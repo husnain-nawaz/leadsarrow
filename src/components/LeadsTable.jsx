@@ -10,7 +10,9 @@ import {
   ChevronRight,
   Trash2,
   Sparkles,
-  Loader2
+  Loader2,
+  SearchX,
+  FilterX
 } from 'lucide-react';
 import {
   toggleSelectLead,
@@ -51,8 +53,25 @@ export default function LeadsTable() {
     revealedLeadIds,
     loading
   } = useSelector((state) => state.leads);
-  const { sortBy, sortOrder } = useSelector((state) => state.filters);
+  const filters = useSelector((state) => state.filters);
+  const { sortBy, sortOrder } = filters;
   const [copiedKey, setCopiedKey] = useState(null);
+
+  // Active filters list to display in the empty state
+  const activeFilterTags = [];
+  if (filters.searchQuery) activeFilterTags.push(`Search: "${filters.searchQuery}"`);
+  if (filters.industries?.length) activeFilterTags.push(...filters.industries);
+  if (filters.countries?.length) activeFilterTags.push(...filters.countries);
+  if (filters.seniorities?.length) activeFilterTags.push(...filters.seniorities);
+  if (filters.departments?.length) activeFilterTags.push(...filters.departments);
+  if (filters.employeeRanges?.length) activeFilterTags.push(...filters.employeeRanges);
+  if (filters.revenueRanges?.length) activeFilterTags.push(...filters.revenueRanges);
+  if (filters.fundingStages?.length) activeFilterTags.push(...filters.fundingStages);
+  if (filters.verificationStatuses?.length) activeFilterTags.push(...filters.verificationStatuses);
+  if (filters.minIntentScore > 0) activeFilterTags.push(`Intent Score ≥ ${filters.minIntentScore}`);
+  if (filters.hasVerifiedEmail) activeFilterTags.push('Verified Email Only');
+  if (filters.hasDirectPhone) activeFilterTags.push('Direct Phone Only');
+  if (filters.onlyCustom) activeFilterTags.push('New Leads Only');
 
   const pageIds = items.map((l) => l.id);
   const allCurrentSelected =
@@ -219,22 +238,50 @@ export default function LeadsTable() {
               ))
             ) : items.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-16 text-center">
-                  <div className="max-w-md mx-auto space-y-3">
-                    <div className="text-base font-semibold text-slate-900 font-display">
-                      No matching B2B companies found
+                <td colSpan={8} className="py-20 px-6 text-center">
+                  <div className="max-w-lg mx-auto flex flex-col items-center">
+                    {/* Visual Icon Badge */}
+                    <div className="w-14 h-14 rounded-2xl bg-orange-50 border border-orange-100 flex items-center justify-center text-orange-600 mb-4 shadow-xs">
+                      {filters.searchQuery ? <SearchX className="w-7 h-7" /> : <FilterX className="w-7 h-7" />}
                     </div>
-                    <p className="text-xs text-slate-500">
-                      Your current filter combination returned zero records. Try broadening your
-                      headcount, revenue, or technology stack criteria.
+
+                    <h3 className="text-base font-bold text-slate-900 font-display">
+                      No Leads Found For Your Filter Criteria
+                    </h3>
+
+                    <p className="text-xs text-slate-500 mt-1.5 max-w-md">
+                      We searched through our database, but no leads currently match the specific combination of criteria you selected.
                     </p>
-                    <button
-                      type="button"
-                      onClick={() => dispatch(resetAllFilters())}
-                      className="px-4 py-2 text-xs font-semibold text-white bg-orange-600 rounded-lg hover:bg-orange-700 transition-colors cursor-pointer"
-                    >
-                      Reset All Filters
-                    </button>
+
+                    {/* Active Criteria Chips */}
+                    {activeFilterTags.length > 0 && (
+                      <div className="mt-4 w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-left">
+                        <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                          Filters you are looking for ({activeFilterTags.length}):
+                        </div>
+                        <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto">
+                          {activeFilterTags.map((tag, idx) => (
+                            <span
+                              key={idx}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium bg-white text-slate-700 border border-slate-200 shadow-2xs"
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-3 mt-6">
+                      <button
+                        type="button"
+                        onClick={() => dispatch(resetAllFilters())}
+                        className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-orange-600 rounded-lg hover:bg-orange-700 transition-colors shadow-xs cursor-pointer"
+                      >
+                        Reset All Filters
+                      </button>
+                    </div>
                   </div>
                 </td>
               </tr>
