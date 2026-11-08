@@ -453,37 +453,11 @@ export async function queryLeadsDatabase(params: any = {}) {
   ) {
     totalMatches = deptArr.reduce((sum, d) => sum + (singleFacetTotals.department[d] || 0), 0);
   } else {
-    // For combined multi-faceted queries, run a fast indexed count sample (up to 50,001)
-    // or estimate based on composite facet selectivity
+    // For combined multi-faceted queries, run a fast exact COUNT(*) using the composite index
     try {
-      const countQb = qb.clone().select('lead.id').limit(50001);
-      const countRows = await countQb.getRawMany();
-      if (countRows.length < 50001) {
-        totalMatches = countRows.length;
-      } else {
-        // High-cardinality multi-filter: estimate based on intersection ratio
-        let baseCount = globals.totalDatabaseRecords || 1035683;
-        if (indArr.length > 0) {
-          const indSum = indArr.reduce((s, i) => s + (singleFacetTotals.industry[i] || 0), 0);
-          baseCount = Math.round(baseCount * (indSum / 1035683));
-        }
-        if (empArr.length > 0) {
-          const empSum = empArr.reduce((s, e) => s + (singleFacetTotals.employeeRange[e] || 0), 0);
-          baseCount = Math.round(baseCount * (empSum / 1035683));
-        }
-        if (senArr.length > 0) {
-          const senSum = senArr.reduce((s, sn) => s + (singleFacetTotals.seniority[sn] || 0), 0);
-          baseCount = Math.round(baseCount * (senSum / 1035683));
-        }
-        if (deptArr.length > 0) {
-          const deptSum = deptArr.reduce((s, dp) => s + (singleFacetTotals.department[dp] || 0), 0);
-          baseCount = Math.round(baseCount * (deptSum / 1035683));
-        }
-        if (minScore > 0) {
-          baseCount = Math.round(baseCount * ((100 - minScore) / 30));
-        }
-        totalMatches = Math.max(50001, baseCount);
-      }
+      const countQb = qb.clone().select('COUNT(lead.id)', 'count');
+      const countRes = await countQb.getRawOne();
+      totalMatches = Number(countRes?.count || 0);
     } catch {
       totalMatches = 5000;
     }

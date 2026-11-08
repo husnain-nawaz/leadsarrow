@@ -32,6 +32,14 @@ export async function getDataSource(): Promise<DataSource> {
     if (!AppDataSource.isInitialized) {
       await AppDataSource.initialize();
       console.log('TypeORM AppDataSource connected to MySQL database: ' + (process.env.MYSQL_DATABASE || 'B2B_database'));
+      // Optimize session buffer sizes for high-speed multi-filter sorting and index scanning
+      try {
+        await AppDataSource.query('SET GLOBAL innodb_buffer_pool_size = 536870912');
+      } catch (_) {}
+      try {
+        await AppDataSource.query('SET GLOBAL sort_buffer_size = 16777216');
+        await AppDataSource.query('SET GLOBAL join_buffer_size = 16777216');
+      } catch (_) {}
     }
     isInitialized = true;
   }
