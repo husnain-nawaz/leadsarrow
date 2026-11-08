@@ -230,12 +230,6 @@ export default function LeadDetailDrawer() {
                 <span className="font-medium text-slate-900">Latest Signal: </span>
                 {activeLead.recentSignal || 'Active evaluation of enterprise B2B infrastructure'}
               </div>
-              <div className="pt-2 border-t border-slate-100">
-                <div className="text-slate-500 mb-1">Detected Tech Stack</div>
-                <div className="text-slate-800 font-medium">
-                  {(activeLead.techStack || []).join(' · ')}
-                </div>
-              </div>
             </div>
           </div>
         </div>

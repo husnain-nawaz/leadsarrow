@@ -161,7 +161,7 @@ export default function LeadsTable() {
                   <ArrowUpDown className="w-3 h-3 text-slate-400" />
                 </button>
               </th>
-              <th className="py-2.5 px-3 bg-slate-50">HQ Location & Tech</th>
+              <th className="py-2.5 px-3 bg-slate-50">HQ Location</th>
               <th className="py-2.5 pl-3 pr-6 text-right bg-slate-50">
                 <button
                   type="button"
@@ -372,13 +372,10 @@ export default function LeadsTable() {
                       </div>
                     </td>
 
-                    {/* Location & Tech Stack (Zero-Pill Unboxed Text) */}
+                    {/* Location (Zero-Pill Unboxed Text) */}
                     <td className="py-2.5 px-3 align-middle">
                       <div className="text-slate-800">
-                        {lead.city} · {lead.country}
-                      </div>
-                      <div className="text-[11px] text-slate-500 truncate max-w-[210px] mt-0.5">
-                        {(lead.techStack || []).join(' · ')}
+                        {lead.city ? `${lead.city} · ${lead.country}` : lead.country}
                       </div>
                     </td>
 

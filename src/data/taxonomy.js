@@ -61,23 +61,7 @@ export const FILTER_TAXONOMY = {
     'Information Security',
     'Product Management'
   ],
-  techStackOptions: [
-    'AWS',
-    'Salesforce',
-    'PostgreSQL',
-    'React',
-    'Docker',
-    'Kubernetes',
-    'Microsoft Azure',
-    'Google Cloud',
-    'Python',
-    'Shopify',
-    'Stripe',
-    'Snowflake',
-    'Oracle',
-    'Okta',
-    'Epic Systems'
-  ],
+  techStackOptions: [],
   fundingStages: [
     'Series B',
     'Public / IPO',

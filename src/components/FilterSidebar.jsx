@@ -106,27 +106,6 @@ const TAXONOMY_SECTIONS = [
     ]
   },
   {
-    id: 'techStack',
-    label: 'Installed Tech Stack',
-    options: [
-      'AWS',
-      'Salesforce',
-      'PostgreSQL',
-      'React',
-      'Docker',
-      'Kubernetes',
-      'Microsoft Azure',
-      'Google Cloud',
-      'Python',
-      'Shopify',
-      'Stripe',
-      'Snowflake',
-      'Oracle',
-      'Okta',
-      'Epic Systems'
-    ]
-  },
-  {
     id: 'fundingStages',
     label: 'Funding Stage',
     options: [
@@ -154,7 +133,6 @@ export default function FilterSidebar() {
     countries: true,
     seniorities: true,
     departments: false,
-    techStack: true,
     fundingStages: false,
     verificationStatuses: false
   });

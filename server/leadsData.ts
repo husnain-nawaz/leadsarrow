@@ -56,23 +56,7 @@ export const FILTER_TAXONOMY = {
     'Information Security',
     'Product Management'
   ],
-  techStackOptions: [
-    'AWS',
-    'Salesforce',
-    'PostgreSQL',
-    'React',
-    'Docker',
-    'Kubernetes',
-    'Microsoft Azure',
-    'Google Cloud',
-    'Python',
-    'Shopify',
-    'Stripe',
-    'Snowflake',
-    'Oracle',
-    'Okta',
-    'Epic Systems'
-  ],
+  techStackOptions: [],
   fundingStages: ['Series B', 'Public / IPO', 'Series C+'],
   verificationStatuses: ['Verified']
 };
@@ -639,21 +623,7 @@ export async function queryLeadsDatabase(params: any = {}) {
       'Verified': 1035683
     },
     fundingStages: singleFacetTotals.fundingStage || {},
-    techStack: {
-      'AWS': 620000,
-      'PostgreSQL': 510000,
-      'Salesforce': 480000,
-      'React': 150000,
-      'Docker': 150000,
-      'Kubernetes': 150000,
-      'Microsoft Azure': 75000,
-      'Python': 75000,
-      'Shopify': 75000,
-      'Stripe': 75000,
-      'Google Cloud': 75000,
-      'Snowflake': 40000,
-      'Okta': 40000
-    }
+    techStack: {}
   };
 
   return {
