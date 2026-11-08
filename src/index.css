@@ -29,6 +29,16 @@
   height: 6px;
 }
 
+@keyframes shimmerProgress {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(25%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-indeterminate {
+  animation: shimmerProgress 1.4s ease-in-out infinite;
+}
+
 ::-webkit-scrollbar-track {
   background: #f1f5f9;
 }

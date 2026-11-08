@@ -9,7 +9,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Trash2,
-  Sparkles
+  Sparkles,
+  Loader2
 } from 'lucide-react';
 import {
   toggleSelectLead,
@@ -109,16 +110,24 @@ export default function LeadsTable() {
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-white overflow-hidden relative">
-      {/* Subtle top loading progress bar when switching pages smoothly */}
+      {/* High-visibility top loading progress bar when retrieving/filtering data */}
+      {loading && (
+        <div className="absolute top-0 left-0 right-0 h-1 bg-orange-100 z-30 overflow-hidden shadow-xs">
+          <div className="h-full bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600 animate-indeterminate w-1/2" />
+        </div>
+      )}
+
+      {/* Floating live retrieval badge */}
       {loading && items.length > 0 && (
-        <div className="absolute top-0 left-0 right-0 h-0.5 bg-orange-100 z-30 overflow-hidden">
-          <div className="h-full bg-orange-600 animate-pulse w-full" />
+        <div className="absolute top-3 right-6 z-20 pointer-events-none flex items-center gap-2 bg-slate-900/90 text-white text-[11px] font-medium px-3 py-1.5 rounded-full shadow-lg backdrop-blur-xs animate-in fade-in duration-200">
+          <Loader2 className="w-3.5 h-3.5 text-orange-400 animate-spin" />
+          <span>Updating leads...</span>
         </div>
       )}
 
       {/* High-Density Enterprise Data Grid */}
       <div className="overflow-auto flex-1 min-h-0">
-        <table className={`w-full text-left border-collapse transition-opacity duration-150 ${loading && items.length > 0 ? 'opacity-60' : 'opacity-100'}`}>
+        <table className={`w-full text-left border-collapse transition-opacity duration-200 ${loading && items.length > 0 ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
           <thead className="sticky top-0 z-10 bg-slate-50 shadow-xs">
             <tr className="border-b border-slate-200 text-[11px] font-semibold text-slate-600 bg-slate-50">
               <th className="py-2.5 pl-6 pr-3 w-10 bg-slate-50">
