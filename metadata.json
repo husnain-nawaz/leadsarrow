@@ -1,0 +1,6 @@
+{
+  "name": "LeadsArrow B2B Intelligence",
+  "description": "Enterprise B2B lead discovery and company intelligence database with multi-dimensional filtering, Redux state management, JWT security, and Google authentication.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,226 @@
+{
+  "entities": {
+    "CustomLead": {
+      "title": "CustomLead",
+      "description": "User-saved or custom-added B2B business lead record stored in Firestore.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID or authenticated user ID of the creator.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "companyName": {
+          "type": "string",
+          "description": "Registered name of the B2B enterprise.",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "domain": {
+          "type": "string",
+          "description": "Primary web domain of the business.",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "industry": {
+          "type": "string",
+          "description": "Primary industry classification.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "employeeRange": {
+          "type": "string",
+          "description": "Employee headcount bracket.",
+          "minLength": 1,
+          "maxLength": 50
+        },
+        "revenueRange": {
+          "type": "string",
+          "description": "Annual revenue bracket.",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "country": {
+          "type": "string",
+          "description": "Headquarters country.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "city": {
+          "type": "string",
+          "description": "Headquarters city.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "contactName": {
+          "type": "string",
+          "description": "Primary decision-maker full name.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "contactTitle": {
+          "type": "string",
+          "description": "Decision-maker job title.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "seniority": {
+          "type": "string",
+          "description": "Executive seniority level.",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "department": {
+          "type": "string",
+          "description": "Functional department.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "contactEmail": {
+          "type": "string",
+          "description": "Business email address.",
+          "minLength": 3,
+          "maxLength": 160
+        },
+        "contactPhone": {
+          "type": "string",
+          "description": "Direct business phone number.",
+          "minLength": 3,
+          "maxLength": 60
+        },
+        "verificationStatus": {
+          "type": "string",
+          "description": "Email verification state.",
+          "enum": ["Verified", "Catch-All", "Pending"],
+          "maxLength": 30
+        },
+        "fundingStage": {
+          "type": "string",
+          "description": "Latest venture or corporate funding stage.",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "techStack": {
+          "type": "string",
+          "description": "Comma-separated technologies detected on domain.",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "buyingIntentScore": {
+          "type": "integer",
+          "description": "Buying intent signal score from 0 to 100."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last update timestamp."
+        }
+      },
+      "required": [
+        "ownerId",
+        "companyName",
+        "domain",
+        "industry",
+        "employeeRange",
+        "revenueRange",
+        "country",
+        "city",
+        "contactName",
+        "contactTitle",
+        "seniority",
+        "department",
+        "contactEmail",
+        "contactPhone",
+        "verificationStatus",
+        "fundingStage",
+        "techStack",
+        "buyingIntentScore",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "SavedList": {
+      "title": "SavedList",
+      "description": "User-curated list of B2B leads and saved filter presets.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the list owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the saved lead list.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "description": {
+          "type": "string",
+          "description": "Summary description of the target segment.",
+          "minLength": 0,
+          "maxLength": 300
+        },
+        "leadIdsCsv": {
+          "type": "string",
+          "description": "Comma-separated list of lead IDs included in this list.",
+          "minLength": 0,
+          "maxLength": 2000
+        },
+        "filterSummary": {
+          "type": "string",
+          "description": "Human-readable summary of active filters.",
+          "minLength": 0,
+          "maxLength": 500
+        },
+        "leadCount": {
+          "type": "integer",
+          "description": "Number of leads stored in this list."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": [
+        "ownerId",
+        "name",
+        "description",
+        "leadIdsCsv",
+        "filterSummary",
+        "leadCount",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/custom_leads/{leadId}": {
+      "schema": {
+        "$ref": "#/entities/CustomLead"
+      },
+      "description": "Stores custom B2B leads created or imported by authenticated users."
+    },
+    "/saved_lists/{listId}": {
+      "schema": {
+        "$ref": "#/entities/SavedList"
+      },
+      "description": "Stores saved B2B lead lists and filter segments per authenticated user."
+    }
+  }
+}
