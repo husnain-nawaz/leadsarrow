@@ -518,8 +518,30 @@ export async function queryLeadsDatabase(params: any = {}) {
       }
     } else {
       // 2-step deferred join pagination: select IDs first using indexes, then load row data
-      const idRows = await qb.clone()
-        .select('lead.id', 'id')
+      // For multi-filtered queries, use index hints when selective filters are active to prevent backwards table scans
+      const idQb = qb.clone().select('lead.id', 'id');
+      const activeFilterCount = (indArr.length > 0 ? 1 : 0) +
+        (empArr.length > 0 ? 1 : 0) +
+        (revArr.length > 0 ? 1 : 0) +
+        (countryArr.length > 0 ? 1 : 0) +
+        (senArr.length > 0 ? 1 : 0) +
+        (deptArr.length > 0 ? 1 : 0) +
+        (fundArr.length > 0 ? 1 : 0) +
+        (minScore > 0 ? 1 : 0);
+
+      if (activeFilterCount >= 2) {
+        if (indArr.length > 0) {
+          idQb.useIndex('idx_cov_leads');
+        } else if (deptArr.length > 0) {
+          idQb.useIndex('idx_cov_dept');
+        } else if (empArr.length > 0 || revArr.length > 0) {
+          idQb.useIndex('idx_cov_emp_rev');
+        } else if (senArr.length > 0) {
+          idQb.useIndex('idx_cov_sen_score');
+        }
+      }
+
+      const idRows = await idQb
         .orderBy(sortCol, sortDirection)
         .skip(offset)
         .take(safePageSize)
