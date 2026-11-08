@@ -453,9 +453,18 @@ export async function queryLeadsDatabase(params: any = {}) {
   ) {
     totalMatches = deptArr.reduce((sum, d) => sum + (singleFacetTotals.department[d] || 0), 0);
   } else {
-    // For combined multi-faceted queries, run a fast exact COUNT(*) using the composite index
+    // For combined multi-faceted queries, run a fast exact COUNT(*) using the composite covering index
     try {
       const countQb = qb.clone().select('COUNT(lead.id)', 'count');
+      if (indArr.length > 0 && empArr.length > 0) {
+        countQb.useIndex('idx_ind_emp_score');
+      } else if (indArr.length > 0) {
+        countQb.useIndex('idx_cov_leads');
+      } else if (empArr.length > 0 || revArr.length > 0) {
+        countQb.useIndex('idx_cov_emp_rev');
+      } else if (deptArr.length > 0) {
+        countQb.useIndex('idx_cov_dept');
+      }
       const countRes = await countQb.getRawOne();
       totalMatches = Number(countRes?.count || 0);
     } catch {
@@ -529,8 +538,10 @@ export async function queryLeadsDatabase(params: any = {}) {
         (fundArr.length > 0 ? 1 : 0) +
         (minScore > 0 ? 1 : 0);
 
-      if (activeFilterCount >= 2) {
-        if (indArr.length > 0) {
+      if (activeFilterCount >= 1) {
+        if (indArr.length > 0 && empArr.length > 0) {
+          idQb.useIndex('idx_ind_emp_score');
+        } else if (indArr.length > 0) {
           idQb.useIndex('idx_cov_leads');
         } else if (deptArr.length > 0) {
           idQb.useIndex('idx_cov_dept');
