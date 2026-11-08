@@ -33,7 +33,7 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
   const isSuperAdmin = Boolean(user && (user.isSuperAdmin || user.role === 'superadmin' || user.email === 'alex@leadsarrow.io' || user.email === 'alex@nexuslead.io'));
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between gap-4 px-6 py-3 bg-white border-b border-slate-200">
+    <header className="relative z-20 flex items-center justify-between gap-4 px-6 py-3 bg-white border-b border-slate-200">
       {/* Zone 1: Single text element wordmark */}
       <div className="flex items-center gap-6">
         <a

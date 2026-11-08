@@ -364,7 +364,7 @@ export default function FilterSidebar() {
   return (
     <>
       {/* Desktop Permanent Filter Sidebar (280px width) */}
-      <aside className="hidden lg:block w-[280px] shrink-0 h-[calc(100vh-57px)] sticky top-[57px]">
+      <aside className="hidden lg:block w-[280px] shrink-0 h-screen sticky top-0 self-start">
         {sidebarContent}
       </aside>
 

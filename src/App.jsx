@@ -127,9 +127,9 @@ function WorkspaceContent({ onToggleLanding }) {
           <SuperadminPanel onBack={() => setActiveView('finder')} />
         </main>
       ) : (
-        <div className="flex-1 flex min-w-0 h-[calc(100vh-57px)] overflow-hidden">
+        <div className="flex-1 flex min-w-0">
           <FilterSidebar />
-          <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-white">
+          <main className="flex-1 flex flex-col min-w-0 bg-white">
             <AnalyticsBar />
             <LeadsTable />
           </main>
