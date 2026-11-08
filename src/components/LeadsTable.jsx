@@ -140,7 +140,7 @@ export default function LeadsTable() {
                 </button>
               </th>
               <th className="py-2.5 px-3 bg-slate-50">Decision Maker</th>
-              <th className="py-2.5 px-3 bg-slate-50">Direct Contact & Verification</th>
+              <th className="py-2.5 px-3 bg-slate-50 w-[260px] min-w-[260px]">Direct Contact & Verification</th>
               <th className="py-2.5 px-3 text-right bg-slate-50">
                 <button
                   type="button"
@@ -300,15 +300,15 @@ export default function LeadsTable() {
                     </td>
 
                     {/* Direct Contact & Verification */}
-                    <td className="py-2.5 px-3 align-middle" onClick={(e) => e.stopPropagation()}>
+                    <td className="py-2.5 px-3 align-middle w-[260px] min-w-[260px]" onClick={(e) => e.stopPropagation()}>
                       {isRevealed ? (
-                        <div className="space-y-0.5">
+                        <div className="space-y-0.5 max-w-[260px]">
                           <div className="flex items-center gap-1.5 font-mono text-[11px] text-slate-800">
-                            <span>{lead.contactEmail}</span>
+                            <span className="truncate">{lead.contactEmail}</span>
                             <button
                               type="button"
                               onClick={(e) => handleCopy(e, lead.contactEmail, `${lead.id}_email`)}
-                              className="text-slate-400 hover:text-slate-700 cursor-pointer"
+                              className="text-slate-400 hover:text-slate-700 cursor-pointer shrink-0"
                               title="Copy email"
                             >
                               {copiedKey === `${lead.id}_email` ? (
@@ -335,19 +335,19 @@ export default function LeadsTable() {
                           </div>
                         </div>
                       ) : (
-                        <div className="flex items-center justify-between gap-2 max-w-[240px]">
-                          <div>
-                            <div className="font-mono text-[11px] text-slate-500">
+                        <div className="flex items-center justify-between gap-3 w-full">
+                          <div className="min-w-0 flex-1">
+                            <div className="font-mono text-[11px] text-slate-500 truncate">
                               {maskEmail(lead.contactEmail)}
                             </div>
-                            <div className="text-[11px] text-slate-400 font-mono tabular-nums">
+                            <div className="text-[11px] text-slate-400 font-mono tabular-nums truncate">
                               {maskPhone(lead.contactPhone)} · {lead.verificationStatus}
                             </div>
                           </div>
                           <button
                             type="button"
                             onClick={(e) => handleReveal(e, lead.id)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-orange-600 bg-orange-50 hover:bg-orange-100 rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                            className="inline-flex items-center justify-center gap-1 w-[72px] py-1 text-[11px] font-medium text-orange-600 bg-orange-50 hover:bg-orange-100 rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer text-center"
                           >
                             <Eye className="w-3 h-3" />
                             Reveal
