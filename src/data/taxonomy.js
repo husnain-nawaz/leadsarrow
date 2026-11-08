@@ -43,48 +43,45 @@ export const FILTER_TAXONOMY = {
   ],
   countries: [
     'USA',
-    'United States',
     'Canada'
   ],
   seniorities: [
     'C-Level / Founder',
-    'VP',
     'Director',
-    'Senior Manager'
+    'Senior Manager',
+    'VP'
   ],
   departments: [
     'Executive Leadership',
-    'Sales & Revenue',
     'Marketing & Growth',
-    'Engineering & Technical',
+    'Sales & Revenue',
     'Operations & Supply Chain',
+    'Engineering & Technical',
     'Finance & Procurement',
     'Information Security',
     'Product Management'
   ],
   techStackOptions: [
     'AWS',
-    'Google Cloud',
-    'Microsoft Azure',
     'Salesforce',
-    'HubSpot',
-    'Snowflake',
-    'Databricks',
-    'Stripe',
-    'Kubernetes',
-    'React',
     'PostgreSQL',
-    'MySQL',
-    'Okta',
-    'Cloudflare',
-    'Shopify',
+    'React',
     'Docker',
-    'Python'
+    'Kubernetes',
+    'Microsoft Azure',
+    'Google Cloud',
+    'Python',
+    'Shopify',
+    'Stripe',
+    'Snowflake',
+    'Oracle',
+    'Okta',
+    'Epic Systems'
   ],
   fundingStages: [
     'Series B',
-    'Series C+',
-    'Public / IPO'
+    'Public / IPO',
+    'Series C+'
   ],
   verificationStatuses: ['Verified']
 };

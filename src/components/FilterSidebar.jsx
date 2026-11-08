@@ -78,7 +78,6 @@ const TAXONOMY_SECTIONS = [
     label: 'HQ Country & Region',
     options: [
       'USA',
-      'United States',
       'Canada'
     ]
   },
@@ -87,9 +86,9 @@ const TAXONOMY_SECTIONS = [
     label: 'Decision-Maker Seniority',
     options: [
       'C-Level / Founder',
-      'VP',
       'Director',
-      'Senior Manager'
+      'Senior Manager',
+      'VP'
     ]
   },
   {
@@ -97,10 +96,10 @@ const TAXONOMY_SECTIONS = [
     label: 'Job Department',
     options: [
       'Executive Leadership',
-      'Sales & Revenue',
       'Marketing & Growth',
-      'Engineering & Technical',
+      'Sales & Revenue',
       'Operations & Supply Chain',
+      'Engineering & Technical',
       'Finance & Procurement',
       'Information Security',
       'Product Management'
@@ -111,21 +110,20 @@ const TAXONOMY_SECTIONS = [
     label: 'Installed Tech Stack',
     options: [
       'AWS',
-      'Google Cloud',
-      'Microsoft Azure',
       'Salesforce',
-      'HubSpot',
-      'Snowflake',
-      'Databricks',
-      'Stripe',
-      'Kubernetes',
-      'React',
       'PostgreSQL',
-      'MySQL',
-      'Okta',
-      'Cloudflare',
+      'React',
+      'Docker',
+      'Kubernetes',
+      'Microsoft Azure',
+      'Google Cloud',
+      'Python',
       'Shopify',
-      'Docker'
+      'Stripe',
+      'Snowflake',
+      'Oracle',
+      'Okta',
+      'Epic Systems'
     ]
   },
   {
@@ -133,8 +131,8 @@ const TAXONOMY_SECTIONS = [
     label: 'Funding Stage',
     options: [
       'Series B',
-      'Series C+',
-      'Public / IPO'
+      'Public / IPO',
+      'Series C+'
     ]
   },
   {

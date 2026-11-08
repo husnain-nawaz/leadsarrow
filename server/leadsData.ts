@@ -44,51 +44,36 @@ export const FILTER_TAXONOMY = {
     '$500M - $1B',
     '> $1B'
   ],
-  countries: [
-    'USA',
-    'United States',
-    'Canada'
-  ],
-  seniorities: [
-    'C-Level / Founder',
-    'VP',
-    'Director',
-    'Senior Manager'
-  ],
+  countries: ['USA', 'Canada'],
+  seniorities: ['C-Level / Founder', 'Director', 'Senior Manager', 'VP'],
   departments: [
     'Executive Leadership',
-    'Sales & Revenue',
     'Marketing & Growth',
-    'Engineering & Technical',
+    'Sales & Revenue',
     'Operations & Supply Chain',
+    'Engineering & Technical',
     'Finance & Procurement',
     'Information Security',
     'Product Management'
   ],
   techStackOptions: [
     'AWS',
-    'Google Cloud',
-    'Microsoft Azure',
     'Salesforce',
-    'HubSpot',
-    'Snowflake',
-    'Databricks',
-    'Stripe',
-    'Kubernetes',
-    'React',
     'PostgreSQL',
-    'MySQL',
-    'Okta',
-    'Cloudflare',
-    'Shopify',
+    'React',
     'Docker',
-    'Python'
+    'Kubernetes',
+    'Microsoft Azure',
+    'Google Cloud',
+    'Python',
+    'Shopify',
+    'Stripe',
+    'Snowflake',
+    'Oracle',
+    'Okta',
+    'Epic Systems'
   ],
-  fundingStages: [
-    'Series B',
-    'Series C+',
-    'Public / IPO'
-  ],
+  fundingStages: ['Series B', 'Public / IPO', 'Series C+'],
   verificationStatuses: ['Verified']
 };
 
@@ -96,7 +81,7 @@ function parseArrayParam(param: any): string[] {
   if (!param) return [];
   if (Array.isArray(param)) return param.filter(Boolean);
   return String(param)
-    .split(',')
+    .split(/[|,]/)
     .map((s) => s.trim())
     .filter(Boolean);
 }
@@ -439,6 +424,33 @@ export async function queryLeadsDatabase(params: any = {}) {
     !onlyCustom
   ) {
     totalMatches = senArr.reduce((sum, sen) => sum + (singleFacetTotals.seniority[sen] || 0), 0);
+  } else if (
+    !searchLower &&
+    revArr.length > 0 &&
+    indArr.length === 0 &&
+    empArr.length === 0 &&
+    countryArr.length === 0 &&
+    senArr.length === 0 &&
+    deptArr.length === 0 &&
+    verArr.length === 0 &&
+    fundArr.length === 0 &&
+    techArr.length === 0 &&
+    minScore === 0 &&
+    String(hasVerifiedEmail) !== 'true' &&
+    String(hasDirectPhone) !== 'true' &&
+    !onlyCustom
+  ) {
+    const revFacetTotals: Record<string, number> = {
+      '> $1B': 228772,
+      '$500M - $1B': 35260,
+      '$250 - $500M': 26947,
+      '$100 - $250M': 48747,
+      '$50 - $100M': 56662,
+      '$10 - $50M': 151739,
+      '$1 - $10M': 211280,
+      '$0 - $1M': 262117
+    };
+    totalMatches = revArr.reduce((sum, r) => sum + (revFacetTotals[r] || 30000), 0);
   } else if (
     !searchLower &&
     deptArr.length > 0 &&
