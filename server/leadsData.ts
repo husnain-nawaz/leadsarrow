@@ -456,11 +456,13 @@ export async function queryLeadsDatabase(params: any = {}) {
     // For combined multi-faceted queries, run a fast exact COUNT(*) using the composite covering index
     try {
       const countQb = qb.clone().select('COUNT(lead.id)', 'count');
-      if (indArr.length > 0 && empArr.length > 0) {
+      if (revArr.length > 0) {
+        countQb.useIndex('idx_rev_emp_ind');
+      } else if (indArr.length > 0 && empArr.length > 0) {
         countQb.useIndex('idx_ind_emp_score');
       } else if (indArr.length > 0) {
         countQb.useIndex('idx_cov_leads');
-      } else if (empArr.length > 0 || revArr.length > 0) {
+      } else if (empArr.length > 0) {
         countQb.useIndex('idx_cov_emp_rev');
       } else if (deptArr.length > 0) {
         countQb.useIndex('idx_cov_dept');
@@ -539,13 +541,15 @@ export async function queryLeadsDatabase(params: any = {}) {
         (minScore > 0 ? 1 : 0);
 
       if (activeFilterCount >= 1) {
-        if (indArr.length > 0 && empArr.length > 0) {
+        if (revArr.length > 0) {
+          idQb.useIndex('idx_rev_emp_ind');
+        } else if (indArr.length > 0 && empArr.length > 0) {
           idQb.useIndex('idx_ind_emp_score');
         } else if (indArr.length > 0) {
           idQb.useIndex('idx_cov_leads');
         } else if (deptArr.length > 0) {
           idQb.useIndex('idx_cov_dept');
-        } else if (empArr.length > 0 || revArr.length > 0) {
+        } else if (empArr.length > 0) {
           idQb.useIndex('idx_cov_emp_rev');
         } else if (senArr.length > 0) {
           idQb.useIndex('idx_cov_sen_score');

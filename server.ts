@@ -126,11 +126,15 @@ async function startServer() {
   });
 
   app.get('/api/leads', async (req, res) => {
+    const tStart = Date.now();
     try {
       const result = await queryLeadsDatabase(req.query);
+      const elapsed = Date.now() - tStart;
+      console.log(`[QUERY MONITOR] ${elapsed}ms | Filters: ${JSON.stringify(req.query)}`);
       res.json(result);
     } catch (error: any) {
-      console.error('Error querying B2B leads from MySQL:', error);
+      const elapsed = Date.now() - tStart;
+      console.error(`[QUERY MONITOR ERROR] ${elapsed}ms:`, error);
       res.status(500).json({ error: 'Failed to execute B2B database query' });
     }
   });
