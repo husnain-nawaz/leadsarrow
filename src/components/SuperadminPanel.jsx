@@ -338,6 +338,52 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
     setImportedListName('Enterprise Leads Sample');
   };
 
+  const handleExportUsersCsv = () => {
+    const headers = [
+      'ID',
+      'Name',
+      'Email',
+      'Role',
+      'Plan',
+      'Plan ID',
+      'Payment Status',
+      'Amount Paid ($/mo)',
+      'Daily Credits Limit',
+      'Credits Remaining',
+      'Credits Used Today',
+      'Total Lifetime Credits',
+      'Last Login',
+      'Auth Provider'
+    ];
+    const rows = usersList.map((u) => [
+      u.id,
+      u.name,
+      u.email,
+      u.role,
+      u.plan,
+      u.planId,
+      u.paymentStatus,
+      u.amountPaid || 0,
+      u.dailyCreditsLimit || 100,
+      u.creditsRemaining ?? 100,
+      u.creditsUsedToday ?? 0,
+      u.totalCreditsUsed ?? 0,
+      u.lastLoginAt,
+      u.authProvider
+    ]);
+    const csvContent = [
+      headers.join(','),
+      ...rows.map((r) => r.map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `leadsarrow_users_audit_${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleBatchIngestFromCsv = async () => {
     if (parsedLeadsPreview.length === 0) {
       alert('Please upload or paste CSV / Excel rows first.');
