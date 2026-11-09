@@ -511,6 +511,7 @@ export async function queryLeadsDatabase(params: any = {}) {
       const idRows = await leadRepo.createQueryBuilder('lead')
         .select('lead.id', 'id')
         .orderBy(sortCol, revDirection)
+        .addOrderBy('lead.id', 'ASC')
         .skip(revOffset)
         .take(revTake)
         .getRawMany();
@@ -558,6 +559,7 @@ export async function queryLeadsDatabase(params: any = {}) {
 
       const idRows = await idQb
         .orderBy(sortCol, sortDirection)
+        .addOrderBy('lead.id', 'ASC')
         .skip(offset)
         .take(safePageSize)
         .getRawMany();
@@ -577,6 +579,7 @@ export async function queryLeadsDatabase(params: any = {}) {
     console.warn('Optimized deferred pagination fallback:', err.message);
     // Fallback to standard execution if custom query fails
     qb.orderBy(sortCol, sortDirection)
+      .addOrderBy('lead.id', 'ASC')
       .skip(offset)
       .take(safePageSize);
     const entities = await qb.getMany();
