@@ -155,12 +155,15 @@ const leadsSlice = createSlice({
       .addCase(fetchLeads.fulfilled, (state, action) => {
         state.loading = false;
         const serverLeads = action.payload.leads || [];
-        // Merge any Firestore custom leads not yet in server memory
+        const requestedPageSize = action.payload.pagination?.pageSize || 25;
+        
+        // Merge any Firestore custom leads not yet in server memory, keeping total items capped to requested pageSize
         const existingIds = new Set(serverLeads.map((l) => l.id));
         const extraFirestore = state.firestoreCustomLeads.filter(
           (fl) => !existingIds.has(fl.id)
         );
-        state.items = [...extraFirestore, ...serverLeads];
+        const combined = [...extraFirestore, ...serverLeads];
+        state.items = combined.slice(0, requestedPageSize);
         state.pagination = action.payload.pagination || state.pagination;
         state.metrics = action.payload.metrics || state.metrics;
         state.facets = action.payload.facets || state.facets;
