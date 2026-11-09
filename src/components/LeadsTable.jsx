@@ -500,23 +500,25 @@ export default function LeadsTable() {
             <span>Rows:</span>
             <select
               value={pagination.pageSize}
-              onChange={(e) => {
-                const newSize = Number(e.target.value);
-                const isPaid = user && (user.planId === 'starter' || user.planId === 'pro' || user.planId === 'unlimited' || user.isSuperAdmin);
-                if (newSize === 1000 && !isPaid) {
-                  dispatch(openUpgradeModal('starter'));
-                  return;
-                }
-                dispatch(setPageSize(newSize));
-              }}
+              onChange={(e) => dispatch(setPageSize(Number(e.target.value)))}
               className="bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs font-mono tabular-nums text-slate-900 focus:outline-none focus:border-orange-600"
             >
               <option value={25}>25</option>
               <option value={50}>50</option>
               <option value={100}>100</option>
-              <option value={1000}>
-                1,000 {!(user && (user.planId === 'starter' || user.planId === 'pro' || user.planId === 'unlimited' || user.isSuperAdmin)) ? '🔒 (Paid)' : ''}
-              </option>
+              {Boolean(
+                user &&
+                (user.isSuperAdmin ||
+                  user.role === 'superadmin' ||
+                  user.email === 'alex@leadsarrow.io' ||
+                  user.email === 'alex@nexuslead.io' ||
+                  user.planId === 'starter' ||
+                  user.planId === 'pro' ||
+                  user.planId === 'unlimited' ||
+                  (user.plan && !user.plan.toLowerCase().includes('free')))
+              ) && (
+                <option value={1000}>1,000</option>
+              )}
             </select>
           </label>
         </div>
