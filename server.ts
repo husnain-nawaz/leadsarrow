@@ -20,7 +20,8 @@ import {
   getAdminStats,
   optionalAuthMiddleware,
   requireJwtMiddleware,
-  requireSuperAdminMiddleware
+  requireSuperAdminMiddleware,
+  decrementUserCreditsInDb
 } from './server/auth.ts';
 import { antiScraperProtectionMiddleware } from './server/antiScraper.ts';
 
@@ -79,6 +80,16 @@ async function startServer() {
       res.json(result);
     } catch (error: any) {
       res.status(400).json({ error: error.message || 'Plan upgrade failed' });
+    }
+  });
+
+  app.post('/api/auth/decrement-credits', requireJwtMiddleware, async (req: any, res) => {
+    try {
+      const amount = Number(req.body?.amount) || 1;
+      const updatedUser = await decrementUserCreditsInDb(req.user.id, amount);
+      res.json({ success: true, user: updatedUser });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || 'Failed to decrement credits' });
     }
   });
 

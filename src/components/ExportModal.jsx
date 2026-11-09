@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { X, Download, AlertTriangle, Zap, Sparkles, Loader2 } from 'lucide-react';
 import { setExportModalOpen } from '../store/leadsSlice.js';
-import { decrementExportCredits, openUpgradeModal } from '../store/authSlice.js';
+import { decrementExportCredits, consumeCredits, openUpgradeModal } from '../store/authSlice.js';
 import { fetchLeadsByIdsApi } from '../services/api.js';
 
 export default function ExportModal() {
@@ -155,6 +155,7 @@ export default function ExportModal() {
     }
 
     dispatch(decrementExportCredits(targetLeads.length));
+    dispatch(consumeCredits(targetLeads.length));
     dispatch(setExportModalOpen(false));
   };
 

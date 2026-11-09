@@ -9,9 +9,31 @@ import {
   loginWithJwtApi,
   registerWithJwtApi,
   syncGoogleAuthWithBackendApi,
-  upgradeUserPlanApi
+  upgradeUserPlanApi,
+  decrementCreditsApi
 } from '../services/api.js';
 import { auth, googleProvider, signInWithPopup, firebaseSignOut } from '../firebase.js';
+
+export const consumeCredits = createAsyncThunk(
+  'auth/consumeCredits',
+  async (amount, { getState, rejectWithValue }) => {
+    try {
+      const response = await decrementCreditsApi(amount);
+      if (response?.user) {
+        const { auth } = getState();
+        persistAuthSession({
+          user: response.user,
+          token: auth.token || getStoredToken(),
+          rememberMe: true
+        });
+        return response.user;
+      }
+      return null;
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
 
 export const loginWithJwt = createAsyncThunk(
   'auth/loginWithJwt',
@@ -209,6 +231,11 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(consumeCredits.fulfilled, (state, action) => {
+        if (action.payload) {
+          state.user = action.payload;
+        }
+      })
       .addCase(loginWithJwt.pending, (state) => {
         state.loading = true;
         state.error = null;

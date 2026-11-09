@@ -442,6 +442,33 @@ export async function requireSuperAdminMiddleware(req: any, res: any, next: any)
   next();
 }
 
+export async function decrementUserCreditsInDb(userId: string, amount: number) {
+  if (!userId || amount <= 0) return null;
+  const ds = await getDataSource();
+  const userRepo = ds.getRepository(User);
+  const user = await userRepo.findOne({ where: [{ id: userId }, { email: userId }] });
+  if (!user) return null;
+
+  // Unlimited / superadmin plans do not decrement credits
+  if (user.isSuperAdmin || user.role === 'superadmin' || user.planId === 'unlimited' || user.email === 'alex@leadsarrow.io') {
+    return sanitizeUser(user);
+  }
+
+  const currentRem = user.creditsRemaining ?? user.dailyCreditsLimit ?? 100;
+  const newRem = Math.max(0, currentRem - amount);
+  const usedToday = (user.creditsUsedToday || 0) + amount;
+  const totalUsed = (user.totalCreditsUsed || 0) + amount;
+
+  await userRepo.update(user.id, {
+    creditsRemaining: newRem,
+    creditsUsedToday: usedToday,
+    totalCreditsUsed: totalUsed
+  });
+
+  const updated = await userRepo.findOne({ where: { id: user.id } });
+  return updated ? sanitizeUser(updated) : null;
+}
+
 export async function getAllUsersForAdmin() {
   const ds = await getDataSource();
   const userRepo = ds.getRepository(User);

@@ -27,7 +27,7 @@ import {
   setPageSize,
   resetAllFilters
 } from '../store/filtersSlice.js';
-import { decrementExportCredits, openUpgradeModal } from '../store/authSlice.js';
+import { decrementExportCredits, consumeCredits, openUpgradeModal } from '../store/authSlice.js';
 
 // 4 weeks limit in milliseconds: 4 * 7 * 24 * 60 * 60 * 1000
 const FOUR_WEEKS_MS = 28 * 24 * 60 * 60 * 1000;
@@ -130,6 +130,7 @@ export default function LeadsTable() {
     }
     dispatch(revealLeadContact(leadId));
     dispatch(decrementExportCredits(1));
+    dispatch(consumeCredits(1));
   };
 
   const maskEmail = (email) => {
