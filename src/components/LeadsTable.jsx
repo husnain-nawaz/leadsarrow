@@ -525,9 +525,6 @@ export default function LeadsTable() {
               <option value={25}>25</option>
               <option value={50}>50</option>
               <option value={100}>100</option>
-              {isPaidOrSuperadmin && (
-                <option value={1000}>1,000</option>
-              )}
             </select>
           </label>
         </div>
