@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { X, Plus, Trash2, Filter } from 'lucide-react';
 import {
   setSavedListsModalOpen,
   createSavedList,
-  removeSavedList
+  removeSavedList,
+  fetchSavedLists
 } from '../store/savedListsSlice.js';
 import { setSavedListFilter } from '../store/filtersSlice.js';
 
@@ -18,6 +19,13 @@ export default function SavedListsModal() {
 
   const [listName, setListName] = useState('');
   const [listDesc, setListDesc] = useState('');
+
+  // Always refresh saved lists from MySQL whenever modal opens
+  useEffect(() => {
+    if (isSavedListsModalOpen) {
+      dispatch(fetchSavedLists());
+    }
+  }, [isSavedListsModalOpen, dispatch]);
 
   if (!isSavedListsModalOpen) return null;
 

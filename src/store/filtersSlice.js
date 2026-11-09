@@ -1,5 +1,14 @@
 import { createSlice } from '@reduxjs/toolkit';
 
+// Retrieve persisted active list from localStorage if user was viewing one
+let persistedSavedList = null;
+try {
+  const cached = localStorage.getItem('leadsarrow_active_saved_list');
+  if (cached) {
+    persistedSavedList = JSON.parse(cached);
+  }
+} catch (e) {}
+
 const initialState = {
   searchQuery: '',
   industries: [],
@@ -15,8 +24,8 @@ const initialState = {
   hasVerifiedEmail: false,
   hasDirectPhone: false,
   onlyCustom: false,
-  savedListLeadIds: null,
-  activePresetName: null,
+  savedListLeadIds: persistedSavedList?.leadIds || null,
+  activePresetName: persistedSavedList?.name || null,
   sortBy: 'buyingIntentScore',
   sortOrder: 'desc',
   page: 1,
@@ -64,6 +73,9 @@ const filtersSlice = createSlice({
       state.onlyCustom = Boolean(action.payload);
       state.savedListLeadIds = null;
       state.page = 1;
+      try {
+        localStorage.removeItem('leadsarrow_active_saved_list');
+      } catch (e) {}
     },
     setSavedListFilter(state, action) {
       const { leadIds, name } = action.payload || {};
@@ -71,9 +83,22 @@ const filtersSlice = createSlice({
       state.activePresetName = name || null;
       state.onlyCustom = false;
       state.page = 1;
+      try {
+        if (state.savedListLeadIds && state.savedListLeadIds.length > 0) {
+          localStorage.setItem('leadsarrow_active_saved_list', JSON.stringify({
+            leadIds: state.savedListLeadIds,
+            name: state.activePresetName
+          }));
+        } else {
+          localStorage.removeItem('leadsarrow_active_saved_list');
+        }
+      } catch (e) {}
     },
     applyQuickSegmentPreset(state, action) {
       const preset = action.payload;
+      try {
+        localStorage.removeItem('leadsarrow_active_saved_list');
+      } catch (e) {}
       Object.assign(state, {
         ...initialState,
         searchQuery: state.searchQuery,
@@ -100,8 +125,13 @@ const filtersSlice = createSlice({
       state.isMobileFilterOpen = Boolean(action.payload);
     },
     resetAllFilters(state) {
+      try {
+        localStorage.removeItem('leadsarrow_active_saved_list');
+      } catch (e) {}
       return {
         ...initialState,
+        savedListLeadIds: null,
+        activePresetName: null,
         isMobileFilterOpen: state.isMobileFilterOpen
       };
     }

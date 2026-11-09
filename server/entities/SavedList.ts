@@ -37,3 +37,4 @@ export class SavedList {
   @UpdateDateColumn({ name: 'updated_at', type: 'datetime' })
   updatedAt!: Date;
 }
+

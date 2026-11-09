@@ -213,14 +213,15 @@ async function startServer() {
       
       let lists = [];
       if (userId) {
-        lists = await listRepo.find({
-          where: [{ userId }, { userId: null as any }],
-          order: { createdAt: 'DESC' }
-        });
+        lists = await listRepo
+          .createQueryBuilder('list')
+          .where('list.userId = :userId OR list.userId IS NULL', { userId })
+          .orderBy('list.createdAt', 'DESC')
+          .getMany();
       } else {
         lists = await listRepo.find({
           order: { createdAt: 'DESC' },
-          take: 50
+          take: 100
         });
       }
 
