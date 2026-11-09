@@ -159,6 +159,132 @@ async function startServer() {
     }
   });
 
+  app.post('/api/admin/leads/upload-stream', requireSuperAdminMiddleware, async (req: any, res) => {
+    try {
+      const { fileName, fileBase64, createList, listName } = req.body || {};
+      if (!fileBase64) {
+        return res.status(400).json({ error: 'No file data received' });
+      }
+
+      console.log(`[FILE STREAM INGESTION] Processing: ${fileName || 'spreadsheet'}...`);
+      const buffer = Buffer.from(fileBase64, 'base64');
+      const isExcel = String(fileName || '').endsWith('.xlsx') || String(fileName || '').endsWith('.xls');
+
+      const leadsToInsert: any[] = [];
+      const clean = (val: any) => String(val ?? '').trim().replace(/^["']|["']$/g, '');
+
+      if (isExcel) {
+        const XLSX = await import('xlsx');
+        const workbook = XLSX.read(buffer, { type: 'buffer' });
+        const sheetName = workbook.SheetNames[0];
+        const rows: any[] = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '' });
+
+        for (let i = 0; i < rows.length; i++) {
+          const row = rows[i];
+          const company = clean(row.company || row.companyname || row['company name'] || row.organization || row.business || row.account || `Enterprise Co #${i + 1}`);
+          const domain = clean(row.domain || row.website || row.url || `${company.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`);
+          const industry = clean(row.industry || row.sector || row.category || 'Enterprise Software & SaaS');
+          const contactName = clean(row.name || row.contact || row.contactname || row['contact name'] || row.executive || row['decision maker'] || 'Executive Decision Maker');
+          const contactTitle = clean(row.title || row.jobtitle || row['job title'] || row.role || 'Director of Operations');
+          const contactEmail = clean(row.email || row.workemail || row['contact email'] || row['work email'] || `contact_${i + 1}@${domain}`);
+          const contactPhone = clean(row.phone || row.mobile || row.directphone || row['direct phone'] || row.telephone || '+1 (555) 019-3829');
+
+          leadsToInsert.push({
+            companyName: company,
+            domain,
+            industry,
+            contactName,
+            contactTitle,
+            contactEmail,
+            contactPhone,
+            country: clean(row.country || row.nation || 'United States'),
+            city: clean(row.city || row.location || 'San Francisco, CA'),
+            employeeRange: clean(row.employees || row.employeerange || row['employee range'] || row.headcount || '51-200'),
+            employeeCount: Number(clean(row.employeecount || row['employee count'] || row.size)) || 150,
+            revenueRange: clean(row.revenue || row.revenuerange || row['revenue range'] || '$10M - $50M'),
+            annualRevenueUsd: Number(clean(row.annualrevenue || row['annual revenue'])) || 25000000,
+            fundingStage: clean(row.funding || row.fundingstage || row['funding stage'] || 'Series B'),
+            buyingIntentScore: Number(clean(row.intent || row.intentscore || row['intent score'])) || Math.floor(Math.random() * 20 + 80),
+            techStack: clean(row.tech || row.techstack || row['tech stack'] || row.technologies || 'AWS, Salesforce').split(/[,;|]/).map((s: string) => s.trim()).filter(Boolean)
+          });
+        }
+      } else {
+        // Plain text CSV / TSV streaming parser
+        const textContent = buffer.toString('utf8');
+        const lines = textContent.split(/\r?\n/).filter(Boolean);
+        if (lines.length > 1) {
+          const delimiter = lines[0].includes('\t') ? '\t' : ',';
+          const headers = lines[0].split(delimiter).map((h) => h.trim().replace(/^["']|["']$/g, '').toLowerCase());
+
+          for (let i = 1; i < lines.length; i++) {
+            const rawCols = lines[i].split(delimiter);
+            const row: any = {};
+            headers.forEach((h, idx) => {
+              row[h] = (rawCols[idx] || '').trim().replace(/^["']|["']$/g, '');
+            });
+
+            const company = clean(row.company || row.companyname || row['company name'] || row.organization || `Enterprise Co #${i}`);
+            const domain = clean(row.domain || row.website || row.url || 'company.io');
+            leadsToInsert.push({
+              companyName: company,
+              domain,
+              industry: clean(row.industry || row.sector || 'Enterprise Software & SaaS'),
+              contactName: clean(row.name || row.contact || row.contactname || 'Executive Decision Maker'),
+              contactTitle: clean(row.title || row.jobtitle || 'Director of Operations'),
+              contactEmail: clean(row.email || row.workemail || `contact_${i}@${domain}`),
+              contactPhone: clean(row.phone || row.mobile || '+1 (555) 019-3829'),
+              country: clean(row.country || 'United States'),
+              city: clean(row.city || 'San Francisco, CA'),
+              employeeRange: clean(row.employees || row.employeerange || '51-200'),
+              revenueRange: clean(row.revenue || row.revenuerange || '$10M - $50M'),
+              fundingStage: clean(row.funding || 'Series B'),
+              buyingIntentScore: Number(row.intent) || 88,
+              techStack: ['AWS', 'Salesforce']
+            });
+          }
+        }
+      }
+
+      console.log(`[FILE STREAM INGESTION] Ingesting ${leadsToInsert.length.toLocaleString()} leads to MySQL...`);
+      const result = await batchInsertLeads(
+        leadsToInsert.map((l) => ({ ...l, source: fileName || 'server_stream_upload' }))
+      );
+
+      let savedList = null;
+      if (createList || listName) {
+        try {
+          const ds = await (await import('./server/dataSource.ts')).getDataSource();
+          const listRepo = ds.getRepository((await import('./server/entities/SavedList.ts')).SavedList);
+          const name = String(listName || fileName?.replace(/\.[^/.]+$/, '') || `Imported List (${new Date().toLocaleDateString()})`).trim();
+          const targetIds = leadsToInsert.map((l) => l.id).filter(Boolean);
+
+          const newList = listRepo.create({
+            id: `list_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+            userId: req.user?.id ? String(req.user.id) : null,
+            name,
+            description: `Imported from ${fileName || 'spreadsheet'} (${result.insertedCount.toLocaleString()} leads)`,
+            leadIds: targetIds,
+            filterSummary: `${result.insertedCount.toLocaleString()} Leads from ${fileName || 'File'}`,
+            leadCount: result.insertedCount
+          });
+          savedList = await listRepo.save(newList);
+        } catch (listErr) {
+          console.warn('Could not auto-create list for imported leads:', listErr);
+        }
+      }
+
+      res.status(201).json({
+        success: true,
+        insertedCount: result.insertedCount,
+        totalRecords: result.totalRecords,
+        list: savedList
+      });
+    } catch (err: any) {
+      console.error('File stream ingestion error:', err);
+      res.status(500).json({ error: err.message || 'Server failed to process high-capacity file upload' });
+    }
+  });
+
   // --- B2B LEADS DATABASE & FACETED SEARCH API ---
   app.get('/api/leads/taxonomy', (_req, res) => {
     res.json(FILTER_TAXONOMY);

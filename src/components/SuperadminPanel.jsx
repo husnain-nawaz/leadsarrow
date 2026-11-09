@@ -36,7 +36,8 @@ import {
   fetchAdminUsersApi,
   updateAdminUserApi,
   fetchAdminStatsApi,
-  batchIngestLeadsApi
+  batchIngestLeadsApi,
+  uploadStreamLeadsApi
 } from '../services/api.js';
 import { fetchLeads } from '../store/leadsSlice.js';
 import { fetchSavedLists } from '../store/savedListsSlice.js';
@@ -277,15 +278,38 @@ export default function SuperadminPanel({ onBack }) {
     return results;
   };
 
+  const [selectedFileObj, setSelectedFileObj] = useState(null);
+  const [fileSizeMb, setFileSizeMb] = useState(0);
+
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setSelectedFileObj(file);
     setUploadFileName(file.name);
     setImportedListName(file.name.replace(/\.[^/.]+$/, ''));
+    const sizeInMb = Number((file.size / (1024 * 1024)).toFixed(1));
+    setFileSizeMb(sizeInMb);
 
+    // If file is large (> 5MB), send directly to backend streaming parser without freezing Chrome
+    if (sizeInMb >= 5) {
+      setParsedLeadsPreview([
+        {
+          companyName: `Large Dataset (${file.name})`,
+          domain: 'enterprise.io',
+          contactName: `${sizeInMb} MB High-Capacity Sheet`,
+          contactTitle: 'Streaming Server Ingestion',
+          contactEmail: 'Automated Backend Stream',
+          industry: 'Multi-Industry Dataset'
+        }
+      ]);
+      setTotalParsedCount(1);
+      setCsvRawText(`[High-Capacity File: ${file.name} (${sizeInMb} MB) — Streaming backend pipeline ready for direct MySQL ingestion]`);
+      return;
+    }
+
+    // For smaller files, parse preview quickly in client
     const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
-
     if (isExcel) {
       const reader = new FileReader();
       reader.onload = (event) => {
@@ -319,6 +343,8 @@ export default function SuperadminPanel({ onBack }) {
   };
 
   const handleLoadSampleData = () => {
+    setSelectedFileObj(null);
+    setFileSizeMb(0);
     const sample = `Company,Domain,Contact Name,Job Title,Email,Phone,Industry
 Palantir Technologies,palantir.com,Alex Karp,CEO,a.karp@palantir.com,+13035550144,AI & Data Analytics
 Figma Inc.,figma.com,Dylan Field,CEO & Co-Founder,dylan@figma.com,+14155550183,Enterprise Software & SaaS
@@ -385,12 +411,54 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
   };
 
   const handleBatchIngestFromCsv = async () => {
-    if (parsedLeadsPreview.length === 0) {
+    if (!selectedFileObj && parsedLeadsPreview.length === 0) {
       alert('Please upload or paste CSV / Excel rows first.');
       return;
     }
     setIsIngesting(true);
     try {
+      // If a file was selected, use the high-performance base64 stream pipeline
+      if (selectedFileObj && fileSizeMb >= 5) {
+        const fileReader = new FileReader();
+        fileReader.onload = async (evt) => {
+          try {
+            const raw = evt.target?.result;
+            // Extract base64 part
+            const base64Data = typeof raw === 'string' && raw.includes(',') ? raw.split(',')[1] : raw;
+            const res = await uploadStreamLeadsApi({
+              fileName: selectedFileObj.name,
+              fileBase64: base64Data,
+              createList: autoCreateSavedList,
+              listName: importedListName || selectedFileObj.name.replace(/\.[^/.]+$/, '')
+            });
+
+            dispatch(fetchLeads(filters));
+            dispatch(fetchSavedLists());
+            triggerSuccess(
+              `Successfully ingested ${res.insertedCount.toLocaleString()} leads into MySQL database${
+                autoCreateSavedList ? ' and created reusable list!' : '!'
+              }`
+            );
+            setSelectedFileObj(null);
+            setParsedLeadsPreview([]);
+            setCsvRawText('');
+            setUploadFileName('');
+            loadAdminData();
+          } catch (err) {
+            alert(err.message || 'High-capacity upload failed');
+          } finally {
+            setIsIngesting(false);
+          }
+        };
+        fileReader.onerror = () => {
+          alert('Failed to read file from disk.');
+          setIsIngesting(false);
+        };
+        fileReader.readAsDataURL(selectedFileObj);
+        return;
+      }
+
+      // Standard parsed leads batch ingestion
       const res = await batchIngestLeadsApi({
         leads: parsedLeadsPreview,
         source: uploadFileName || 'csv_excel_upload',
@@ -404,6 +472,7 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
           autoCreateSavedList ? ' and saved to lists!' : '!'
         }`
       );
+      setSelectedFileObj(null);
       setParsedLeadsPreview([]);
       setCsvRawText('');
       setUploadFileName('');

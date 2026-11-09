@@ -216,3 +216,10 @@ export async function batchIngestLeadsApi({ leads, source, createList, listName 
     body: JSON.stringify({ leads, source, createList, listName })
   });
 }
+
+export async function uploadStreamLeadsApi({ fileName, fileBase64, createList, listName }) {
+  return apiRequest('/api/admin/leads/upload-stream', {
+    method: 'POST',
+    body: JSON.stringify({ fileName, fileBase64, createList, listName })
+  });
+}
