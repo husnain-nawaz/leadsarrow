@@ -22,6 +22,7 @@ import {
   requireJwtMiddleware,
   requireSuperAdminMiddleware
 } from './server/auth.ts';
+import { antiScraperProtectionMiddleware } from './server/antiScraper.ts';
 
 async function startServer() {
   const app = express();
@@ -126,7 +127,7 @@ async function startServer() {
     res.json(FILTER_TAXONOMY);
   });
 
-  app.get('/api/leads', async (req, res) => {
+  app.get('/api/leads', antiScraperProtectionMiddleware, async (req, res) => {
     const tStart = Date.now();
     try {
       const result = await queryLeadsDatabase(req.query);
@@ -140,7 +141,7 @@ async function startServer() {
     }
   });
 
-  app.post('/api/leads/by-ids', async (req, res) => {
+  app.post('/api/leads/by-ids', antiScraperProtectionMiddleware, async (req, res) => {
     try {
       const { ids } = req.body || {};
       const leads = await fetchLeadsByIds(ids || []);
