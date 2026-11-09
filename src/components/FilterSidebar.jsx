@@ -125,6 +125,22 @@ export default function FilterSidebar() {
   const dispatch = useDispatch();
   const filters = useSelector((state) => state.filters);
   const { facets, metrics } = useSelector((state) => state.leads);
+  const [searchInput, setSearchInput] = useState(filters.searchQuery || '');
+
+  // Keep local search input synchronized if reset from outside
+  useEffect(() => {
+    setSearchInput(filters.searchQuery || '');
+  }, [filters.searchQuery]);
+
+  // Debounce search query dispatch by 300ms to avoid firing un-debounced keystroke race conditions
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchInput !== filters.searchQuery) {
+        dispatch(setSearchQuery(searchInput));
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput, filters.searchQuery, dispatch]);
 
   const [expandedSections, setExpandedSections] = useState({
     industries: true,
@@ -191,15 +207,18 @@ export default function FilterSidebar() {
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
-            value={filters.searchQuery}
-            onChange={(e) => dispatch(setSearchQuery(e.target.value))}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
             placeholder="e.g. Vanguard, CTO, .io, Munich..."
             className="w-full pl-9 pr-7 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-orange-600 transition-colors"
           />
-          {filters.searchQuery && (
+          {searchInput && (
             <button
               type="button"
-              onClick={() => dispatch(setSearchQuery(''))}
+              onClick={() => {
+                setSearchInput('');
+                dispatch(setSearchQuery(''));
+              }}
               className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
