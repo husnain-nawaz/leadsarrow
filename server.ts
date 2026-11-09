@@ -6,7 +6,8 @@ import { initDatabaseSchema } from './server/dataSource.ts';
 import {
   FILTER_TAXONOMY,
   queryLeadsDatabase,
-  batchInsertLeads
+  batchInsertLeads,
+  fetchLeadsByIds
 } from './server/leadsData.ts';
 import {
   ensureSuperAdminSeed,
@@ -136,6 +137,17 @@ async function startServer() {
       const elapsed = Date.now() - tStart;
       console.error(`[QUERY MONITOR ERROR] ${elapsed}ms:`, error);
       res.status(500).json({ error: 'Failed to execute B2B database query' });
+    }
+  });
+
+  app.post('/api/leads/by-ids', async (req, res) => {
+    try {
+      const { ids } = req.body || {};
+      const leads = await fetchLeadsByIds(ids || []);
+      res.json({ leads });
+    } catch (err: any) {
+      console.error('Error fetching leads by IDs:', err);
+      res.status(500).json({ error: 'Failed to fetch leads by IDs' });
     }
   });
 

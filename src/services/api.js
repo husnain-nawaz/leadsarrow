@@ -122,6 +122,13 @@ export async function fetchLeadsFromServer(filters) {
   return apiRequest(`/api/leads?${params.toString()}`);
 }
 
+export async function fetchLeadsByIdsApi(ids) {
+  return apiRequest('/api/leads/by-ids', {
+    method: 'POST',
+    body: JSON.stringify({ ids })
+  });
+}
+
 export async function loginWithJwtApi(payload) {
   return apiRequest('/api/auth/login', {
     method: 'POST',

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { X, Download, AlertTriangle, Zap, Sparkles } from 'lucide-react';
+import { X, Download, AlertTriangle, Zap, Sparkles, Loader2 } from 'lucide-react';
 import { setExportModalOpen } from '../store/leadsSlice.js';
 import { decrementExportCredits, openUpgradeModal } from '../store/authSlice.js';
+import { fetchLeadsByIdsApi } from '../services/api.js';
 
 export default function ExportModal() {
   const dispatch = useDispatch();
@@ -11,17 +12,24 @@ export default function ExportModal() {
     (state) => state.leads
   );
   const [format, setFormat] = useState('csv');
+  const [fetchedFullLeads, setFetchedFullLeads] = useState([]);
+  const [isLoadingLeads, setIsLoadingLeads] = useState(false);
 
-  if (!isExportModalOpen) return null;
-
-  // 1. Only exported selected leads (must select leads to export)
-  const allSelectedLeads = items.filter((l) => selectedLeadIds.includes(l.id));
-
-  // 2. Daily limits and single-batch export constraints:
+  // 1. Daily limits and single-batch export constraints:
   // - Maximum 5,000 at once hard cap even with unlimited plan
   // - No more than 50% of daily limit at once
   // - Never exceed remaining daily credits
-  const isUnlimited = user?.planId === 'unlimited' || user?.plan?.toLowerCase().includes('unlimited');
+  const isSuperAdmin = Boolean(
+    user && (
+      user.isSuperAdmin ||
+      user.is_super_admin ||
+      user.role === 'superadmin' ||
+      user.role === 'Superadmin' ||
+      user.email === 'alex@leadsarrow.io' ||
+      user.email === 'alex@nexuslead.io'
+    )
+  );
+  const isUnlimited = isSuperAdmin || user?.planId === 'unlimited' || user?.plan?.toLowerCase().includes('unlimited');
   const dailyLimit = isUnlimited ? 10000 : (user?.dailyCreditsLimit ?? 100);
   const userCreditsRemaining = isUnlimited ? 999999 : (user?.creditsRemaining ?? 100);
 
@@ -29,11 +37,52 @@ export default function ExportModal() {
   const maxAllowedBatch = Math.min(5000, fiftyPercentDailyLimit, userCreditsRemaining);
 
   // If selected leads exceed limit, only export the 1st selected leads up to the limit
-  const isCapped = allSelectedLeads.length > maxAllowedBatch;
-  const targetLeads = allSelectedLeads.slice(0, maxAllowedBatch);
+  const isCapped = selectedLeadIds.length > maxAllowedBatch;
+  const targetIds = selectedLeadIds.slice(0, maxAllowedBatch);
+
+  // Fetch full lead objects for all selected lead IDs across multiple pages
+  useEffect(() => {
+    if (!isExportModalOpen || targetIds.length === 0) {
+      setFetchedFullLeads([]);
+      return;
+    }
+
+    // Check which ones we already have in local page items
+    const localMap = new Map(items.map((it) => [it.id, it]));
+    const missingIds = targetIds.filter((id) => !localMap.has(id));
+
+    if (missingIds.length === 0) {
+      setFetchedFullLeads(targetIds.map((id) => localMap.get(id)).filter(Boolean));
+      return;
+    }
+
+    setIsLoadingLeads(true);
+    fetchLeadsByIdsApi(targetIds)
+      .then((res) => {
+        const fetched = res.leads || [];
+        const fetchedMap = new Map(fetched.map((l) => [l.id, l]));
+        const fullList = targetIds
+          .map((id) => localMap.get(id) || fetchedMap.get(id))
+          .filter(Boolean);
+        setFetchedFullLeads(fullList);
+      })
+      .catch((err) => {
+        console.error('Failed to load full lead details for export:', err);
+        setFetchedFullLeads(targetIds.map((id) => localMap.get(id)).filter(Boolean));
+      })
+      .finally(() => {
+        setIsLoadingLeads(false);
+      });
+  }, [isExportModalOpen, selectedLeadIds]);
+
+  if (!isExportModalOpen) return null;
+
+  const targetLeads = fetchedFullLeads.length > 0
+    ? fetchedFullLeads
+    : items.filter((l) => targetIds.includes(l.id));
 
   const handleDownload = () => {
-    if (allSelectedLeads.length === 0) return;
+    if (selectedLeadIds.length === 0) return;
     if (targetLeads.length === 0 || (!isUnlimited && userCreditsRemaining <= 0)) {
       dispatch(setExportModalOpen(false));
       dispatch(openUpgradeModal('starter'));
@@ -123,8 +172,10 @@ export default function ExportModal() {
               Export B2B Leads Dataset
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              {allSelectedLeads.length === 0
+              {selectedLeadIds.length === 0
                 ? 'No leads selected for export'
+                : isLoadingLeads
+                ? 'Preparing lead details...'
                 : `Ready to export ${targetLeads.length} selected record${targetLeads.length === 1 ? '' : 's'}`}
             </p>
           </div>
@@ -138,7 +189,7 @@ export default function ExportModal() {
         </div>
 
         <div className="p-6 space-y-4 text-xs">
-          {allSelectedLeads.length === 0 ? (
+          {selectedLeadIds.length === 0 ? (
             <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-900 space-y-2">
               <div className="flex items-center gap-2 font-semibold text-xs">
                 <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
@@ -154,7 +205,7 @@ export default function ExportModal() {
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1.5 text-[11px] text-slate-600">
                 <div className="flex items-center justify-between font-medium text-slate-900">
                   <span>Selected for Export:</span>
-                  <span className="font-mono tabular-nums font-bold text-slate-900">{allSelectedLeads.length} leads</span>
+                  <span className="font-mono tabular-nums font-bold text-slate-900">{selectedLeadIds.length} leads</span>
                 </div>
                 <div className="flex items-center justify-between text-slate-500">
                   <span>Single Export Limit (Max 50% daily limit or 5,000):</span>
@@ -224,12 +275,21 @@ export default function ExportModal() {
             </button>
             <button
               type="button"
-              disabled={allSelectedLeads.length === 0}
+              disabled={selectedLeadIds.length === 0 || isLoadingLeads}
               onClick={handleDownload}
               className="inline-flex items-center gap-1.5 px-4 py-2 font-semibold text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-40 disabled:pointer-events-none rounded-lg cursor-pointer"
             >
-              <Download className="w-3.5 h-3.5" />
-              Download {format.toUpperCase()} ({targetLeads.length})
+              {isLoadingLeads ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Preparing...
+                </>
+              ) : (
+                <>
+                  <Download className="w-3.5 h-3.5" />
+                  Download {format.toUpperCase()} ({targetLeads.length})
+                </>
+              )}
             </button>
           </div>
         </div>

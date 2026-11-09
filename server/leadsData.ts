@@ -733,3 +733,13 @@ export async function insertSingleLead(lead: any) {
   return { ...lead, id: lead.id || `lead_${Date.now()}` };
 }
 
+export async function fetchLeadsByIds(ids: string[]) {
+  if (!Array.isArray(ids) || ids.length === 0) return [];
+  const ds = await getDataSource();
+  const leadRepo = ds.getRepository(Lead);
+  const entities = await leadRepo.createQueryBuilder('lead')
+    .where('lead.id IN (:...ids)', { ids })
+    .getMany();
+  return entities.map(mapEntityToLead);
+}
+
