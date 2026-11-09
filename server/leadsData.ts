@@ -492,7 +492,7 @@ export async function queryLeadsDatabase(params: any = {}) {
   const sortDirection = String(sortOrder).toLowerCase() === 'asc' ? 'ASC' : 'DESC';
 
   const safePage = Math.max(1, Number(page) || 1);
-  const safePageSize = Math.min(100, Math.max(10, Number(pageSize) || 25));
+  const safePageSize = Math.min(1000, Math.max(10, Number(pageSize) || 25));
   const offset = (safePage - 1) * safePageSize;
 
   let leads: LeadDTO[] = [];
