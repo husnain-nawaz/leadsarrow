@@ -152,7 +152,7 @@ async function startServer() {
     }
   });
 
-  app.post('/api/leads/custom', async (req: any, res) => {
+  app.post('/api/leads/custom', requireSuperAdminMiddleware, async (req: any, res) => {
     try {
       const body = req.body || {};
       const result = await batchInsertLeads([{
@@ -193,7 +193,7 @@ async function startServer() {
     }
   });
 
-  app.delete('/api/leads/custom/:id', async (req, res) => {
+  app.delete('/api/leads/custom/:id', requireSuperAdminMiddleware, async (req, res) => {
     try {
       const ds = await (await import('./server/dataSource.ts')).getDataSource();
       const leadRepo = ds.getRepository((await import('./server/entities/Lead.ts')).Lead);

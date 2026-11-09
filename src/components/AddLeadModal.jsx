@@ -7,6 +7,15 @@ export default function AddLeadModal() {
   const dispatch = useDispatch();
   const { isAddLeadModalOpen } = useSelector((state) => state.leads);
   const filters = useSelector((state) => state.filters);
+  const { user } = useSelector((state) => state.auth);
+
+  const isSuperAdmin = Boolean(
+    user &&
+    (user.isSuperAdmin ||
+      user.role === 'superadmin' ||
+      user.email === 'alex@leadsarrow.io' ||
+      user.email === 'alex@nexuslead.io')
+  );
 
   const [form, setForm] = useState({
     companyName: '',
@@ -28,7 +37,7 @@ export default function AddLeadModal() {
     buyingIntentScore: 88
   });
 
-  if (!isAddLeadModalOpen) return null;
+  if (!isAddLeadModalOpen || !isSuperAdmin) return null;
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));

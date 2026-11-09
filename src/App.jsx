@@ -140,7 +140,7 @@ function WorkspaceContent({ onToggleLanding }) {
       <LeadDetailDrawer />
       <AuthModal />
       <SavedListsModal />
-      <AddLeadModal />
+      {isSuperAdmin && <AddLeadModal />}
       <ExportModal />
       <PlanUpgradeModal />
     </div>

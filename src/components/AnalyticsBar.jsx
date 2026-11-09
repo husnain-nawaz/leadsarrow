@@ -121,14 +121,16 @@ export default function AnalyticsBar() {
             Save / Load List
           </button>
 
-          <button
-            type="button"
-            onClick={() => dispatch(setAddLeadModalOpen(true))}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5 text-slate-500" />
-            Add B2B Lead
-          </button>
+          {Boolean(user && (user.isSuperAdmin || user.role === 'superadmin' || user.email === 'alex@leadsarrow.io' || user.email === 'alex@nexuslead.io')) && (
+            <button
+              type="button"
+              onClick={() => dispatch(setAddLeadModalOpen(true))}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5 text-slate-500" />
+              Add B2B Lead
+            </button>
+          )}
 
           <button
             type="button"
