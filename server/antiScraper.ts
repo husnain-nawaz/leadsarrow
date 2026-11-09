@@ -91,7 +91,7 @@ export function antiScraperProtectionMiddleware(req: any, res: Response, next: N
   // Check if daily hard limit of 500 already reached
   if (currentCount >= MAX_THIRD_PARTY_DAILY_EXTRACT) {
     return res.status(429).json({
-      error: `Security limit reached: You have reached the maximum daily limit of ${MAX_THIRD_PARTY_DAILY_EXTRACT} leads extracted per 24 hours. Automated 3rd-party extractors and bulk scrapers are strictly blocked.`,
+      error: `Security limit reached: You have reached the maximum daily limit of ${MAX_THIRD_PARTY_DAILY_EXTRACT} leads exported per 24 hours. Automated 3rd-party extractors and bulk scrapers are strictly blocked.`,
       code: 'DAILY_EXTRACT_LIMIT_REACHED',
       limit: MAX_THIRD_PARTY_DAILY_EXTRACT,
       used: currentCount

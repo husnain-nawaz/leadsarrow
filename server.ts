@@ -127,7 +127,7 @@ async function startServer() {
     res.json(FILTER_TAXONOMY);
   });
 
-  app.get('/api/leads', antiScraperProtectionMiddleware, async (req, res) => {
+  app.get('/api/leads', async (req, res) => {
     const tStart = Date.now();
     try {
       const result = await queryLeadsDatabase(req.query);
