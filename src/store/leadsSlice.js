@@ -61,6 +61,25 @@ export const deleteCustomLead = createAsyncThunk(
   }
 );
 
+const STORAGE_SELECTED_KEY = 'leadsarrow_selected_lead_ids';
+
+function loadPersistedSelectedLeadIds() {
+  try {
+    const raw = localStorage.getItem(STORAGE_SELECTED_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (e) {}
+  return [];
+}
+
+function persistSelectedLeadIds(ids) {
+  try {
+    localStorage.setItem(STORAGE_SELECTED_KEY, JSON.stringify(ids));
+  } catch (e) {}
+}
+
 const initialState = {
   items: [],
   firestoreCustomLeads: [],
@@ -89,7 +108,7 @@ const initialState = {
     techStack: {}
   },
   executedSql: '',
-  selectedLeadIds: [],
+  selectedLeadIds: loadPersistedSelectedLeadIds(),
   revealedLeadIds: ['lead_100001', 'lead_100002'],
   activeLead: null,
   isAddLeadModalOpen: false,
@@ -110,6 +129,7 @@ const leadsSlice = createSlice({
       } else {
         state.selectedLeadIds.splice(idx, 1);
       }
+      persistSelectedLeadIds(state.selectedLeadIds);
     },
     selectAllCurrentPageLeads(state, action) {
       const pageIds = action.payload || state.items.map((l) => l.id);
@@ -123,9 +143,11 @@ const leadsSlice = createSlice({
           }
         }
       }
+      persistSelectedLeadIds(state.selectedLeadIds);
     },
     clearSelectedLeads(state) {
       state.selectedLeadIds = [];
+      persistSelectedLeadIds([]);
     },
     revealLeadContact(state, action) {
       const id = action.payload;
