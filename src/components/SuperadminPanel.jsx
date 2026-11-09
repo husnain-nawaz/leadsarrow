@@ -39,7 +39,9 @@ import {
   batchIngestLeadsApi
 } from '../services/api.js';
 import { fetchLeads } from '../store/leadsSlice.js';
+import { fetchSavedLists } from '../store/savedListsSlice.js';
 import { FILTER_TAXONOMY } from '../data/taxonomy.js';
+import * as XLSX from 'xlsx';
 
 export default function SuperadminPanel({ onBack }) {
   const dispatch = useDispatch();
@@ -82,6 +84,10 @@ export default function SuperadminPanel({ onBack }) {
 
   const [csvRawText, setCsvRawText] = useState('');
   const [parsedLeadsPreview, setParsedLeadsPreview] = useState([]);
+  const [totalParsedCount, setTotalParsedCount] = useState(0);
+  const [autoCreateSavedList, setAutoCreateSavedList] = useState(true);
+  const [importedListName, setImportedListName] = useState('');
+  const [uploadFileName, setUploadFileName] = useState('');
   const [sheetsUrlOrPaste, setSheetsUrlOrPaste] = useState('');
   const [mysqlConfig, setMysqlConfig] = useState({
     host: '127.0.0.1',
@@ -212,6 +218,46 @@ export default function SuperadminPanel({ onBack }) {
   };
 
   // --- CSV / EXCEL PARSER ---
+  const mapRawRowToLead = (row, i) => {
+    const clean = (val) => String(val ?? '').trim().replace(/^["']|["']$/g, '');
+    const company = clean(row.company || row.companyname || row['company name'] || row.organization || row.business || row.account || `Enterprise Co #${i}`);
+    const domain = clean(row.domain || row.website || row.url || (company ? `${company.toLowerCase().replace(/[^a-z0-9]/g, '')}.com` : 'company.io'));
+    const industry = clean(row.industry || row.sector || row.category || 'Enterprise Software & SaaS');
+    const contactName = clean(row.name || row.contact || row.contactname || row['contact name'] || row.executive || row['decision maker'] || 'Executive Decision Maker');
+    const contactTitle = clean(row.title || row.jobtitle || row['job title'] || row.role || 'Director of Operations');
+    const contactEmail = clean(row.email || row.workemail || row['contact email'] || row['work email'] || `contact${i}@${domain}`);
+    const contactPhone = clean(row.phone || row.mobile || row.directphone || row['direct phone'] || row.telephone || '+1 (555) 019-3829');
+    const country = clean(row.country || row.nation || 'United States');
+    const city = clean(row.city || row.location || 'San Francisco, CA');
+    const employeeRange = clean(row.employees || row.employeerange || row['employee range'] || row.headcount || '51-200');
+    const employeeCount = Number(clean(row.employeecount || row['employee count'] || row.size)) || 150;
+    const revenueRange = clean(row.revenue || row.revenuerange || row['revenue range'] || '$10M - $50M');
+    const annualRevenueUsd = Number(clean(row.annualrevenue || row['annual revenue'])) || 25000000;
+    const fundingStage = clean(row.funding || row.fundingstage || row['funding stage'] || 'Series B');
+    const buyingIntentScore = Number(clean(row.intent || row.intentscore || row['intent score'])) || Math.floor(Math.random() * 20 + 80);
+    const techRaw = clean(row.tech || row.techstack || row['tech stack'] || row.technologies || 'AWS, Salesforce');
+    const techStack = techRaw.split(/[,;|]/).map((s) => s.trim()).filter(Boolean);
+
+    return {
+      companyName: company,
+      domain,
+      industry,
+      contactName,
+      contactTitle,
+      contactEmail,
+      contactPhone,
+      country,
+      city,
+      employeeRange,
+      employeeCount,
+      revenueRange,
+      annualRevenueUsd,
+      fundingStage,
+      buyingIntentScore,
+      techStack
+    };
+  };
+
   const parseDelimitedText = (text) => {
     const lines = text.trim().split(/\r?\n/).filter(Boolean);
     if (lines.length < 2) return [];
@@ -226,24 +272,7 @@ export default function SuperadminPanel({ onBack }) {
       headers.forEach((h, idx) => {
         row[h] = (rawCols[idx] || '').trim().replace(/^["']|["']$/g, '');
       });
-
-      const lead = {
-        companyName: row.company || row.companyname || row['company name'] || row.organization || `Enterprise Co #${i}`,
-        domain: row.domain || row.website || row.url || 'company.io',
-        industry: row.industry || row.sector || 'Enterprise Software & SaaS',
-        contactName: row.name || row.contact || row.contactname || row['contact name'] || 'Executive Decision Maker',
-        contactTitle: row.title || row.jobtitle || row.role || 'Director of Operations',
-        contactEmail: row.email || row.workemail || row['contact email'] || `contact${i}@enterprise.io`,
-        contactPhone: row.phone || row.mobile || row.directphone || '+1 (555) 019-3829',
-        country: row.country || 'United States',
-        city: row.city || 'New York, NY',
-        employeeRange: row.employees || row.employeerange || '51-200',
-        revenueRange: row.revenue || row.revenuerange || '$10M - $50M',
-        fundingStage: row.funding || row.fundingstage || 'Series B',
-        buyingIntentScore: Number(row.intent || row.intentscore) || Math.floor(Math.random() * 20 + 80),
-        techStack: (row.tech || row.techstack || 'AWS, Salesforce').split(/[,;|]/).map((s) => s.trim())
-      };
-      results.push(lead);
+      results.push(mapRawRowToLead(row, i));
     }
     return results;
   };
@@ -252,14 +281,41 @@ export default function SuperadminPanel({ onBack }) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result || '';
-      setCsvRawText(content);
-      const parsed = parseDelimitedText(content);
-      setParsedLeadsPreview(parsed);
-    };
-    reader.readAsText(file);
+    setUploadFileName(file.name);
+    setImportedListName(file.name.replace(/\.[^/.]+$/, ''));
+
+    const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
+
+    if (isExcel) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const data = new Uint8Array(event.target?.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const jsonRows = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+
+          const allParsed = jsonRows.map((r, i) => mapRawRowToLead(r, i + 1));
+          setTotalParsedCount(allParsed.length);
+          setParsedLeadsPreview(allParsed);
+          setCsvRawText(`[Excel Workbook: ${file.name} - ${allParsed.length} rows detected]`);
+        } catch (err) {
+          alert('Could not parse Excel spreadsheet: ' + err.message);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const content = event.target?.result || '';
+        setCsvRawText(content);
+        const parsed = parseDelimitedText(content);
+        setTotalParsedCount(parsed.length);
+        setParsedLeadsPreview(parsed);
+      };
+      reader.readAsText(file);
+    }
   };
 
   const handleLoadSampleData = () => {
@@ -276,35 +332,10 @@ Deel Inc.,deel.com,Alex Bouaziz,CEO,alex@deel.com,+14155550121,Enterprise Softwa
 Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech & Digital Banking`;
     setCsvRawText(sample);
     const parsed = parseDelimitedText(sample);
+    setTotalParsedCount(parsed.length);
     setParsedLeadsPreview(parsed);
-  };
-
-  const handleExportUsersCsv = () => {
-    const headers = ['ID', 'Name', 'Email', 'Role', 'Plan', 'Plan ID', 'Payment Status', 'Amount Paid ($/mo)', 'Daily Credits Limit', 'Credits Remaining', 'Credits Used Today', 'Total Lifetime Credits', 'Last Login', 'Auth Provider'];
-    const rows = usersList.map((u) => [
-      u.id,
-      u.name,
-      u.email,
-      u.role,
-      u.plan,
-      u.planId,
-      u.paymentStatus,
-      u.amountPaid || 0,
-      u.dailyCreditsLimit || 100,
-      u.creditsRemaining ?? 100,
-      u.creditsUsedToday ?? 0,
-      u.totalCreditsUsed ?? 0,
-      u.lastLoginAt,
-      u.authProvider
-    ]);
-    const csvContent = [headers.join(','), ...rows.map((r) => r.map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `leadsarrow_users_audit_${Date.now()}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    setUploadFileName('sample_enterprise_leads.csv');
+    setImportedListName('Enterprise Leads Sample');
   };
 
   const handleBatchIngestFromCsv = async () => {
@@ -314,11 +345,22 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
     }
     setIsIngesting(true);
     try {
-      await batchIngestLeadsApi({ leads: parsedLeadsPreview, source: 'csv_excel_upload' });
+      const res = await batchIngestLeadsApi({
+        leads: parsedLeadsPreview,
+        source: uploadFileName || 'csv_excel_upload',
+        createList: autoCreateSavedList,
+        listName: importedListName || uploadFileName || `Imported Segment (${parsedLeadsPreview.length} leads)`
+      });
       dispatch(fetchLeads(filters));
-      triggerSuccess(`Successfully ingested ${parsedLeadsPreview.length} leads from CSV / Excel!`);
+      dispatch(fetchSavedLists());
+      triggerSuccess(
+        `Successfully ingested ${parsedLeadsPreview.length.toLocaleString()} leads into MySQL database${
+          autoCreateSavedList ? ' and saved to lists!' : '!'
+        }`
+      );
       setParsedLeadsPreview([]);
       setCsvRawText('');
+      setUploadFileName('');
       loadAdminData();
     } catch (err) {
       alert(err.message || 'Batch ingestion failed');
@@ -1290,20 +1332,65 @@ Snowflake,snowflake.com,Frank Slootman,Chairman,frank@snowflake.com,+14085550182
                   />
                 </div>
 
-                {/* Preview Table */}
+                {/* Preview Table & Ingestion Action Bar */}
                 {parsedLeadsPreview.length > 0 && (
-                  <div className="space-y-3 pt-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-orange-400">
-                        Preview: {parsedLeadsPreview.length} Parsed Leads Ready for Database Ingestion
-                      </span>
+                  <div className="space-y-4 pt-2">
+                    {/* List Integration Settings */}
+                    <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl flex flex-wrap items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-200">
+                          <input
+                            type="checkbox"
+                            checked={autoCreateSavedList}
+                            onChange={(e) => setAutoCreateSavedList(e.target.checked)}
+                            className="w-4 h-4 rounded border-slate-700 text-orange-600 focus:ring-orange-500"
+                          />
+                          <span>Also save these leads as a Reusable Saved List in Database</span>
+                        </label>
+                      </div>
+
+                      {autoCreateSavedList && (
+                        <div className="flex items-center gap-2 flex-1 max-w-sm">
+                          <span className="text-xs text-slate-400 whitespace-nowrap">List Name:</span>
+                          <input
+                            type="text"
+                            value={importedListName}
+                            onChange={(e) => setImportedListName(e.target.value)}
+                            placeholder="e.g. Q4 Target Ingestion Segment"
+                            className="w-full px-3 py-1.5 text-xs bg-slate-950 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <span className="text-xs font-bold text-orange-400">
+                          Ready for Database Ingestion: {parsedLeadsPreview.length.toLocaleString()} Leads
+                        </span>
+                        {uploadFileName && (
+                          <span className="text-[11px] text-slate-400 ml-2">
+                            Source: {uploadFileName}
+                          </span>
+                        )}
+                      </div>
                       <button
                         type="button"
                         onClick={handleBatchIngestFromCsv}
                         disabled={isIngesting}
-                        className="px-5 py-2.5 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        className="px-6 py-2.5 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-50 transition-colors"
                       >
-                        {isIngesting ? 'Ingesting Leads...' : `Confirm & Ingest ${parsedLeadsPreview.length} Leads`}
+                        {isIngesting ? (
+                          <>
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                            <span>Ingesting {parsedLeadsPreview.length.toLocaleString()} Leads to MySQL...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Database className="w-3.5 h-3.5" />
+                            <span>Confirm & Ingest {parsedLeadsPreview.length.toLocaleString()} Leads to Database</span>
+                          </>
+                        )}
                       </button>
                     </div>
 

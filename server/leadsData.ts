@@ -688,47 +688,51 @@ export async function batchInsertLeads(newLeads: any[] = []) {
   const leadRepo = ds.getRepository(Lead);
 
   let insertedCount = 0;
+  const BATCH_CHUNK_SIZE = 1000;
 
-  for (let idx = 0; idx < newLeads.length; idx++) {
-    const item = newLeads[idx];
-    const id = item.id || `lead_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 7)}`;
-    const domain = item.domain || 'example.com';
+  for (let c = 0; c < newLeads.length; c += BATCH_CHUNK_SIZE) {
+    const chunk = newLeads.slice(c, c + BATCH_CHUNK_SIZE);
+    const entities = chunk.map((item, idx) => {
+      const globalIdx = c + idx;
+      const id = item.id || `lead_${Date.now()}_${globalIdx}_${Math.random().toString(36).substring(2, 7)}`;
+      const domain = String(item.domain || 'example.com').trim();
 
-    const leadEntity = leadRepo.create({
-      id,
-      companyName: item.companyName || item.company || 'Enterprise Company',
-      domain,
-      industry: item.industry || 'Enterprise Software & SaaS',
-      employeeRange: item.employeeRange || '51-200',
-      employeeCount: Number(item.employeeCount) || 150,
-      revenueRange: item.revenueRange || '$10M - $50M',
-      annualRevenueUsd: Number(item.annualRevenueUsd) || 25000000,
-      country: item.country || 'United States',
-      city: item.city || 'San Francisco, CA',
-      contactName: item.contactName || item.name || 'Decision Maker',
-      contactTitle: item.contactTitle || item.title || 'Director of Operations',
-      seniority: item.seniority || 'Director',
-      department: item.department || 'Executive Leadership',
-      contactEmail: item.contactEmail || item.email || `contact_${idx}@example.com`,
-      contactPhone: item.contactPhone || item.phone || '+1 (555) 019-2831',
-      linkedinUrl: item.linkedinUrl || `https://linkedin.com/company/${domain.replace(/\.[^/.]+$/, '')}`,
-      verificationStatus: item.verificationStatus || 'Verified',
-      fundingStage: item.fundingStage || 'Series B',
-      techStack: Array.isArray(item.techStack)
-        ? item.techStack
-        : typeof item.techStack === 'string'
-        ? item.techStack.split(/[,;|]/).map((s: string) => s.trim()).filter(Boolean)
-        : ['AWS', 'Salesforce'],
-      buyingIntentScore: Number(item.buyingIntentScore) || Math.floor(Math.random() * 25 + 75),
-      hasDirectPhone: item.hasDirectPhone !== undefined ? (item.hasDirectPhone ? 1 : 0) : 1,
-      isCustom: 1,
-      isRecent: 1,
-      source: item.source || 'mysql_b2b_database',
-      createdAt: item.createdAt ? new Date(item.createdAt) : new Date()
+      return leadRepo.create({
+        id,
+        companyName: String(item.companyName || item.company || 'Enterprise Company').trim(),
+        domain,
+        industry: String(item.industry || 'Enterprise Software & SaaS').trim(),
+        employeeRange: String(item.employeeRange || '51-200').trim(),
+        employeeCount: Number(item.employeeCount) || 150,
+        revenueRange: String(item.revenueRange || '$10M - $50M').trim(),
+        annualRevenueUsd: Number(item.annualRevenueUsd) || 25000000,
+        country: String(item.country || 'United States').trim(),
+        city: String(item.city || 'San Francisco, CA').trim(),
+        contactName: String(item.contactName || item.name || 'Decision Maker').trim(),
+        contactTitle: String(item.contactTitle || item.title || 'Director of Operations').trim(),
+        seniority: String(item.seniority || 'Director').trim(),
+        department: String(item.department || 'Executive Leadership').trim(),
+        contactEmail: String(item.contactEmail || item.email || `contact_${globalIdx}@example.com`).trim(),
+        contactPhone: String(item.contactPhone || item.phone || '+1 (555) 019-2831').trim(),
+        linkedinUrl: item.linkedinUrl || `https://linkedin.com/company/${domain.replace(/\.[^/.]+$/, '')}`,
+        verificationStatus: item.verificationStatus || 'Verified',
+        fundingStage: item.fundingStage || 'Series B',
+        techStack: Array.isArray(item.techStack)
+          ? item.techStack
+          : typeof item.techStack === 'string'
+          ? item.techStack.split(/[,;|]/).map((s: string) => s.trim()).filter(Boolean)
+          : ['AWS', 'Salesforce'],
+        buyingIntentScore: Number(item.buyingIntentScore) || Math.floor(Math.random() * 25 + 75),
+        hasDirectPhone: item.hasDirectPhone !== undefined ? (item.hasDirectPhone ? 1 : 0) : 1,
+        isCustom: 1,
+        isRecent: 1,
+        source: item.source || 'mysql_b2b_database',
+        createdAt: item.createdAt ? new Date(item.createdAt) : new Date()
+      });
     });
 
-    await leadRepo.save(leadEntity);
-    insertedCount++;
+    await leadRepo.save(entities, { chunk: 500 });
+    insertedCount += entities.length;
   }
 
   const totalRecords = await leadRepo.count();

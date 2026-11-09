@@ -38,7 +38,8 @@ async function startServer() {
     console.error('Failed to initialize MySQL:', err.message);
   }
 
-  app.use(express.json({ limit: '10mb' }));
+  app.use(express.json({ limit: '500mb' }));
+  app.use(express.urlencoded({ limit: '500mb', extended: true }));
   app.use(optionalAuthMiddleware);
 
   // --- AUTHENTICATION API (JWT + Google One-Click Exchange with MySQL) ---
@@ -123,11 +124,36 @@ async function startServer() {
 
   app.post('/api/admin/leads/batch', requireSuperAdminMiddleware, async (req: any, res) => {
     try {
-      const { leads, source } = req.body || {};
+      const { leads, source, createList, listName } = req.body || {};
       const result = await batchInsertLeads(
         (leads || []).map((l: any) => ({ ...l, source: source || 'superadmin_import' }))
       );
-      res.status(201).json(result);
+
+      // If requested or if a batch is imported, also automatically save to a reusable list
+      let savedList = null;
+      if (createList || listName) {
+        try {
+          const ds = await (await import('./server/dataSource.ts')).getDataSource();
+          const listRepo = ds.getRepository((await import('./server/entities/SavedList.ts')).SavedList);
+          const name = String(listName || `Imported List (${new Date().toLocaleDateString()})`).trim();
+          const targetIds = (leads || []).map((l: any) => l.id).filter(Boolean);
+          
+          const newList = listRepo.create({
+            id: `list_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+            userId: req.user?.id ? String(req.user.id) : null,
+            name,
+            description: `Imported via ${source || 'spreadsheet'} on ${new Date().toLocaleString()}`,
+            leadIds: targetIds,
+            filterSummary: `${result.insertedCount.toLocaleString()} Imported B2B Accounts`,
+            leadCount: result.insertedCount
+          });
+          savedList = await listRepo.save(newList);
+        } catch (listErr) {
+          console.warn('Could not auto-create list for imported leads:', listErr);
+        }
+      }
+
+      res.status(201).json({ ...result, list: savedList });
     } catch (err: any) {
       res.status(400).json({ error: err.message });
     }

@@ -210,9 +210,9 @@ export async function fetchAdminStatsApi() {
   return apiRequest('/api/admin/stats');
 }
 
-export async function batchIngestLeadsApi({ leads, source }) {
+export async function batchIngestLeadsApi({ leads, source, createList, listName }) {
   return apiRequest('/api/admin/leads/batch', {
     method: 'POST',
-    body: JSON.stringify({ leads, source })
+    body: JSON.stringify({ leads, source, createList, listName })
   });
 }
