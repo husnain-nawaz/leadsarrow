@@ -168,6 +168,7 @@ export async function queryLeadsDatabase(params: any = {}) {
     hasVerifiedEmail = false,
     hasDirectPhone = false,
     onlyCustom = false,
+    savedListLeadIds,
     sortBy = 'buying_intent_score',
     sortOrder = 'desc',
     page = 1,
@@ -284,6 +285,12 @@ export async function queryLeadsDatabase(params: any = {}) {
 
   if (onlyCustom) {
     qb.andWhere('lead.is_custom = 1');
+    hasWhere = true;
+  }
+
+  const savedIdsArr = parseArrayParam(savedListLeadIds);
+  if (savedIdsArr.length > 0) {
+    qb.andWhere('lead.id IN (:...savedIdsArr)', { savedIdsArr });
     hasWhere = true;
   }
 

@@ -5,6 +5,7 @@ import { Lead } from './entities/Lead.ts';
 import { User } from './entities/User.ts';
 import { UserPurchase } from './entities/UserPurchase.ts';
 import { UserLogin } from './entities/UserLogin.ts';
+import { SavedList } from './entities/SavedList.ts';
 
 dotenv.config();
 
@@ -17,7 +18,7 @@ export const AppDataSource = new DataSource({
   database: process.env.MYSQL_DATABASE || 'B2B_database',
   synchronize: false, // Schema already exists and indexed
   logging: false,
-  entities: [Lead, User, UserPurchase, UserLogin],
+  entities: [Lead, User, UserPurchase, UserLogin, SavedList],
   extra: {
     connectionLimit: 15,
     waitForConnections: true,

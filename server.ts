@@ -205,8 +205,100 @@ async function startServer() {
   });
 
   // --- SAVED LEAD LISTS API ---
-  app.get('/api/lists', (_req, res) => {
-    res.json({ lists: [] });
+  app.get('/api/lists', async (req: any, res) => {
+    try {
+      const ds = await (await import('./server/dataSource.ts')).getDataSource();
+      const listRepo = ds.getRepository((await import('./server/entities/SavedList.ts')).SavedList);
+      const userId = req.user?.id ? String(req.user.id) : null;
+      
+      let lists = [];
+      if (userId) {
+        lists = await listRepo.find({
+          where: [{ userId }, { userId: null as any }],
+          order: { createdAt: 'DESC' }
+        });
+      } else {
+        lists = await listRepo.find({
+          order: { createdAt: 'DESC' },
+          take: 50
+        });
+      }
+
+      res.json({
+        lists: lists.map((l) => ({
+          id: l.id,
+          name: l.name,
+          description: l.description,
+          leadIds: Array.isArray(l.leadIds) ? l.leadIds : [],
+          filterSummary: l.filterSummary,
+          leadCount: l.leadCount,
+          createdAt: l.createdAt,
+          updatedAt: l.updatedAt
+        }))
+      });
+    } catch (err: any) {
+      console.error('Failed to get saved lists:', err);
+      res.status(500).json({ error: err.message || 'Failed to fetch saved lists' });
+    }
+  });
+
+  app.post('/api/lists', async (req: any, res) => {
+    try {
+      const body = req.body || {};
+      const name = String(body.name || '').trim();
+      if (!name) {
+        return res.status(400).json({ error: 'List name is required' });
+      }
+
+      const ds = await (await import('./server/dataSource.ts')).getDataSource();
+      const listRepo = ds.getRepository((await import('./server/entities/SavedList.ts')).SavedList);
+      
+      const leadIds = Array.isArray(body.leadIds) ? body.leadIds : [];
+      const listId = body.id && /^[a-zA-Z0-9_\-]+$/.test(body.id)
+        ? body.id
+        : `list_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      const userId = req.user?.id ? String(req.user.id) : null;
+
+      const newList = listRepo.create({
+        id: listId,
+        userId,
+        name,
+        description: body.description ? String(body.description).trim() : null,
+        leadIds,
+        filterSummary: body.filterSummary ? String(body.filterSummary).trim() : 'Custom Selected B2B Leads',
+        leadCount: leadIds.length || Number(body.leadCount) || 0
+      });
+
+      const saved = await listRepo.save(newList);
+      res.status(201).json({
+        success: true,
+        list: {
+          id: saved.id,
+          name: saved.name,
+          description: saved.description,
+          leadIds: saved.leadIds || [],
+          filterSummary: saved.filterSummary,
+          leadCount: saved.leadCount,
+          createdAt: saved.createdAt,
+          updatedAt: saved.updatedAt
+        }
+      });
+    } catch (err: any) {
+      console.error('Failed to save list:', err);
+      res.status(500).json({ error: err.message || 'Failed to save list' });
+    }
+  });
+
+  app.delete('/api/lists/:id', async (req: any, res) => {
+    try {
+      const ds = await (await import('./server/dataSource.ts')).getDataSource();
+      const listRepo = ds.getRepository((await import('./server/entities/SavedList.ts')).SavedList);
+      await listRepo.delete(req.params.id);
+      res.json({ success: true, deleted: true, id: req.params.id });
+    } catch (err: any) {
+      console.error('Failed to delete list:', err);
+      res.status(500).json({ error: err.message || 'Failed to delete list' });
+    }
   });
 
   // Vite middleware for development or static serving in production

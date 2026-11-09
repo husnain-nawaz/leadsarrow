@@ -32,11 +32,27 @@ export const createSavedList = createAsyncThunk(
         console.warn('Firestore saved list sync skipped or failed:', err);
       }
 
-      const response = await createSavedListOnServerApi({
-        ...listInput,
-        id: firestoreList?.id || undefined
-      });
-      return response.list;
+      try {
+        const response = await createSavedListOnServerApi({
+          ...listInput,
+          id: firestoreList?.id || undefined
+        });
+        return response.list;
+      } catch (serverErr) {
+        if (firestoreList) {
+          return firestoreList;
+        }
+        // Fallback local list object if both network syncs had an issue
+        return {
+          id: `list_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+          name: listInput.name,
+          description: listInput.description,
+          leadIds: Array.isArray(listInput.leadIds) ? listInput.leadIds : [],
+          filterSummary: listInput.filterSummary || 'Custom Selected B2B Leads',
+          leadCount: Array.isArray(listInput.leadIds) ? listInput.leadIds.length : (listInput.leadCount || 0),
+          createdAt: new Date().toISOString()
+        };
+      }
     } catch (error) {
       return rejectWithValue(error.message || 'Failed to save list');
     }

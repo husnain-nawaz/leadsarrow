@@ -145,8 +145,22 @@ export default function AnalyticsBar() {
       {/* Row 2: Interactive Segment Filter Controls & Bulk Selection Notice */}
       <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
         <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg overflow-x-auto max-w-full">
+          {filters.savedListLeadIds && (
+            <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-md bg-orange-600 text-white shadow-xs">
+              <Bookmark className="w-3.5 h-3.5" />
+              <span>List: {filters.activePresetName || 'Saved Segment'}</span>
+              <button
+                type="button"
+                onClick={() => dispatch(resetAllFilters())}
+                className="ml-1 p-0.5 hover:bg-orange-700 rounded-sm cursor-pointer"
+                title="Clear saved list filter"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          )}
           {QUICK_SEGMENTS.map((seg) => {
-            const isActive = activePreset === seg.name;
+            const isActive = !filters.savedListLeadIds && activePreset === seg.name;
             return (
               <button
                 key={seg.id}
