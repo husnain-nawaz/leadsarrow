@@ -146,10 +146,20 @@ function WorkspaceContent({ onToggleLanding }) {
         <main className="flex-1">
           <SqlArchitectureView onBack={() => handleSetActiveView('finder')} />
         </main>
-      ) : activeView === 'superadmin' && isSuperAdmin ? (
-        <main className="flex-1">
-          <SuperadminPanel onBack={() => handleSetActiveView('finder')} />
-        </main>
+      ) : activeView === 'superadmin' ? (
+        isSuperAdmin ? (
+          <main className="flex-1">
+            <SuperadminPanel onBack={() => handleSetActiveView('finder')} />
+          </main>
+        ) : (
+          <div className="flex-1 flex min-w-0">
+            <FilterSidebar />
+            <main className="flex-1 flex flex-col min-w-0 bg-white">
+              <AnalyticsBar />
+              <LeadsTable />
+            </main>
+          </div>
+        )
       ) : (
         <div className="flex-1 flex min-w-0">
           <FilterSidebar />
