@@ -29,8 +29,32 @@ function WorkspaceContent({ onToggleLanding }) {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const filters = useSelector((state) => state.filters);
-  const [activeView, setActiveView] = useState('finder');
   const isSuperAdmin = Boolean(user && (user.isSuperAdmin || user.role === 'superadmin' || user.email === 'alex@leadsarrow.io' || user.email === 'alex@nexuslead.io'));
+
+  // Persist current active navbar view across browser refreshes
+  const [activeView, setActiveView] = useState(() => {
+    try {
+      const savedView = localStorage.getItem('leadsarrow_active_nav_view');
+      if (savedView && ['finder', 'schema', 'superadmin'].includes(savedView)) {
+        return savedView;
+      }
+    } catch (e) {}
+    return 'finder';
+  });
+
+  const handleSetActiveView = (viewKey) => {
+    setActiveView(viewKey);
+    try {
+      localStorage.setItem('leadsarrow_active_nav_view', viewKey);
+    } catch (e) {}
+  };
+
+  // If non-superadmin tries to access superadmin view, fallback to finder
+  useEffect(() => {
+    if (activeView === 'superadmin' && !isSuperAdmin) {
+      handleSetActiveView('finder');
+    }
+  }, [activeView, isSuperAdmin]);
 
   // Fetch B2B leads whenever any filter, sort, or pagination state changes in Redux
   useEffect(() => {
@@ -114,17 +138,17 @@ function WorkspaceContent({ onToggleLanding }) {
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
       <Navbar
         activeView={activeView}
-        setActiveView={setActiveView}
+        setActiveView={handleSetActiveView}
         onToggleLanding={onToggleLanding}
       />
 
       {activeView === 'schema' ? (
         <main className="flex-1">
-          <SqlArchitectureView onBack={() => setActiveView('finder')} />
+          <SqlArchitectureView onBack={() => handleSetActiveView('finder')} />
         </main>
       ) : activeView === 'superadmin' && isSuperAdmin ? (
         <main className="flex-1">
-          <SuperadminPanel onBack={() => setActiveView('finder')} />
+          <SuperadminPanel onBack={() => handleSetActiveView('finder')} />
         </main>
       ) : (
         <div className="flex-1 flex min-w-0">
