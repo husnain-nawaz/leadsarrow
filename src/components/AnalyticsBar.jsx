@@ -43,11 +43,13 @@ const QUICK_SEGMENTS = [
 
 export default function AnalyticsBar() {
   const dispatch = useDispatch();
-  const { pagination, metrics, selectedLeadIds } = useSelector((state) => state.leads);
+  const { pagination, metrics, selectedLeadIds, loading } = useSelector((state) => state.leads);
   const filters = useSelector((state) => state.filters);
   const { user } = useSelector((state) => state.auth);
 
   const activePreset = filters.activePresetName || (metrics.activeFiltersCount === 0 && !filters.onlyCustom ? 'All Global Businesses' : null);
+
+  const hasLoaded = pagination.totalDatabaseRecords > 0 || (pagination.estimatedGlobalMatches === 0 && !loading);
 
   return (
     <div className="shrink-0 bg-white border-b border-slate-200 px-6 py-3.5 space-y-3 z-10 shadow-xs">
@@ -57,11 +59,9 @@ export default function AnalyticsBar() {
           <div>
             <div className="text-xs text-slate-500">Matched B2B Leads</div>
             <div className="text-xl font-bold text-slate-900 font-mono tabular-nums">
-              {pagination.estimatedGlobalMatches > 0
-                ? pagination.estimatedGlobalMatches.toLocaleString()
-                : (pagination.totalDatabaseRecords > 0
-                    ? pagination.totalDatabaseRecords.toLocaleString()
-                    : 'Loading...')}
+              {loading && pagination.totalDatabaseRecords === 0
+                ? 'Loading...'
+                : (pagination.estimatedGlobalMatches || 0).toLocaleString()}
             </div>
           </div>
 
@@ -70,9 +70,9 @@ export default function AnalyticsBar() {
           <div>
             <div className="text-xs text-slate-500">Total Indexed Businesses</div>
             <div className="text-sm font-semibold text-slate-800 font-mono tabular-nums mt-0.5">
-              {pagination.totalDatabaseRecords > 0
-                ? pagination.totalDatabaseRecords.toLocaleString()
-                : 'Loading...'}
+              {loading && pagination.totalDatabaseRecords === 0
+                ? 'Loading...'
+                : (pagination.totalDatabaseRecords || 0).toLocaleString()}
             </div>
           </div>
 
@@ -81,7 +81,7 @@ export default function AnalyticsBar() {
           <div className="hidden md:block">
             <div className="text-xs text-slate-500">Verified Deliverability</div>
             <div className="text-sm font-semibold text-emerald-700 font-mono tabular-nums mt-0.5">
-              {metrics.verifiedRatio}% Verified
+              {pagination.totalDatabaseRecords > 0 ? `${metrics.verifiedRatio}% Verified` : '—'}
             </div>
           </div>
 
@@ -90,7 +90,7 @@ export default function AnalyticsBar() {
           <div className="hidden xl:block">
             <div className="text-xs text-slate-500">Avg. Buying Intent</div>
             <div className="text-sm font-semibold text-slate-800 font-mono tabular-nums mt-0.5">
-              {metrics.avgIntentScore} / 100
+              {pagination.totalDatabaseRecords > 0 ? `${metrics.avgIntentScore} / 100` : '—'}
             </div>
           </div>
 

@@ -117,34 +117,33 @@ function mapEntityToLead(entity: Lead) {
 // In-memory cache for aggregate metrics & total database counts
 let cachedGlobals = {
   timestamp: 0,
-  totalDatabaseRecords: 3105465,
-  avgIntentScore: 88,
-  verifiedRatio: 100,
+  totalDatabaseRecords: 0,
+  avgIntentScore: 0,
+  verifiedRatio: 0,
   facets: {
     industries: {} as Record<string, number>,
     countries: {} as Record<string, number>
   }
 };
 
-const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes cache to keep API instantaneous
+const CACHE_TTL_MS = 10 * 1000; // 10 seconds cache for real-time accurate counts
 
 async function getGlobalMetricsAndFacets(ds: any) {
   const now = Date.now();
-  if (now - cachedGlobals.timestamp < CACHE_TTL_MS && cachedGlobals.totalDatabaseRecords > 0) {
+  if (now - cachedGlobals.timestamp < CACHE_TTL_MS && cachedGlobals.timestamp > 0) {
     return cachedGlobals;
   }
 
-  // Refresh in background without delaying user request
-  (async () => {
-    try {
-      const rawCount = await ds.query("SELECT COUNT(*) as cnt FROM leads;");
-      const totalDatabaseRecords = Number(rawCount[0]?.cnt) || 3105465;
-      cachedGlobals.totalDatabaseRecords = totalDatabaseRecords;
-      cachedGlobals.timestamp = Date.now();
-    } catch (err: any) {
-      console.error('Failed to update leads count:', err.message);
-    }
-  })();
+  try {
+    const rawCount = await ds.query("SELECT COUNT(*) as cnt FROM leads;");
+    const totalDatabaseRecords = Number(rawCount[0]?.cnt) || 0;
+    cachedGlobals.totalDatabaseRecords = totalDatabaseRecords;
+    cachedGlobals.verifiedRatio = totalDatabaseRecords > 0 ? 100 : 0;
+    cachedGlobals.avgIntentScore = totalDatabaseRecords > 0 ? 88 : 0;
+    cachedGlobals.timestamp = Date.now();
+  } catch (err: any) {
+    console.error('Failed to update leads count:', err.message);
+  }
 
   return cachedGlobals;
 }
