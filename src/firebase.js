@@ -19,18 +19,17 @@ import {
   onSnapshot,
   serverTimestamp
 } from 'firebase/firestore';
-import firebaseConfigJson from '../firebase-applet-config.json';
-
-// Use environment variables if set, otherwise fallback to local applet config
+// Firebase Web SDK Configuration
+// Reads from Vite environment variables (or defaults for production deployment)
 const firebaseConfig = {
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || firebaseConfigJson.projectId,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || firebaseConfigJson.appId,
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || firebaseConfigJson.apiKey,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || firebaseConfigJson.authDomain,
-  firestoreDatabaseId: import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || firebaseConfigJson.firestoreDatabaseId,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || firebaseConfigJson.storageBucket,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseConfigJson.messagingSenderId,
-  oAuthClientId: import.meta.env.VITE_FIREBASE_OAUTH_CLIENT_ID || firebaseConfigJson.oAuthClientId
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'ai-studio-applet-webapp-dbdba',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:121886914011:web:3b1667370a052c8bae63fe',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyAtsd4Y65XMZUfm32VOQd0V1lBsb5WJqN0',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'ai-studio-applet-webapp-dbdba.firebaseapp.com',
+  firestoreDatabaseId: import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || 'ai-studio-99d9b920-03fb-41d1-97a3-51eedc32d59c',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'ai-studio-applet-webapp-dbdba.firebasestorage.app',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '121886914011',
+  oAuthClientId: import.meta.env.VITE_FIREBASE_OAUTH_CLIENT_ID || '121886914011-6demip2rbtvvbmtchikfmt1o92rv7fjm.apps.googleusercontent.com'
 };
 
 const app = initializeApp(firebaseConfig);
