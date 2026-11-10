@@ -157,6 +157,11 @@ export default function SuperadminPanel({ onBack }) {
             setIsIngesting(false);
             alert(`Ingestion error: ${job.error || 'Processing failed'}`);
           }
+        } else if (res && res.error) {
+          clearInterval(interval);
+          setActiveJobId(null);
+          setIsIngesting(false);
+          alert(`Ingestion failed: ${res.error}`);
         }
       } catch (err) {
         console.warn('Progress poll error:', err);

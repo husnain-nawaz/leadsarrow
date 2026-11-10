@@ -697,26 +697,32 @@ export async function batchInsertLeads(newLeads: any[] = []) {
       const id = item.id || `lead_${Date.now()}_${globalIdx}_${Math.random().toString(36).substring(2, 7)}`;
       const domain = String(item.domain || 'example.com').trim();
 
+      const safeTrim = (v: any, maxLen: number, fallback = '') => {
+        if (v === null || v === undefined) return fallback.slice(0, maxLen);
+        const s = String(v).replace(/\0/g, '').trim();
+        return (s || fallback).slice(0, maxLen);
+      };
+
       return leadRepo.create({
         id,
-        companyName: String(item.companyName || item.company || 'Enterprise Company').trim(),
-        domain,
-        industry: String(item.industry || 'Enterprise Software & SaaS').trim(),
-        employeeRange: String(item.employeeRange || '51-200').trim(),
+        companyName: safeTrim(item.companyName || item.company, 255, 'Enterprise Company'),
+        domain: safeTrim(item.domain, 255, 'example.com'),
+        industry: safeTrim(item.industry, 128, 'Enterprise Software & SaaS'),
+        employeeRange: safeTrim(item.employeeRange, 64, '51-200'),
         employeeCount: Number(item.employeeCount) || 150,
-        revenueRange: String(item.revenueRange || '$10M - $50M').trim(),
+        revenueRange: safeTrim(item.revenueRange, 64, '$10M - $50M'),
         annualRevenueUsd: Number(item.annualRevenueUsd) || 25000000,
-        country: String(item.country || 'United States').trim(),
-        city: String(item.city || 'San Francisco, CA').trim(),
-        contactName: String(item.contactName || item.name || 'Decision Maker').trim(),
-        contactTitle: String(item.contactTitle || item.title || 'Director of Operations').trim(),
-        seniority: String(item.seniority || 'Director').trim(),
-        department: String(item.department || 'Executive Leadership').trim(),
-        contactEmail: String(item.contactEmail || item.email || `contact_${globalIdx}@example.com`).trim(),
-        contactPhone: String(item.contactPhone || item.phone || '+1 (555) 019-2831').trim(),
-        linkedinUrl: item.linkedinUrl || `https://linkedin.com/company/${domain.replace(/\.[^/.]+$/, '')}`,
-        verificationStatus: item.verificationStatus || 'Verified',
-        fundingStage: item.fundingStage || 'Series B',
+        country: safeTrim(item.country, 128, 'United States'),
+        city: safeTrim(item.city, 128, 'San Francisco, CA'),
+        contactName: safeTrim(item.contactName || item.name, 255, 'Decision Maker'),
+        contactTitle: safeTrim(item.contactTitle || item.title, 255, 'Director of Operations'),
+        seniority: safeTrim(item.seniority, 64, 'Director'),
+        department: safeTrim(item.department, 128, 'Executive Leadership'),
+        contactEmail: safeTrim(item.contactEmail || item.email, 255, `contact_${globalIdx}@example.com`),
+        contactPhone: safeTrim(item.contactPhone || item.phone, 64, '+1 (555) 019-2831'),
+        linkedinUrl: safeTrim(item.linkedinUrl || `https://linkedin.com/company/${domain.replace(/\.[^/.]+$/, '')}`, 255, ''),
+        verificationStatus: safeTrim(item.verificationStatus, 32, 'Verified'),
+        fundingStage: safeTrim(item.fundingStage, 64, 'Series B'),
         techStack: Array.isArray(item.techStack)
           ? item.techStack
           : typeof item.techStack === 'string'
@@ -726,7 +732,7 @@ export async function batchInsertLeads(newLeads: any[] = []) {
         hasDirectPhone: item.hasDirectPhone !== undefined ? (item.hasDirectPhone ? 1 : 0) : 1,
         isCustom: 1,
         isRecent: 1,
-        source: item.source || 'mysql_b2b_database',
+        source: safeTrim(item.source, 64, 'mysql_b2b_database'),
         createdAt: item.createdAt ? new Date(item.createdAt) : new Date()
       });
     });

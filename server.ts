@@ -229,10 +229,24 @@ async function startServer() {
             pureBase64 = fileBase64.slice(commaIdx + 1);
           }
           const buffer = Buffer.from(pureBase64, 'base64');
-          const isExcel = String(fileName || '').endsWith('.xlsx') || String(fileName || '').endsWith('.xls');
 
-          const clean = (val: any) => String(val ?? '').trim().replace(/^["']|["']$/g, '');
+          const clean = (val: any) => {
+            if (val === null || val === undefined) return '';
+            let s = String(val).trim().replace(/^["']|["']$/g, '');
+            // Strip any null bytes or unprintable control codes
+            s = s.replace(/\0/g, '').trim();
+            return s;
+          };
+          const cleanField = (val: any, maxLen: number, fallback = '') => {
+            const s = clean(val);
+            if (!s) return fallback.slice(0, maxLen);
+            return s.slice(0, maxLen);
+          };
           const rowsToInsert: any[] = [];
+
+          // Detect if file is truly a zip/xlsx archive by header magic bytes (PK\x03\x04)
+          const isZipArchive = buffer.length > 4 && buffer[0] === 0x50 && buffer[1] === 0x4B;
+          const isExcel = isZipArchive || String(fileName || '').endsWith('.xlsx') || String(fileName || '').endsWith('.xls');
 
           if (isExcel) {
             const XLSX = await import('xlsx');
@@ -279,24 +293,28 @@ async function startServer() {
                 if (key) rowObj[key] = clean(rowArr[col]);
               }
 
-              const company = clean(
+              const company = cleanField(
                 rowObj.company || rowObj.companyname || rowObj['company name'] ||
                 rowObj.organization || rowObj.business || rowObj.account ||
-                rowArr[0] || `Enterprise #${r}`
+                rowArr[0],
+                255,
+                `Enterprise #${r}`
               );
-              const domain = clean(
-                rowObj.domain || rowObj.website || rowObj.url || rowObj['website domain'] ||
+              const domain = cleanField(
+                rowObj.domain || rowObj.website || rowObj.url || rowObj['website domain'],
+                255,
                 (company ? `${company.toLowerCase().replace(/[^a-z0-9]/g, '')}.com` : 'company.io')
               );
-              const industry = clean(rowObj.industry || rowObj.sector || rowObj.category || 'Business Services');
-              const contactName = clean(
+              const industry = cleanField(rowObj.industry || rowObj.sector || rowObj.category, 128, 'Business Services');
+              const contactName = cleanField(
                 rowObj.name || rowObj.contact || rowObj.contactname || rowObj['contact name'] ||
-                rowObj['first name'] ? `${clean(rowObj['first name'])} ${clean(rowObj['last name'] || '')}`.trim() :
+                (rowObj['first name'] ? `${clean(rowObj['first name'])} ${clean(rowObj['last name'] || '')}`.trim() : ''),
+                255,
                 'Executive Decision Maker'
               );
-              const contactTitle = clean(rowObj.title || rowObj.jobtitle || rowObj['job title'] || rowObj.role || 'Director of Operations');
-              const contactEmail = clean(rowObj.email || rowObj.workemail || rowObj['contact email'] || rowObj['work email'] || `contact_${r}@${domain}`);
-              const contactPhone = clean(rowObj.phone || rowObj.mobile || rowObj.directphone || rowObj['direct phone'] || '+1 (555) 019-3829');
+              const contactTitle = cleanField(rowObj.title || rowObj.jobtitle || rowObj['job title'] || rowObj.role, 255, 'Director of Operations');
+              const contactEmail = cleanField(rowObj.email || rowObj.workemail || rowObj['contact email'] || rowObj['work email'], 255, `contact_${r}@${domain}`);
+              const contactPhone = cleanField(rowObj.phone || rowObj.mobile || rowObj.directphone || rowObj['direct phone'], 64, '+1 (555) 019-3829');
 
               rowsToInsert.push({
                 companyName: company,
@@ -306,19 +324,31 @@ async function startServer() {
                 contactTitle,
                 contactEmail,
                 contactPhone,
-                country: clean(rowObj.country || rowObj.nation || 'USA'),
-                city: clean(rowObj.city || rowObj.location || 'San Francisco, CA'),
-                employeeRange: clean(rowObj.employees || rowObj.employeerange || rowObj['employee range'] || '51-200'),
+                country: cleanField(rowObj.country || rowObj.nation, 128, 'USA'),
+                city: cleanField(rowObj.city || rowObj.location, 128, 'San Francisco, CA'),
+                employeeRange: cleanField(rowObj.employees || rowObj.employeerange || rowObj['employee range'], 64, '51-200'),
                 employeeCount: Number(clean(rowObj.employeecount || rowObj['employee count'] || rowObj.size)) || 150,
-                revenueRange: clean(rowObj.revenue || rowObj.revenuerange || rowObj['revenue range'] || '$10M - $50M'),
+                revenueRange: cleanField(rowObj.revenue || rowObj.revenuerange || rowObj['revenue range'], 64, '$10M - $50M'),
                 annualRevenueUsd: Number(clean(rowObj.annualrevenue || rowObj['annual revenue'])) || 25000000,
-                fundingStage: clean(rowObj.funding || rowObj.fundingstage || 'Series B'),
+                fundingStage: cleanField(rowObj.funding || rowObj.fundingstage, 64, 'Series B'),
                 buyingIntentScore: Number(clean(rowObj.intent || rowObj.intentscore)) || 90,
                 techStack: ['AWS', 'Salesforce']
               });
             }
           } else {
             // Text / CSV parsing
+            // Check if buffer contains null bytes (binary corruption)
+            let isBinary = false;
+            for (let b = 0; b < Math.min(100, buffer.length); b++) {
+              if (buffer[b] === 0) {
+                isBinary = true;
+                break;
+              }
+            }
+            if (isBinary) {
+              throw new Error('Uploaded CSV file appears to be binary or corrupted. If this was an Excel (.xlsx) file renamed to .csv, please keep the original .xlsx extension.');
+            }
+
             const textContent = buffer.toString('utf8');
             const lines = textContent.split(/\r?\n/).filter(Boolean);
             if (lines.length < 2) {
@@ -340,20 +370,20 @@ async function startServer() {
                 rowObj[h] = clean(cols[idx]);
               });
 
-              const company = clean(rowObj.company || rowObj.companyname || cols[0] || `Enterprise #${i}`);
-              const domain = clean(rowObj.domain || rowObj.website || 'company.io');
+              const company = cleanField(rowObj.company || rowObj.companyname || cols[0], 255, `Enterprise #${i}`);
+              const domain = cleanField(rowObj.domain || rowObj.website, 255, 'company.io');
               rowsToInsert.push({
                 companyName: company,
                 domain,
-                industry: clean(rowObj.industry || 'Business Services'),
-                contactName: clean(rowObj.name || rowObj.contact || 'Executive Decision Maker'),
-                contactTitle: clean(rowObj.title || 'Director of Operations'),
-                contactEmail: clean(rowObj.email || `contact_${i}@${domain}`),
-                contactPhone: clean(rowObj.phone || '+1 (555) 019-3829'),
-                country: clean(rowObj.country || 'USA'),
-                city: clean(rowObj.city || 'San Francisco, CA'),
-                employeeRange: clean(rowObj.employees || '51-200'),
-                revenueRange: clean(rowObj.revenue || '$10M - $50M'),
+                industry: cleanField(rowObj.industry, 128, 'Business Services'),
+                contactName: cleanField(rowObj.name || rowObj.contact, 255, 'Executive Decision Maker'),
+                contactTitle: cleanField(rowObj.title, 255, 'Director of Operations'),
+                contactEmail: cleanField(rowObj.email, 255, `contact_${i}@${domain}`),
+                contactPhone: cleanField(rowObj.phone, 64, '+1 (555) 019-3829'),
+                country: cleanField(rowObj.country, 128, 'USA'),
+                city: cleanField(rowObj.city, 128, 'San Francisco, CA'),
+                employeeRange: cleanField(rowObj.employees, 64, '51-200'),
+                revenueRange: cleanField(rowObj.revenue, 64, '$10M - $50M'),
                 fundingStage: 'Series B',
                 buyingIntentScore: 88,
                 techStack: ['AWS', 'Salesforce']
