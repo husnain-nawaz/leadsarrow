@@ -88,12 +88,12 @@ const initialState = {
     pageSize: 25,
     totalCatalogRows: 600,
     totalPages: 24,
-    estimatedGlobalMatches: 4824910,
-    totalDatabaseRecords: 4824910
+    estimatedGlobalMatches: 0,
+    totalDatabaseRecords: 0
   },
   metrics: {
-    verifiedRatio: 76,
-    avgIntentScore: 75,
+    verifiedRatio: 100,
+    avgIntentScore: 88,
     activeFiltersCount: 0
   },
   facets: {

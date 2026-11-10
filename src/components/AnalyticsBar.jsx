@@ -57,7 +57,11 @@ export default function AnalyticsBar() {
           <div>
             <div className="text-xs text-slate-500">Matched B2B Leads</div>
             <div className="text-xl font-bold text-slate-900 font-mono tabular-nums">
-              {(pagination.estimatedGlobalMatches || 0).toLocaleString()}
+              {pagination.estimatedGlobalMatches > 0
+                ? pagination.estimatedGlobalMatches.toLocaleString()
+                : (pagination.totalDatabaseRecords > 0
+                    ? pagination.totalDatabaseRecords.toLocaleString()
+                    : 'Loading...')}
             </div>
           </div>
 
@@ -66,7 +70,9 @@ export default function AnalyticsBar() {
           <div>
             <div className="text-xs text-slate-500">Total Indexed Businesses</div>
             <div className="text-sm font-semibold text-slate-800 font-mono tabular-nums mt-0.5">
-              {(pagination.totalDatabaseRecords || 0).toLocaleString()}
+              {pagination.totalDatabaseRecords > 0
+                ? pagination.totalDatabaseRecords.toLocaleString()
+                : 'Loading...'}
             </div>
           </div>
 
