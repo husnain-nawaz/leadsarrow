@@ -124,7 +124,7 @@ const TAXONOMY_SECTIONS = [
 export default function FilterSidebar() {
   const dispatch = useDispatch();
   const filters = useSelector((state) => state.filters);
-  const { facets, metrics } = useSelector((state) => state.leads);
+  const { facets, metrics, loading } = useSelector((state) => state.leads);
   const [searchInput, setSearchInput] = useState(filters.searchQuery || '');
 
   // Keep local search input synchronized if reset from outside
@@ -365,7 +365,7 @@ export default function FilterSidebar() {
                             </span>
                           </div>
                           <span className="text-[11px] font-mono tabular-nums text-slate-400 shrink-0">
-                            {count.toLocaleString()}
+                            {count > 0 ? count.toLocaleString() : (loading ? '...' : '0')}
                           </span>
                         </label>
                       );

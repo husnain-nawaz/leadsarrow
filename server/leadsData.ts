@@ -451,7 +451,7 @@ export async function queryLeadsDatabase(params: any = {}) {
   }
   const totalDatabaseRecords = globals.totalDatabaseRecords || totalMatches;
 
-  // Query real facets from database if database has records, else empty
+  // Query real facets from database dynamically
   const facets: Record<string, Record<string, number>> = {
     industries: {},
     employeeRanges: {},
@@ -466,15 +466,35 @@ export async function queryLeadsDatabase(params: any = {}) {
 
   if (globals.totalDatabaseRecords > 0) {
     try {
-      // Calculate top dynamic facet counts from database
-      const [topIndustries] = await ds.query('SELECT industry, COUNT(*) as cnt FROM leads WHERE industry IS NOT NULL GROUP BY industry LIMIT 30;');
-      if (Array.isArray(topIndustries)) {
-        for (const row of topIndustries) {
-          if (row.industry) facets.industries[row.industry] = Number(row.cnt);
+      const [indRows, empRows, revRows, cRows, senRows, deptRows, fundRows, verRows] = await Promise.all([
+        ds.query('SELECT industry as val, COUNT(*) as cnt FROM leads WHERE industry IS NOT NULL AND industry != "" GROUP BY industry LIMIT 35;'),
+        ds.query('SELECT employee_range as val, COUNT(*) as cnt FROM leads WHERE employee_range IS NOT NULL AND employee_range != "" GROUP BY employee_range LIMIT 20;'),
+        ds.query('SELECT revenue_range as val, COUNT(*) as cnt FROM leads WHERE revenue_range IS NOT NULL AND revenue_range != "" GROUP BY revenue_range LIMIT 20;'),
+        ds.query('SELECT country as val, COUNT(*) as cnt FROM leads WHERE country IS NOT NULL AND country != "" GROUP BY country LIMIT 20;'),
+        ds.query('SELECT seniority as val, COUNT(*) as cnt FROM leads WHERE seniority IS NOT NULL AND seniority != "" GROUP BY seniority LIMIT 20;'),
+        ds.query('SELECT department as val, COUNT(*) as cnt FROM leads WHERE department IS NOT NULL AND department != "" GROUP BY department LIMIT 20;'),
+        ds.query('SELECT funding_stage as val, COUNT(*) as cnt FROM leads WHERE funding_stage IS NOT NULL AND funding_stage != "" GROUP BY funding_stage LIMIT 20;'),
+        ds.query('SELECT verification_status as val, COUNT(*) as cnt FROM leads WHERE verification_status IS NOT NULL AND verification_status != "" GROUP BY verification_status LIMIT 10;')
+      ]);
+
+      const populate = (target: Record<string, number>, rows: any) => {
+        if (Array.isArray(rows)) {
+          for (const r of rows) {
+            if (r.val) target[String(r.val)] = Number(r.cnt);
+          }
         }
-      }
-    } catch (e) {
-      // ignore
+      };
+
+      populate(facets.industries, indRows);
+      populate(facets.employeeRanges, empRows);
+      populate(facets.revenueRanges, revRows);
+      populate(facets.countries, cRows);
+      populate(facets.seniorities, senRows);
+      populate(facets.departments, deptRows);
+      populate(facets.fundingStages, fundRows);
+      populate(facets.verificationStatuses, verRows);
+    } catch (e: any) {
+      console.warn('Dynamic facet aggregation error:', e.message);
     }
   }
 
