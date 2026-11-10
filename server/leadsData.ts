@@ -136,9 +136,9 @@ async function getGlobalMetricsAndFacets(ds: any) {
 
   try {
     const rawCount = await ds.query(
-      "SELECT TABLE_ROWS as cnt FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'leads'"
+      "SELECT COUNT(*) as cnt FROM leads"
     );
-    const totalDatabaseRecords = Number(rawCount[0]?.cnt) || cachedGlobals.totalDatabaseRecords || 1048576;
+    const totalDatabaseRecords = Number(rawCount[0]?.cnt) || cachedGlobals.totalDatabaseRecords || 2070413;
     cachedGlobals.totalDatabaseRecords = totalDatabaseRecords;
     cachedGlobals.timestamp = now;
   } catch (err: any) {
