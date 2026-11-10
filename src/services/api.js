@@ -223,3 +223,13 @@ export async function uploadStreamLeadsApi({ fileName, fileBase64, createList, l
     body: JSON.stringify({ fileName, fileBase64, createList, listName })
   });
 }
+
+export async function fetchUploadProgressApi(jobId) {
+  return apiRequest(`/api/admin/leads/upload-progress/${encodeURIComponent(jobId)}`);
+}
+
+export async function cancelUploadStreamApi(jobId) {
+  return apiRequest(`/api/admin/leads/upload-cancel/${encodeURIComponent(jobId)}`, {
+    method: 'POST'
+  });
+}

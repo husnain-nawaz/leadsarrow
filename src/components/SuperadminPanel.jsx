@@ -37,7 +37,9 @@ import {
   updateAdminUserApi,
   fetchAdminStatsApi,
   batchIngestLeadsApi,
-  uploadStreamLeadsApi
+  uploadStreamLeadsApi,
+  fetchUploadProgressApi,
+  cancelUploadStreamApi
 } from '../services/api.js';
 import { fetchLeads } from '../store/leadsSlice.js';
 import { fetchSavedLists } from '../store/savedListsSlice.js';
@@ -99,6 +101,8 @@ export default function SuperadminPanel({ onBack }) {
     rawSql: ''
   });
   const [isIngesting, setIsIngesting] = useState(false);
+  const [activeJobId, setActiveJobId] = useState(null);
+  const [jobProgress, setJobProgress] = useState(null); // { percent, processedRows, totalRows, insertedCount, status, error, fileName }
 
   // Load Admin Data on mount
   const loadAdminData = async () => {
@@ -120,6 +124,57 @@ export default function SuperadminPanel({ onBack }) {
   useEffect(() => {
     loadAdminData();
   }, []);
+
+  // Poll active background ingestion job every 1.5 seconds
+  useEffect(() => {
+    if (!activeJobId) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetchUploadProgressApi(activeJobId);
+        if (res && res.job) {
+          const job = res.job;
+          setJobProgress(job);
+
+          if (job.status === 'completed') {
+            clearInterval(interval);
+            setActiveJobId(null);
+            setIsIngesting(false);
+            dispatch(fetchLeads(filters));
+            dispatch(fetchSavedLists());
+            triggerSuccess(
+              `Ingestion finished! ${Number(job.insertedCount || job.processedRows || 0).toLocaleString()} leads successfully committed to database!`
+            );
+            loadAdminData();
+          } else if (job.status === 'cancelled') {
+            clearInterval(interval);
+            setActiveJobId(null);
+            setIsIngesting(false);
+            alert('Upload/Ingestion cancelled by user.');
+          } else if (job.status === 'error') {
+            clearInterval(interval);
+            setActiveJobId(null);
+            setIsIngesting(false);
+            alert(`Ingestion error: ${job.error || 'Processing failed'}`);
+          }
+        }
+      } catch (err) {
+        console.warn('Progress poll error:', err);
+      }
+    }, 1500);
+
+    return () => clearInterval(interval);
+  }, [activeJobId, dispatch, filters]);
+
+  const handleCancelActiveJob = async () => {
+    if (!activeJobId) return;
+    try {
+      await cancelUploadStreamApi(activeJobId);
+      triggerSuccess('Cancellation requested. Halting ingestion...');
+    } catch (err) {
+      alert(err.message || 'Failed to cancel job');
+    }
+  };
 
   const triggerSuccess = (msg) => {
     setSuccessBanner(msg);
@@ -432,21 +487,27 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
               listName: importedListName || selectedFileObj.name.replace(/\.[^/.]+$/, '')
             });
 
-            dispatch(fetchLeads(filters));
-            dispatch(fetchSavedLists());
-            triggerSuccess(
-              `Successfully ingested ${res.insertedCount.toLocaleString()} leads into MySQL database${
-                autoCreateSavedList ? ' and created reusable list!' : '!'
-              }`
-            );
-            setSelectedFileObj(null);
-            setParsedLeadsPreview([]);
-            setCsvRawText('');
-            setUploadFileName('');
-            loadAdminData();
+            if (res && res.jobId) {
+              setActiveJobId(res.jobId);
+              setJobProgress({
+                percent: 0,
+                processedRows: 0,
+                totalRows: 0,
+                insertedCount: 0,
+                status: 'parsing',
+                fileName: selectedFileObj.name
+              });
+              triggerSuccess(
+                `Upload initiated in the background! You can freely browse or do other tasks while progress runs.`
+              );
+              // Clean up the upload form preview
+              setSelectedFileObj(null);
+              setParsedLeadsPreview([]);
+              setCsvRawText('');
+              setUploadFileName('');
+            }
           } catch (err) {
             alert(err.message || 'High-capacity upload failed');
-          } finally {
             setIsIngesting(false);
           }
         };
@@ -602,6 +663,64 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
         <div className="bg-emerald-500/20 border-b border-emerald-500/40 text-emerald-300 px-6 py-2.5 text-xs font-semibold flex items-center justify-center gap-2">
           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           <span>{successBanner}</span>
+        </div>
+      )}
+
+      {/* Active High-Capacity Streaming Progress Widget (Non-blocking, Multitasking enabled) */}
+      {jobProgress && (activeJobId || jobProgress.status === 'ingesting' || jobProgress.status === 'parsing') && (
+        <div className="bg-slate-950/95 border-b border-orange-500/40 px-6 py-3.5 shadow-xl sticky top-[73px] z-20 backdrop-blur-md">
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3 w-full md:w-auto">
+              <div className="w-8 h-8 rounded-lg bg-orange-600/20 border border-orange-500/40 flex items-center justify-center text-orange-400 shrink-0">
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-white flex items-center gap-2">
+                  <span>Adding High-Capacity Data to Database...</span>
+                  <span className="text-orange-400 font-mono font-bold text-sm">
+                    {jobProgress.percent}%
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-400 mt-0.5">
+                  File: <span className="text-slate-200 font-medium">{jobProgress.fileName}</span> &bull;{' '}
+                  {jobProgress.status === 'parsing' ? (
+                    <span className="text-amber-400">Parsing and mapping spreadsheet structure...</span>
+                  ) : (
+                    <span>
+                      Inserted <strong className="text-emerald-400">{(jobProgress.insertedCount || jobProgress.processedRows || 0).toLocaleString()}</strong> of{' '}
+                      <strong className="text-slate-300">{(jobProgress.totalRows || 0).toLocaleString()}</strong> rows into MySQL
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 w-full md:w-auto justify-end">
+              {/* Progress bar line */}
+              <div className="w-full md:w-72 bg-slate-800 rounded-full h-2.5 overflow-hidden border border-slate-700">
+                <div
+                  className="bg-gradient-to-r from-orange-500 to-emerald-500 h-full rounded-full transition-all duration-300 ease-out"
+                  style={{ width: `${Math.max(4, jobProgress.percent || 0)}%` }}
+                />
+              </div>
+
+              {/* Multitask reminder tag */}
+              <span className="hidden lg:inline-block text-[11px] text-slate-400 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-md">
+                Background Active (Multitasking enabled)
+              </span>
+
+              {/* Cancel Button with Full Authority */}
+              <button
+                type="button"
+                onClick={handleCancelActiveJob}
+                className="px-3.5 py-1.5 bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/40 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-sm"
+                title="Cancel and halt ingestion immediately"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>Cancel Ingestion</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
