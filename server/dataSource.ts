@@ -28,6 +28,46 @@ export const AppDataSource = new DataSource({
 
 let isInitialized = false;
 
+// Optional Secondary Sharded Database (e.g. Hostinger Database 2)
+export const SecondaryDataSource = new DataSource({
+  type: 'mysql',
+  host: process.env.MYSQL_HOST_DB2 || process.env.MYSQL_HOST || '193.203.184.241',
+  port: Number(process.env.MYSQL_PORT_DB2 || process.env.MYSQL_PORT || 3306),
+  username: process.env.MYSQL_USER_DB2 || 'u340392193_leadsarrow2',
+  password: process.env.MYSQL_PASSWORD_DB2 || 'Player74773/',
+  database: process.env.MYSQL_DATABASE_DB2 || 'u340392193_leadsarrow2',
+  synchronize: false,
+  logging: false,
+  entities: [Lead],
+  extra: {
+    connectionLimit: 10,
+    waitForConnections: true,
+    queueLimit: 0
+  }
+});
+
+let isDb2Initialized = false;
+
+export async function getSecondaryDataSource(): Promise<DataSource | null> {
+  // Only connect if DB2 is specified or on production
+  if (process.env.MYSQL_DATABASE_DB2 || process.env.NODE_ENV === 'production' || process.env.MYSQL_HOST?.includes('hstgr') || process.env.MYSQL_HOST === '193.203.184.241') {
+    if (!isDb2Initialized) {
+      if (!SecondaryDataSource.isInitialized) {
+        try {
+          await SecondaryDataSource.initialize();
+          console.log('Connected to Sharded Secondary Database: u340392193_leadsarrow2');
+        } catch (e: any) {
+          console.warn('Secondary DataSource not available:', e.message);
+          return null;
+        }
+      }
+      isDb2Initialized = true;
+    }
+    return SecondaryDataSource;
+  }
+  return null;
+}
+
 export async function getDataSource(): Promise<DataSource> {
   if (!isInitialized) {
     if (!AppDataSource.isInitialized) {

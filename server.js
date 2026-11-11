@@ -344,12 +344,32 @@ var init_SavedList = __esm({
 var dataSource_exports = {};
 __export(dataSource_exports, {
   AppDataSource: () => AppDataSource,
+  SecondaryDataSource: () => SecondaryDataSource,
   getDataSource: () => getDataSource,
+  getSecondaryDataSource: () => getSecondaryDataSource,
   initDatabaseSchema: () => initDatabaseSchema
 });
 import "reflect-metadata";
 import { DataSource } from "typeorm";
 import dotenv from "dotenv";
+async function getSecondaryDataSource() {
+  if (process.env.MYSQL_DATABASE_DB2 || process.env.NODE_ENV === "production" || process.env.MYSQL_HOST?.includes("hstgr") || process.env.MYSQL_HOST === "193.203.184.241") {
+    if (!isDb2Initialized) {
+      if (!SecondaryDataSource.isInitialized) {
+        try {
+          await SecondaryDataSource.initialize();
+          console.log("Connected to Sharded Secondary Database: u340392193_leadsarrow2");
+        } catch (e) {
+          console.warn("Secondary DataSource not available:", e.message);
+          return null;
+        }
+      }
+      isDb2Initialized = true;
+    }
+    return SecondaryDataSource;
+  }
+  return null;
+}
 async function getDataSource() {
   if (!isInitialized) {
     if (!AppDataSource.isInitialized) {
@@ -374,7 +394,7 @@ async function initDatabaseSchema() {
   console.log("TypeORM initialized schema connection.");
   return ds;
 }
-var AppDataSource, isInitialized;
+var AppDataSource, isInitialized, SecondaryDataSource, isDb2Initialized;
 var init_dataSource = __esm({
   "server/dataSource.ts"() {
     init_Lead();
@@ -401,6 +421,23 @@ var init_dataSource = __esm({
       }
     });
     isInitialized = false;
+    SecondaryDataSource = new DataSource({
+      type: "mysql",
+      host: process.env.MYSQL_HOST_DB2 || process.env.MYSQL_HOST || "193.203.184.241",
+      port: Number(process.env.MYSQL_PORT_DB2 || process.env.MYSQL_PORT || 3306),
+      username: process.env.MYSQL_USER_DB2 || "u340392193_leadsarrow2",
+      password: process.env.MYSQL_PASSWORD_DB2 || "Player74773/",
+      database: process.env.MYSQL_DATABASE_DB2 || "u340392193_leadsarrow2",
+      synchronize: false,
+      logging: false,
+      entities: [Lead],
+      extra: {
+        connectionLimit: 10,
+        waitForConnections: true,
+        queueLimit: 0
+      }
+    });
+    isDb2Initialized = false;
   }
 });
 
@@ -537,8 +574,16 @@ async function getGlobalMetricsAndFacets(ds) {
     return cachedGlobals;
   }
   try {
-    const rawCount = await ds.query("SELECT COUNT(*) as cnt FROM leads;");
-    const totalDatabaseRecords = Number(rawCount[0]?.cnt) || 0;
+    const rawCount1 = await ds.query("SELECT COUNT(*) as cnt FROM leads;");
+    let totalDatabaseRecords = Number(rawCount1[0]?.cnt) || 0;
+    try {
+      const ds2 = await getSecondaryDataSource();
+      if (ds2) {
+        const rawCount2 = await ds2.query("SELECT COUNT(*) as cnt FROM leads;");
+        totalDatabaseRecords += Number(rawCount2[0]?.cnt) || 0;
+      }
+    } catch (_) {
+    }
     cachedGlobals.totalDatabaseRecords = totalDatabaseRecords;
     cachedGlobals.verifiedRatio = totalDatabaseRecords > 0 ? 100 : 0;
     cachedGlobals.avgIntentScore = totalDatabaseRecords > 0 ? 88 : 0;

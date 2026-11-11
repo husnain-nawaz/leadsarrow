@@ -1,4 +1,4 @@
-import { getDataSource } from './dataSource.ts';
+import { getDataSource, getSecondaryDataSource } from './dataSource.ts';
 import { Lead } from './entities/Lead.ts';
 
 export const FILTER_TAXONOMY = {
@@ -135,8 +135,18 @@ async function getGlobalMetricsAndFacets(ds: any) {
   }
 
   try {
-    const rawCount = await ds.query("SELECT COUNT(*) as cnt FROM leads;");
-    const totalDatabaseRecords = Number(rawCount[0]?.cnt) || 0;
+    const rawCount1 = await ds.query("SELECT COUNT(*) as cnt FROM leads;");
+    let totalDatabaseRecords = Number(rawCount1[0]?.cnt) || 0;
+
+    // Add count from secondary database if available
+    try {
+      const ds2 = await getSecondaryDataSource();
+      if (ds2) {
+        const rawCount2 = await ds2.query("SELECT COUNT(*) as cnt FROM leads;");
+        totalDatabaseRecords += Number(rawCount2[0]?.cnt) || 0;
+      }
+    } catch (_) {}
+
     cachedGlobals.totalDatabaseRecords = totalDatabaseRecords;
     cachedGlobals.verifiedRatio = totalDatabaseRecords > 0 ? 100 : 0;
     cachedGlobals.avgIntentScore = totalDatabaseRecords > 0 ? 88 : 0;
