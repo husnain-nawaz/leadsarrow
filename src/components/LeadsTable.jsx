@@ -341,8 +341,8 @@ export default function LeadsTable() {
 
                     {/* Company & Unboxed Metadata */}
                     <td className="py-2.5 px-3 align-middle">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-slate-900 group-hover:text-orange-600 transition-colors">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="font-semibold text-slate-900 group-hover:text-orange-600 transition-colors truncate">
                           {lead.companyName}
                         </span>
                         <a
@@ -350,17 +350,11 @@ export default function LeadsTable() {
                           target="_blank"
                           rel="noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="text-slate-400 hover:text-slate-700"
+                          className="text-slate-400 hover:text-slate-700 shrink-0 inline-flex items-center"
                           title={`Open ${lead.domain}`}
                         >
                           <ExternalLink className="w-3 h-3" />
                         </a>
-                        {isNewLead(lead) && (
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs">
-                            <Sparkles className="w-3 h-3 text-emerald-600" />
-                            <span>NEW</span>
-                          </span>
-                        )}
                       </div>
                       <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-0.5">
                         <span className="truncate max-w-[180px]">{lead.industry}</span>
