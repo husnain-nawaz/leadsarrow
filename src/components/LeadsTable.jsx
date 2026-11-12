@@ -145,7 +145,7 @@ export default function LeadsTable() {
     return `${str.slice(0, 6)} •••-••${str.slice(-2)}`;
   };
 
-  const isFirstLoad = loading && items.length === 0;
+  const showSkeleton = loading;
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-white overflow-hidden relative">
@@ -156,17 +156,9 @@ export default function LeadsTable() {
         </div>
       )}
 
-      {/* Floating live retrieval badge */}
-      {loading && items.length > 0 && (
-        <div className="absolute top-3 right-6 z-20 pointer-events-none flex items-center gap-2 bg-slate-900/90 text-white text-[11px] font-medium px-3 py-1.5 rounded-full shadow-lg backdrop-blur-xs animate-in fade-in duration-200">
-          <Loader2 className="w-3.5 h-3.5 text-orange-400 animate-spin" />
-          <span>Updating leads...</span>
-        </div>
-      )}
-
       {/* High-Density Enterprise Data Grid */}
       <div className="overflow-auto flex-1 min-h-0">
-        <table className={`w-full text-left border-collapse transition-opacity duration-200 ${loading && items.length > 0 ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
+        <table className="w-full text-left border-collapse">
           <thead className="sticky top-0 z-10 bg-slate-50 shadow-xs">
             <tr className="border-b border-slate-200 text-[11px] font-semibold text-slate-600 bg-slate-50">
               <th className="py-2.5 pl-6 pr-3 w-10 bg-slate-50">
@@ -224,8 +216,8 @@ export default function LeadsTable() {
           </thead>
 
           <tbody className="divide-y divide-slate-200 text-xs">
-            {isFirstLoad ? (
-              Array.from({ length: 12 }).map((_, idx) => (
+            {showSkeleton ? (
+              Array.from({ length: filters.pageSize || 25 }).map((_, idx) => (
                 <tr key={idx} className="h-11 animate-pulse">
                   <td className="pl-6 pr-3">
                     <div className="w-3.5 h-3.5 bg-slate-200 rounded" />
