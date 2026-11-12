@@ -79,17 +79,6 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
           >
             Custom Leads
           </button>
-          <button
-            type="button"
-            onClick={() => handleNavClick('schema')}
-            className={`transition-colors whitespace-nowrap shrink-0 cursor-pointer pb-0.5 ${
-              activeView === 'schema'
-                ? 'text-slate-900 border-b-2 border-orange-600 font-semibold'
-                : 'hover:text-slate-900'
-            }`}
-          >
-            SQL Schema
-          </button>
           {isSuperAdmin && (
             <button
               type="button"

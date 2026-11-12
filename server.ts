@@ -616,12 +616,12 @@ async function startServer() {
     }
   });
 
-  // --- SAVED LEAD LISTS API ---
+  // --- SAVED LEAD LISTS API (Routed to Database 3 with Full Read/Write Privileges) ---
   app.get('/api/lists', async (req: any, res) => {
     try {
-      const ds = await (await import('./server/dataSource.ts')).getDataSource();
+      const ds = (await (await import('./server/dataSource.ts')).getTertiaryDataSource()) || (await (await import('./server/dataSource.ts')).getDataSource());
       const listRepo = ds.getRepository((await import('./server/entities/SavedList.ts')).SavedList);
-      const userId = req.user?.id ? String(req.user.id) : null;
+      const userId = req.user?.id || req.user?.email ? String(req.user.id || req.user.email) : null;
       
       let lists = [];
       if (userId) {
@@ -642,7 +642,7 @@ async function startServer() {
           id: l.id,
           name: l.name,
           description: l.description,
-          leadIds: Array.isArray(l.leadIds) ? l.leadIds : [],
+          leadIds: Array.isArray(l.leadIds) ? l.leadIds : (typeof l.leadIds === 'string' ? JSON.parse(l.leadIds || '[]') : []),
           filterSummary: l.filterSummary,
           leadCount: l.leadCount,
           createdAt: l.createdAt,
@@ -663,14 +663,14 @@ async function startServer() {
         return res.status(400).json({ error: 'List name is required' });
       }
 
-      const ds = await (await import('./server/dataSource.ts')).getDataSource();
+      const ds = (await (await import('./server/dataSource.ts')).getTertiaryDataSource()) || (await (await import('./server/dataSource.ts')).getDataSource());
       const listRepo = ds.getRepository((await import('./server/entities/SavedList.ts')).SavedList);
       
       const leadIds = Array.isArray(body.leadIds) ? body.leadIds : [];
       const listId = body.id && /^[a-zA-Z0-9_\-]+$/.test(body.id)
         ? body.id
         : `list_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-      const userId = req.user?.id ? String(req.user.id) : null;
+      const userId = req.user?.id || req.user?.email ? String(req.user.id || req.user.email) : null;
 
       const newList = listRepo.create({
         id: listId,
@@ -704,7 +704,7 @@ async function startServer() {
 
   app.delete('/api/lists/:id', async (req: any, res) => {
     try {
-      const ds = await (await import('./server/dataSource.ts')).getDataSource();
+      const ds = (await (await import('./server/dataSource.ts')).getTertiaryDataSource()) || (await (await import('./server/dataSource.ts')).getDataSource());
       const listRepo = ds.getRepository((await import('./server/entities/SavedList.ts')).SavedList);
       await listRepo.delete(req.params.id);
       res.json({ success: true, deleted: true, id: req.params.id });

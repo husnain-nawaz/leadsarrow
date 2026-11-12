@@ -430,6 +430,11 @@ export default function LandingPage() {
                 </div>
 
                 <div className="mt-8 pt-4">
+                  {plan.id === 'free' && (
+                    <div className="text-[11px] text-center text-slate-400 mb-2 font-medium">
+                      No credit card required
+                    </div>
+                  )}
                   <button
                     type="button"
                     onClick={() => handleOpenAuth(plan.id)}
@@ -444,11 +449,6 @@ export default function LandingPage() {
                     <span>{plan.ctaText}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
-                  {plan.id === 'free' && (
-                    <div className="text-[11px] text-center text-slate-400 mt-2 font-medium">
-                      No credit card required
-                    </div>
-                  )}
                 </div>
               </div>
             ))}

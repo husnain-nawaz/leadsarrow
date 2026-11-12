@@ -104,7 +104,7 @@ export async function getSecondaryDataSource(): Promise<DataSource | null> {
   return SecondaryDataSource;
 }
 
-// Tertiary Sharded Database (Hostinger Database 3)
+// Tertiary Sharded Database (Hostinger Database 3 - Holds Saved Lists & Leads Node)
 export const TertiaryDataSource = new DataSource({
   type: 'mysql',
   host: process.env.MYSQL_HOST_DB3 || process.env.MYSQL_HOST || '193.203.184.241',
@@ -114,7 +114,7 @@ export const TertiaryDataSource = new DataSource({
   database: process.env.MYSQL_DATABASE_DB3 || 'u340392193_leadsarrow3',
   synchronize: false,
   logging: false,
-  entities: [Lead],
+  entities: [Lead, SavedList],
   extra: {
     connectionLimit: 10,
     waitForConnections: true,
