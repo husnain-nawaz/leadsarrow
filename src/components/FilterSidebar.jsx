@@ -335,37 +335,31 @@ export default function FilterSidebar() {
                   <div className="max-h-48 overflow-y-auto space-y-1 pr-1">
                     {visibleOptions.map((option) => {
                       const isChecked = selectedValues.includes(option);
-                      const count = sectionFacets[option] || 0;
 
                       return (
                         <label
                           key={option}
-                          className="flex items-center justify-between gap-2 py-1 text-xs text-slate-700 hover:text-slate-950 cursor-pointer"
+                          className="flex items-center gap-2 py-1 text-xs text-slate-700 hover:text-slate-950 cursor-pointer"
                         >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={() =>
-                                dispatch(
-                                  toggleArrayFilter({
-                                    category: section.id,
-                                    value: option
-                                  })
-                                )
-                              }
-                              className="w-3.5 h-3.5 rounded border-slate-300 text-orange-600 focus:ring-orange-500 shrink-0"
-                            />
-                            <span
-                              className={`truncate ${
-                                isChecked ? 'font-semibold text-slate-900' : ''
-                              }`}
-                            >
-                              {option}
-                            </span>
-                          </div>
-                          <span className="text-[11px] font-mono tabular-nums text-slate-400 shrink-0">
-                            {count > 0 ? count.toLocaleString() : (loading ? '...' : '0')}
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() =>
+                              dispatch(
+                                toggleArrayFilter({
+                                  category: section.id,
+                                  value: option
+                                })
+                              )
+                            }
+                            className="w-3.5 h-3.5 rounded border-slate-300 text-orange-600 focus:ring-orange-500 shrink-0"
+                          />
+                          <span
+                            className={`truncate ${
+                              isChecked ? 'font-semibold text-slate-900' : ''
+                            }`}
+                          >
+                            {option}
                           </span>
                         </label>
                       );
