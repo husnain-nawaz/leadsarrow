@@ -501,7 +501,7 @@ var init_dataSource = __esm({
       database: process.env.MYSQL_DATABASE_DB3 || "u340392193_leadsarrow3",
       synchronize: false,
       logging: false,
-      entities: [Lead],
+      entities: [Lead, SavedList],
       extra: {
         connectionLimit: 10,
         waitForConnections: true,
@@ -1585,14 +1585,46 @@ async function getAdminStats() {
   const userRepo = ds.getRepository(User);
   const leadRepo = ds.getRepository(Lead);
   const userStats = await userRepo.createQueryBuilder("user").select("COUNT(*)", "totalUsers").addSelect("SUM(CASE WHEN user.payment_status = 'paid' THEN 1 ELSE 0 END)", "paidUsers").addSelect("SUM(CASE WHEN user.payment_status != 'paid' THEN 1 ELSE 0 END)", "freeUsers").addSelect("SUM(user.amount_paid)", "totalRevenue").addSelect("SUM(user.credits_used_today)", "totalCreditsUsedToday").getRawOne();
-  let totalLeads = 1035682;
+  let totalLeads = 10363428;
   try {
-    const rows = await ds.query(
+    const ds1 = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getPrimaryDataSource();
+    const ds3 = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getTertiaryDataSource();
+    let sum = 0;
+    const rowsMain = await ds.query(
       "SELECT TABLE_ROWS FROM information_schema.tables WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'leads'"
     );
-    if (rows && rows.length > 0 && rows[0].TABLE_ROWS) {
-      totalLeads = Number(rows[0].TABLE_ROWS);
+    if (rowsMain && rowsMain[0]?.TABLE_ROWS) {
+      sum += Number(rowsMain[0].TABLE_ROWS);
+    } else {
+      sum += 4365787;
     }
+    if (ds1) {
+      try {
+        const rows1 = await ds1.query(
+          "SELECT TABLE_ROWS FROM information_schema.tables WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'leads'"
+        );
+        if (rows1 && rows1[0]?.TABLE_ROWS) sum += Number(rows1[0].TABLE_ROWS);
+        else sum += 1843e3;
+      } catch {
+        sum += 1843e3;
+      }
+    } else {
+      sum += 1843e3;
+    }
+    if (ds3) {
+      try {
+        const rows3 = await ds3.query(
+          "SELECT TABLE_ROWS FROM information_schema.tables WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'leads'"
+        );
+        if (rows3 && rows3[0]?.TABLE_ROWS) sum += Number(rows3[0].TABLE_ROWS);
+        else sum += 4154641;
+      } catch {
+        sum += 4154641;
+      }
+    } else {
+      sum += 4154641;
+    }
+    if (sum > 0) totalLeads = sum;
   } catch {
   }
   const customLeads = await leadRepo.count({ where: { isCustom: 1 } });
@@ -2194,9 +2226,9 @@ async function startServer() {
   });
   app.get("/api/lists", async (req, res) => {
     try {
-      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
+      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getTertiaryDataSource() || await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
       const listRepo = ds.getRepository((await Promise.resolve().then(() => (init_SavedList(), SavedList_exports))).SavedList);
-      const userId = req.user?.id ? String(req.user.id) : null;
+      const userId = req.user?.id || req.user?.email ? String(req.user.id || req.user.email) : null;
       let lists = [];
       if (userId) {
         lists = await listRepo.createQueryBuilder("list").where("list.userId = :userId OR list.userId IS NULL", { userId }).orderBy("list.createdAt", "DESC").getMany();
@@ -2211,7 +2243,7 @@ async function startServer() {
           id: l.id,
           name: l.name,
           description: l.description,
-          leadIds: Array.isArray(l.leadIds) ? l.leadIds : [],
+          leadIds: Array.isArray(l.leadIds) ? l.leadIds : typeof l.leadIds === "string" ? JSON.parse(l.leadIds || "[]") : [],
           filterSummary: l.filterSummary,
           leadCount: l.leadCount,
           createdAt: l.createdAt,
@@ -2230,11 +2262,11 @@ async function startServer() {
       if (!name) {
         return res.status(400).json({ error: "List name is required" });
       }
-      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
+      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getTertiaryDataSource() || await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
       const listRepo = ds.getRepository((await Promise.resolve().then(() => (init_SavedList(), SavedList_exports))).SavedList);
       const leadIds = Array.isArray(body.leadIds) ? body.leadIds : [];
       const listId = body.id && /^[a-zA-Z0-9_\-]+$/.test(body.id) ? body.id : `list_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-      const userId = req.user?.id ? String(req.user.id) : null;
+      const userId = req.user?.id || req.user?.email ? String(req.user.id || req.user.email) : null;
       const newList = listRepo.create({
         id: listId,
         userId,
@@ -2265,7 +2297,7 @@ async function startServer() {
   });
   app.delete("/api/lists/:id", async (req, res) => {
     try {
-      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
+      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getTertiaryDataSource() || await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
       const listRepo = ds.getRepository((await Promise.resolve().then(() => (init_SavedList(), SavedList_exports))).SavedList);
       await listRepo.delete(req.params.id);
       res.json({ success: true, deleted: true, id: req.params.id });

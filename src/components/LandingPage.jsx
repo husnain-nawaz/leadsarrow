@@ -163,7 +163,7 @@ export default function LandingPage() {
               href="#pricing"
               className="w-full sm:w-auto px-6 py-3.5 text-sm font-semibold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl transition-colors text-center"
             >
-              View Pricing ($10 / $39 / $79)
+              View Pricing
             </a>
           </div>
 

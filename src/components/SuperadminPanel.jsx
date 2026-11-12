@@ -104,7 +104,7 @@ export default function SuperadminPanel({ onBack }) {
   const [activeJobId, setActiveJobId] = useState(null);
   const [jobProgress, setJobProgress] = useState(null); // { percent, processedRows, totalRows, insertedCount, status, error, fileName }
 
-  // Load Admin Data on mount
+  // Load Admin Data on mount and setup real-time polling
   const loadAdminData = async () => {
     setLoadingUsers(true);
     try {
@@ -123,6 +123,26 @@ export default function SuperadminPanel({ onBack }) {
 
   useEffect(() => {
     loadAdminData();
+
+    // Real-time synchronization: poll users and admin stats every 5 seconds
+    const pollInterval = setInterval(async () => {
+      try {
+        const [usersRes, statsRes] = await Promise.all([
+          fetchAdminUsersApi().catch(() => null),
+          fetchAdminStatsApi().catch(() => null)
+        ]);
+        if (usersRes && Array.isArray(usersRes.users)) {
+          setUsersList(usersRes.users);
+        }
+        if (statsRes) {
+          setStats(statsRes);
+        }
+      } catch (e) {
+        // quiet poll fail
+      }
+    }, 5000);
+
+    return () => clearInterval(pollInterval);
   }, []);
 
   // Poll active background ingestion job every 1.5 seconds
@@ -741,7 +761,7 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
               {stats?.totalUsers ?? usersList.length}
             </div>
             <div className="text-[11px] text-slate-400 mt-0.5">
-              {stats?.paidUsers ?? 3} Paid · {stats?.freeUsers ?? 2} Free
+              {stats?.paidUsers ?? 0} Paid · {stats?.freeUsers ?? 0} Free
             </div>
           </div>
 
@@ -751,7 +771,7 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
               <CreditCard className="w-4 h-4 text-emerald-400" />
             </div>
             <div className="text-2xl font-bold text-emerald-400 mt-1 font-display">
-              {stats?.paidUsers ?? 3} Accounts
+              {stats?.paidUsers ?? 0} Accounts
             </div>
             <div className="text-[11px] text-slate-400 mt-0.5">
               Starter ($10), Pro ($39), Unlimited ($79)
@@ -764,7 +784,7 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
               <DollarSign className="w-4 h-4 text-orange-400" />
             </div>
             <div className="text-2xl font-bold text-orange-400 mt-1 font-display">
-              ${stats?.totalRevenue ?? 128} / mo
+              ${stats?.totalRevenue ?? 0} / mo
             </div>
             <div className="text-[11px] text-slate-400 mt-0.5">
               Active recurring revenue
@@ -777,7 +797,7 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
               <Zap className="w-4 h-4 text-amber-400" />
             </div>
             <div className="text-2xl font-bold text-amber-400 mt-1 font-display">
-              {(stats?.totalCreditsUsedToday ?? 2623).toLocaleString()}
+              {(stats?.totalCreditsUsedToday ?? 0).toLocaleString()}
             </div>
             <div className="text-[11px] text-slate-400 mt-0.5">
               Across all user sessions

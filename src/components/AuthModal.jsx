@@ -52,20 +52,6 @@ export default function AuthModal() {
     dispatch(loginWithGooglePopup({ rememberMe }));
   };
 
-  const fillDemoCredentials = () => {
-    setEmail('alex@leadsarrow.io');
-    setPassword('LeadsArrow2026!');
-    setRememberMe(true);
-    dispatch(clearAuthError());
-  };
-
-  const fillFreeUserCredentials = () => {
-    setEmail('elena@rossiconsulting.eu');
-    setPassword('Password123!');
-    setRememberMe(true);
-    dispatch(clearAuthError());
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
@@ -81,7 +67,7 @@ export default function AuthModal() {
               {mode === 'login' ? 'Sign In to LeadsArrow' : 'Create Enterprise Account'}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              JWT session security & one-click Google authentication
+              Secure session authentication & one-click Google access
             </p>
           </div>
           <button
@@ -125,7 +111,7 @@ export default function AuthModal() {
           <div className="relative flex items-center justify-center">
             <div className="border-t border-slate-200 w-full" />
             <span className="bg-white px-3 text-[11px] text-slate-400 whitespace-nowrap">
-              or sign in with JWT credentials
+              or sign in with email credentials
             </span>
             <div className="border-t border-slate-200 w-full" />
           </div>
@@ -144,7 +130,7 @@ export default function AuthModal() {
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Sign In (JWT)
+              Sign In
             </button>
             <button
               type="button"
@@ -216,25 +202,6 @@ export default function AuthModal() {
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs font-medium text-slate-700">Work Email</label>
-                {mode === 'login' && (
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={fillDemoCredentials}
-                      className="text-[11px] text-orange-600 hover:underline cursor-pointer font-medium"
-                    >
-                      Fill Superadmin
-                    </button>
-                    <span className="text-slate-300">·</span>
-                    <button
-                      type="button"
-                      onClick={fillFreeUserCredentials}
-                      className="text-[11px] text-slate-500 hover:text-slate-800 hover:underline cursor-pointer"
-                    >
-                      Fill Free User
-                    </button>
-                  </div>
-                )}
               </div>
               <div className="relative">
                 <Mail className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -275,7 +242,7 @@ export default function AuthModal() {
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="w-3.5 h-3.5 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
                 />
-                <span>Remember login credentials (30-day JWT)</span>
+                <span>Remember login session (30 days)</span>
               </div>
             </label>
 
@@ -287,8 +254,8 @@ export default function AuthModal() {
               {loading
                 ? 'Authenticating...'
                 : mode === 'login'
-                ? 'Sign In with JWT'
-                : 'Create Account & Issue JWT'}
+                ? 'Sign In'
+                : 'Create Account'}
             </button>
           </form>
         </div>
