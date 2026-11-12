@@ -1,4 +1,4 @@
-import { getDataSource, getSecondaryDataSource } from './dataSource.ts';
+import { getDataSource, getSecondaryDataSource, getTertiaryDataSource } from './dataSource.ts';
 import { Lead } from './entities/Lead.ts';
 
 export const FILTER_TAXONOMY = {
@@ -144,6 +144,15 @@ async function getGlobalMetricsAndFacets(ds: any) {
       if (ds2) {
         const rawCount2 = await ds2.query("SELECT COUNT(*) as cnt FROM leads;");
         totalDatabaseRecords += Number(rawCount2[0]?.cnt) || 0;
+      }
+    } catch (_) {}
+
+    // Add count from tertiary database (DB3) if available
+    try {
+      const ds3 = await getTertiaryDataSource();
+      if (ds3) {
+        const rawCount3 = await ds3.query("SELECT COUNT(*) as cnt FROM leads;");
+        totalDatabaseRecords += Number(rawCount3[0]?.cnt) || 0;
       }
     } catch (_) {}
 

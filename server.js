@@ -345,8 +345,10 @@ var dataSource_exports = {};
 __export(dataSource_exports, {
   AppDataSource: () => AppDataSource,
   SecondaryDataSource: () => SecondaryDataSource,
+  TertiaryDataSource: () => TertiaryDataSource,
   getDataSource: () => getDataSource,
   getSecondaryDataSource: () => getSecondaryDataSource,
+  getTertiaryDataSource: () => getTertiaryDataSource,
   initDatabaseSchema: () => initDatabaseSchema
 });
 import "reflect-metadata";
@@ -367,6 +369,24 @@ async function getSecondaryDataSource() {
       isDb2Initialized = true;
     }
     return SecondaryDataSource;
+  }
+  return null;
+}
+async function getTertiaryDataSource() {
+  if (process.env.MYSQL_DATABASE_DB3 || process.env.NODE_ENV === "production" || process.env.MYSQL_HOST?.includes("hstgr") || process.env.MYSQL_HOST === "193.203.184.241") {
+    if (!isDb3Initialized) {
+      if (!TertiaryDataSource.isInitialized) {
+        try {
+          await TertiaryDataSource.initialize();
+          console.log("Connected to Sharded Tertiary Database: u340392193_leadsarrow3");
+        } catch (e) {
+          console.warn("Tertiary DataSource not available:", e.message);
+          return null;
+        }
+      }
+      isDb3Initialized = true;
+    }
+    return TertiaryDataSource;
   }
   return null;
 }
@@ -394,7 +414,7 @@ async function initDatabaseSchema() {
   console.log("TypeORM initialized schema connection.");
   return ds;
 }
-var AppDataSource, isInitialized, SecondaryDataSource, isDb2Initialized;
+var AppDataSource, isInitialized, SecondaryDataSource, isDb2Initialized, TertiaryDataSource, isDb3Initialized;
 var init_dataSource = __esm({
   "server/dataSource.ts"() {
     init_Lead();
@@ -438,6 +458,23 @@ var init_dataSource = __esm({
       }
     });
     isDb2Initialized = false;
+    TertiaryDataSource = new DataSource({
+      type: "mysql",
+      host: process.env.MYSQL_HOST_DB3 || process.env.MYSQL_HOST || "193.203.184.241",
+      port: Number(process.env.MYSQL_PORT_DB3 || process.env.MYSQL_PORT || 3306),
+      username: process.env.MYSQL_USER_DB3 || "u340392193_leadsarrow3",
+      password: process.env.MYSQL_PASSWORD_DB3 || "Player74773/",
+      database: process.env.MYSQL_DATABASE_DB3 || "u340392193_leadsarrow3",
+      synchronize: false,
+      logging: false,
+      entities: [Lead],
+      extra: {
+        connectionLimit: 10,
+        waitForConnections: true,
+        queueLimit: 0
+      }
+    });
+    isDb3Initialized = false;
   }
 });
 
@@ -581,6 +618,14 @@ async function getGlobalMetricsAndFacets(ds) {
       if (ds2) {
         const rawCount2 = await ds2.query("SELECT COUNT(*) as cnt FROM leads;");
         totalDatabaseRecords += Number(rawCount2[0]?.cnt) || 0;
+      }
+    } catch (_) {
+    }
+    try {
+      const ds3 = await getTertiaryDataSource();
+      if (ds3) {
+        const rawCount3 = await ds3.query("SELECT COUNT(*) as cnt FROM leads;");
+        totalDatabaseRecords += Number(rawCount3[0]?.cnt) || 0;
       }
     } catch (_) {
     }
