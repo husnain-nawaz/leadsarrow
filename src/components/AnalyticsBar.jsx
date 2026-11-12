@@ -59,9 +59,11 @@ export default function AnalyticsBar() {
           <div>
             <div className="text-xs text-slate-500">Matched B2B Leads</div>
             <div className="text-xl font-bold text-slate-900 font-mono tabular-nums">
-              {loading && pagination.totalDatabaseRecords === 0
-                ? 'Loading...'
-                : (pagination.estimatedGlobalMatches || 0).toLocaleString()}
+              {loading && pagination.totalDatabaseRecords === 0 ? (
+                <div className="h-6 w-24 bg-slate-200/80 rounded animate-pulse mt-0.5" />
+              ) : (
+                (pagination.estimatedGlobalMatches || 0).toLocaleString()
+              )}
             </div>
           </div>
 
@@ -70,9 +72,11 @@ export default function AnalyticsBar() {
           <div>
             <div className="text-xs text-slate-500">Total Indexed Businesses</div>
             <div className="text-sm font-semibold text-slate-800 font-mono tabular-nums mt-0.5">
-              {loading && pagination.totalDatabaseRecords === 0
-                ? 'Loading...'
-                : (pagination.totalDatabaseRecords || 0).toLocaleString()}
+              {loading && pagination.totalDatabaseRecords === 0 ? (
+                <div className="h-4 w-20 bg-slate-200/80 rounded animate-pulse mt-1" />
+              ) : (
+                (pagination.totalDatabaseRecords || 0).toLocaleString()
+              )}
             </div>
           </div>
 
@@ -81,7 +85,13 @@ export default function AnalyticsBar() {
           <div className="hidden md:block">
             <div className="text-xs text-slate-500">Verified Deliverability</div>
             <div className="text-sm font-semibold text-emerald-700 font-mono tabular-nums mt-0.5">
-              {pagination.totalDatabaseRecords > 0 ? `${metrics.verifiedRatio}% Verified` : '—'}
+              {loading && pagination.totalDatabaseRecords === 0 ? (
+                <div className="h-4 w-24 bg-slate-200/80 rounded animate-pulse mt-1" />
+              ) : pagination.totalDatabaseRecords > 0 ? (
+                `${metrics.verifiedRatio}% Verified`
+              ) : (
+                '—'
+              )}
             </div>
           </div>
 
@@ -90,7 +100,13 @@ export default function AnalyticsBar() {
           <div className="hidden xl:block">
             <div className="text-xs text-slate-500">Avg. Buying Intent</div>
             <div className="text-sm font-semibold text-slate-800 font-mono tabular-nums mt-0.5">
-              {pagination.totalDatabaseRecords > 0 ? `${metrics.avgIntentScore} / 100` : '—'}
+              {loading && pagination.totalDatabaseRecords === 0 ? (
+                <div className="h-4 w-16 bg-slate-200/80 rounded animate-pulse mt-1" />
+              ) : pagination.totalDatabaseRecords > 0 ? (
+                `${metrics.avgIntentScore} / 100`
+              ) : (
+                '—'
+              )}
             </div>
           </div>
 
