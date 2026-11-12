@@ -509,11 +509,15 @@ export default function LeadsTable() {
             <strong className="font-mono tabular-nums text-slate-900">
               {pagination.page}
             </strong>{' '}
-            of{' '}
-            <strong className="font-mono tabular-nums text-slate-900">
-              {pagination.totalPages}
-            </strong>{' '}
-            ({(pagination.estimatedGlobalMatches || 0).toLocaleString()} total matches)
+            {user?.role === 'superadmin' ? (
+              <>
+                of{' '}
+                <strong className="font-mono tabular-nums text-slate-900">
+                  {pagination.totalPages}
+                </strong>{' '}
+                ({(pagination.estimatedGlobalMatches || 0).toLocaleString()} total matches)
+              </>
+            ) : null}
           </span>
           <span>·</span>
           <label className="inline-flex items-center gap-1.5">
@@ -545,32 +549,29 @@ export default function LeadsTable() {
           {(() => {
             const current = pagination.page;
             const total = pagination.totalPages;
+            const isSuperAdmin = user?.role === 'superadmin';
             const pages = [];
 
-            if (total <= 7) {
-              for (let i = 1; i <= total; i++) pages.push(i);
-            } else {
-              // Always show first page
-              pages.push(1);
-
-              if (current > 3) {
-                pages.push('...');
+            if (isSuperAdmin) {
+              // Superadmin sees full pagination with last page jumps
+              if (total <= 7) {
+                for (let i = 1; i <= total; i++) pages.push(i);
+              } else {
+                pages.push(1);
+                if (current > 3) pages.push('...');
+                const start = Math.max(2, current - 1);
+                const end = Math.min(total - 1, current + 1);
+                for (let i = start; i <= end; i++) pages.push(i);
+                if (current < total - 2) pages.push('....');
+                pages.push(total);
               }
-
-              // Range around current page
-              const start = Math.max(2, current - 1);
-              const end = Math.min(total - 1, current + 1);
-
+            } else {
+              // Standard client users & customers: progressive window without jumping to the end
+              const start = Math.max(1, current - 2);
+              const end = Math.min(total, current + 2);
               for (let i = start; i <= end; i++) {
                 pages.push(i);
               }
-
-              if (current < total - 2) {
-                pages.push('....');
-              }
-
-              // Always show last page
-              pages.push(total);
             }
 
             return pages.map((p, idx) => {
