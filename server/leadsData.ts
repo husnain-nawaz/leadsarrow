@@ -454,22 +454,30 @@ export async function queryLeadsDatabase(params: any = {}) {
         }
       }
 
-      const idRows = await idQb
-        .orderBy(sortCol, sortDirection)
-        .addOrderBy('lead.id', 'ASC')
-        .skip(offset)
-        .take(safePageSize)
-        .getRawMany();
+      // ULTRA FAST FIRST-PAGES OPTIMIZATION (Page 1-5):
+      // For the first 5 pages, query entities directly without unindexed sub-sorts to return in <200ms
+      if (safePage <= 5 && sortBy === 'buying_intent_score') {
+        qb.skip(offset).take(safePageSize);
+        const entities = await qb.getMany();
+        leads = entities.map(mapEntityToLead);
+      } else {
+        const idRows = await idQb
+          .orderBy(sortCol, sortDirection)
+          .addOrderBy('lead.id', 'ASC')
+          .skip(offset)
+          .take(safePageSize)
+          .getRawMany();
 
-      if (idRows.length > 0) {
-        const idList = idRows.map(r => r.id);
-        const fullEntities = await leadRepo.createQueryBuilder('lead')
-          .where('lead.id IN (:...idList)', { idList })
-          .getMany();
+        if (idRows.length > 0) {
+          const idList = idRows.map(r => r.id);
+          const fullEntities = await leadRepo.createQueryBuilder('lead')
+            .where('lead.id IN (:...idList)', { idList })
+            .getMany();
 
-        const entityMap = new Map(fullEntities.map(e => [e.id, e]));
-        const orderedEntities = idRows.map(r => entityMap.get(r.id)).filter(Boolean) as Lead[];
-        leads = orderedEntities.map(mapEntityToLead);
+          const entityMap = new Map(fullEntities.map(e => [e.id, e]));
+          const orderedEntities = idRows.map(r => entityMap.get(r.id)).filter(Boolean) as Lead[];
+          leads = orderedEntities.map(mapEntityToLead);
+        }
       }
     }
   } catch (err: any) {

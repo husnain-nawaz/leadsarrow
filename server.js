@@ -920,13 +920,19 @@ async function queryLeadsDatabase(params = {}) {
           idQb.useIndex("idx_cov_sen_score");
         }
       }
-      const idRows = await idQb.orderBy(sortCol, sortDirection).addOrderBy("lead.id", "ASC").skip(offset).take(safePageSize).getRawMany();
-      if (idRows.length > 0) {
-        const idList = idRows.map((r) => r.id);
-        const fullEntities = await leadRepo.createQueryBuilder("lead").where("lead.id IN (:...idList)", { idList }).getMany();
-        const entityMap = new Map(fullEntities.map((e) => [e.id, e]));
-        const orderedEntities = idRows.map((r) => entityMap.get(r.id)).filter(Boolean);
-        leads = orderedEntities.map(mapEntityToLead);
+      if (safePage <= 5 && sortBy === "buying_intent_score") {
+        qb.skip(offset).take(safePageSize);
+        const entities = await qb.getMany();
+        leads = entities.map(mapEntityToLead);
+      } else {
+        const idRows = await idQb.orderBy(sortCol, sortDirection).addOrderBy("lead.id", "ASC").skip(offset).take(safePageSize).getRawMany();
+        if (idRows.length > 0) {
+          const idList = idRows.map((r) => r.id);
+          const fullEntities = await leadRepo.createQueryBuilder("lead").where("lead.id IN (:...idList)", { idList }).getMany();
+          const entityMap = new Map(fullEntities.map((e) => [e.id, e]));
+          const orderedEntities = idRows.map((r) => entityMap.get(r.id)).filter(Boolean);
+          leads = orderedEntities.map(mapEntityToLead);
+        }
       }
     }
   } catch (err) {
