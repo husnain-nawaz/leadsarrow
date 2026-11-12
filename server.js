@@ -344,9 +344,11 @@ var init_SavedList = __esm({
 var dataSource_exports = {};
 __export(dataSource_exports, {
   AppDataSource: () => AppDataSource,
+  PrimaryDataSource: () => PrimaryDataSource,
   SecondaryDataSource: () => SecondaryDataSource,
   TertiaryDataSource: () => TertiaryDataSource,
   getDataSource: () => getDataSource,
+  getPrimaryDataSource: () => getPrimaryDataSource,
   getSecondaryDataSource: () => getSecondaryDataSource,
   getTertiaryDataSource: () => getTertiaryDataSource,
   initDatabaseSchema: () => initDatabaseSchema
@@ -354,23 +356,38 @@ __export(dataSource_exports, {
 import "reflect-metadata";
 import { DataSource } from "typeorm";
 import dotenv from "dotenv";
-async function getSecondaryDataSource() {
-  if (process.env.MYSQL_DATABASE_DB2 || process.env.NODE_ENV === "production" || process.env.MYSQL_HOST?.includes("hstgr") || process.env.MYSQL_HOST === "193.203.184.241") {
-    if (!isDb2Initialized) {
-      if (!SecondaryDataSource.isInitialized) {
-        try {
-          await SecondaryDataSource.initialize();
-          console.log("Connected to Sharded Secondary Database: u340392193_leadsarrow2");
-        } catch (e) {
-          console.warn("Secondary DataSource not available:", e.message);
-          return null;
-        }
+async function getPrimaryDataSource() {
+  if (!isDb1Initialized) {
+    if (!PrimaryDataSource.isInitialized) {
+      try {
+        await PrimaryDataSource.initialize();
+        console.log("Connected to Cluster Node DB1: u340392193_leadsarrow");
+      } catch (e) {
+        console.warn("Primary DB1 DataSource not available:", e.message);
+        return null;
       }
-      isDb2Initialized = true;
     }
-    return SecondaryDataSource;
+    isDb1Initialized = true;
   }
-  return null;
+  return PrimaryDataSource;
+}
+async function getSecondaryDataSource() {
+  if (AppDataSource.options.database === "u340392193_leadsarrow2" && AppDataSource.isInitialized) {
+    return AppDataSource;
+  }
+  if (!isDb2Initialized) {
+    if (!SecondaryDataSource.isInitialized) {
+      try {
+        await SecondaryDataSource.initialize();
+        console.log("Connected to Sharded Secondary Database: u340392193_leadsarrow2");
+      } catch (e) {
+        console.warn("Secondary DataSource not available:", e.message);
+        return null;
+      }
+    }
+    isDb2Initialized = true;
+  }
+  return SecondaryDataSource;
 }
 async function getTertiaryDataSource() {
   if (process.env.MYSQL_DATABASE_DB3 || process.env.NODE_ENV === "production" || process.env.MYSQL_HOST?.includes("hstgr") || process.env.MYSQL_HOST === "193.203.184.241") {
@@ -414,7 +431,7 @@ async function initDatabaseSchema() {
   console.log("TypeORM initialized schema connection.");
   return ds;
 }
-var AppDataSource, isInitialized, SecondaryDataSource, isDb2Initialized, TertiaryDataSource, isDb3Initialized;
+var AppDataSource, isInitialized, PrimaryDataSource, isDb1Initialized, SecondaryDataSource, isDb2Initialized, TertiaryDataSource, isDb3Initialized;
 var init_dataSource = __esm({
   "server/dataSource.ts"() {
     init_Lead();
@@ -425,11 +442,11 @@ var init_dataSource = __esm({
     dotenv.config();
     AppDataSource = new DataSource({
       type: "mysql",
-      host: process.env.MYSQL_HOST || "127.0.0.1",
+      host: process.env.MYSQL_HOST || "193.203.184.241",
       port: Number(process.env.MYSQL_PORT) || 3306,
-      username: process.env.MYSQL_USER || "root",
-      password: process.env.MYSQL_PASSWORD || "",
-      database: process.env.MYSQL_DATABASE || "B2B_database",
+      username: process.env.MYSQL_USER_MAIN || "u340392193_leadsarrow2",
+      password: process.env.MYSQL_PASSWORD_MAIN || "Player74773/",
+      database: process.env.MYSQL_DATABASE_MAIN || "u340392193_leadsarrow2",
       synchronize: false,
       // Schema already exists and indexed
       logging: false,
@@ -441,6 +458,23 @@ var init_dataSource = __esm({
       }
     });
     isInitialized = false;
+    PrimaryDataSource = new DataSource({
+      type: "mysql",
+      host: process.env.MYSQL_HOST_DB1 || process.env.MYSQL_HOST || "193.203.184.241",
+      port: Number(process.env.MYSQL_PORT_DB1 || process.env.MYSQL_PORT || 3306),
+      username: process.env.MYSQL_USER_DB1 || "u340392193_leadsarrow",
+      password: process.env.MYSQL_PASSWORD_DB1 || "Player74773/",
+      database: process.env.MYSQL_DATABASE_DB1 || "u340392193_leadsarrow",
+      synchronize: false,
+      logging: false,
+      entities: [Lead],
+      extra: {
+        connectionLimit: 10,
+        waitForConnections: true,
+        queueLimit: 0
+      }
+    });
+    isDb1Initialized = false;
     SecondaryDataSource = new DataSource({
       type: "mysql",
       host: process.env.MYSQL_HOST_DB2 || process.env.MYSQL_HOST || "193.203.184.241",
@@ -611,19 +645,19 @@ async function getGlobalMetricsAndFacets(ds) {
     return cachedGlobals;
   }
   try {
-    const rawCount1 = await ds.query("SELECT COUNT(*) as cnt FROM leads;");
-    let totalDatabaseRecords = Number(rawCount1[0]?.cnt) || 0;
+    const rawCountApp = await ds.query("SELECT COUNT(*) as cnt FROM leads;");
+    let totalDatabaseRecords = Number(rawCountApp[0]?.cnt) || 0;
     try {
-      const ds2 = await getSecondaryDataSource();
-      if (ds2) {
-        const rawCount2 = await ds2.query("SELECT COUNT(*) as cnt FROM leads;");
-        totalDatabaseRecords += Number(rawCount2[0]?.cnt) || 0;
+      const ds1 = await getPrimaryDataSource();
+      if (ds1 && ds1 !== ds) {
+        const rawCount1 = await ds1.query("SELECT COUNT(*) as cnt FROM leads;");
+        totalDatabaseRecords += Number(rawCount1[0]?.cnt) || 0;
       }
     } catch (_) {
     }
     try {
       const ds3 = await getTertiaryDataSource();
-      if (ds3) {
+      if (ds3 && ds3 !== ds) {
         const rawCount3 = await ds3.query("SELECT COUNT(*) as cnt FROM leads;");
         totalDatabaseRecords += Number(rawCount3[0]?.cnt) || 0;
       }

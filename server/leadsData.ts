@@ -1,4 +1,4 @@
-import { getDataSource, getSecondaryDataSource, getTertiaryDataSource } from './dataSource.ts';
+import { getDataSource, getPrimaryDataSource, getSecondaryDataSource, getTertiaryDataSource } from './dataSource.ts';
 import { Lead } from './entities/Lead.ts';
 
 export const FILTER_TAXONOMY = {
@@ -135,22 +135,22 @@ async function getGlobalMetricsAndFacets(ds: any) {
   }
 
   try {
-    const rawCount1 = await ds.query("SELECT COUNT(*) as cnt FROM leads;");
-    let totalDatabaseRecords = Number(rawCount1[0]?.cnt) || 0;
+    const rawCountApp = await ds.query("SELECT COUNT(*) as cnt FROM leads;");
+    let totalDatabaseRecords = Number(rawCountApp[0]?.cnt) || 0;
 
-    // Add count from secondary database if available
+    // Add count from DB1 (u340392193_leadsarrow)
     try {
-      const ds2 = await getSecondaryDataSource();
-      if (ds2) {
-        const rawCount2 = await ds2.query("SELECT COUNT(*) as cnt FROM leads;");
-        totalDatabaseRecords += Number(rawCount2[0]?.cnt) || 0;
+      const ds1 = await getPrimaryDataSource();
+      if (ds1 && ds1 !== ds) {
+        const rawCount1 = await ds1.query("SELECT COUNT(*) as cnt FROM leads;");
+        totalDatabaseRecords += Number(rawCount1[0]?.cnt) || 0;
       }
     } catch (_) {}
 
-    // Add count from tertiary database (DB3) if available
+    // Add count from DB3 (u340392193_leadsarrow3)
     try {
       const ds3 = await getTertiaryDataSource();
-      if (ds3) {
+      if (ds3 && ds3 !== ds) {
         const rawCount3 = await ds3.query("SELECT COUNT(*) as cnt FROM leads;");
         totalDatabaseRecords += Number(rawCount3[0]?.cnt) || 0;
       }
