@@ -2012,6 +2012,68 @@ async function startServer() {
   app.get("/api/leads/taxonomy", (_req, res) => {
     res.json(FILTER_TAXONOMY);
   });
+  const landingPreviewCache = /* @__PURE__ */ new Map();
+  app.get("/api/leads/landing-preview", async (req, res) => {
+    try {
+      const clientIp = String(
+        req.headers["x-forwarded-for"] || req.headers["x-real-ip"] || req.socket.remoteAddress || "unknown"
+      ).split(",")[0].trim();
+      const now = Date.now();
+      const THIRTY_MINUTES_MS = 30 * 60 * 1e3;
+      const cached = landingPreviewCache.get(clientIp);
+      if (cached && now - cached.timestamp < THIRTY_MINUTES_MS) {
+        return res.json({
+          leads: cached.leads,
+          clientIp,
+          nextRotationInMs: THIRTY_MINUTES_MS - (now - cached.timestamp)
+        });
+      }
+      const randOffset = Math.floor(Math.random() * 3e6);
+      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getTertiaryDataSource();
+      const rawLeads = await ds.query(
+        `SELECT id, company_name, domain, industry, employee_range,
+                annual_revenue_usd, revenue_range, country, city,
+                contact_name, contact_title, contact_email, contact_phone,
+                buying_intent_score, verification_status
+         FROM leads 
+         WHERE contact_email IS NOT NULL AND company_name IS NOT NULL
+         LIMIT 20 OFFSET ?`,
+        [randOffset]
+      );
+      const formatted = (rawLeads || []).map((l) => ({
+        id: l.id,
+        companyName: l.company_name,
+        domain: l.domain,
+        industry: l.industry || "Business Services",
+        employeeRange: l.employee_range || "51-200",
+        contactName: l.contact_name || "Executive Contact",
+        contactTitle: l.contact_title || "Director of Operations",
+        contactEmail: l.contact_email,
+        contactPhone: l.contact_phone,
+        buyingIntentScore: Number(l.buying_intent_score) || 88,
+        verificationStatus: l.verification_status || "Verified"
+      }));
+      landingPreviewCache.set(clientIp, {
+        timestamp: now,
+        leads: formatted
+      });
+      if (landingPreviewCache.size > 1e4) {
+        for (const [ip, entry] of landingPreviewCache.entries()) {
+          if (now - entry.timestamp > THIRTY_MINUTES_MS) {
+            landingPreviewCache.delete(ip);
+          }
+        }
+      }
+      res.json({
+        leads: formatted,
+        clientIp,
+        nextRotationInMs: THIRTY_MINUTES_MS
+      });
+    } catch (err) {
+      console.error("Landing preview error:", err.message);
+      res.status(500).json({ error: "Failed to fetch preview leads" });
+    }
+  });
   app.get("/api/leads", async (req, res) => {
     const tStart = Date.now();
     try {
