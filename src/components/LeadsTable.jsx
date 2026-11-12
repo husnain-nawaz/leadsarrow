@@ -158,10 +158,20 @@ export default function LeadsTable() {
 
       {/* High-Density Enterprise Data Grid */}
       <div className="overflow-auto flex-1 min-h-0">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full text-left border-collapse table-fixed min-w-[1020px]">
+          <colgroup>
+            <col className="w-10" />
+            <col className="w-[200px]" />
+            <col className="w-[180px]" />
+            <col className="w-[270px]" />
+            <col className="w-[100px]" />
+            <col className="w-[110px]" />
+            <col className="w-[120px]" />
+            <col className="w-[100px]" />
+          </colgroup>
           <thead className="sticky top-0 z-10 bg-slate-50 shadow-xs">
             <tr className="border-b border-slate-200 text-[11px] font-semibold text-slate-600 bg-slate-50">
-              <th className="py-2.5 pl-6 pr-3 w-10 bg-slate-50">
+              <th className="py-2.5 pl-6 pr-3 bg-slate-50">
                 <input
                   type="checkbox"
                   checked={allCurrentSelected}
@@ -180,7 +190,7 @@ export default function LeadsTable() {
                 </button>
               </th>
               <th className="py-2.5 px-3 bg-slate-50">Decision Maker</th>
-              <th className="py-2.5 px-3 bg-slate-50 w-[270px] min-w-[270px]">Direct Contact & Verification</th>
+              <th className="py-2.5 px-3 bg-slate-50">Direct Contact & Verification</th>
               <th className="py-2.5 px-3 text-right bg-slate-50">
                 <button
                   type="button"
@@ -219,31 +229,33 @@ export default function LeadsTable() {
             {showSkeleton ? (
               Array.from({ length: filters.pageSize || 25 }).map((_, idx) => (
                 <tr key={idx} className="h-11 animate-pulse">
-                  <td className="pl-6 pr-3">
+                  <td className="pl-6 pr-3 align-middle">
                     <div className="w-3.5 h-3.5 bg-slate-200 rounded" />
                   </td>
-                  <td className="px-3">
+                  <td className="px-3 align-middle">
                     <div className="h-3.5 w-36 bg-slate-200 rounded mb-1" />
-                    <div className="h-2.5 w-48 bg-slate-100 rounded" />
+                    <div className="h-2.5 w-24 bg-slate-100 rounded" />
                   </td>
-                  <td className="px-3">
-                    <div className="h-3.5 w-32 bg-slate-200 rounded mb-1" />
-                    <div className="h-2.5 w-40 bg-slate-100 rounded" />
+                  <td className="px-3 align-middle">
+                    <div className="h-3.5 w-28 bg-slate-200 rounded mb-1" />
+                    <div className="h-2.5 w-20 bg-slate-100 rounded" />
                   </td>
-                  <td className="px-3">
+                  <td className="px-3 align-middle">
                     <div className="h-3.5 w-44 bg-slate-200 rounded mb-1" />
                     <div className="h-2.5 w-28 bg-slate-100 rounded" />
                   </td>
-                  <td className="px-3 text-right">
-                    <div className="h-3.5 w-16 bg-slate-200 rounded ml-auto" />
+                  <td className="px-3 align-middle text-right">
+                    <div className="h-3.5 w-16 bg-slate-200 rounded ml-auto mb-1" />
+                    <div className="h-2.5 w-12 bg-slate-100 rounded ml-auto" />
                   </td>
-                  <td className="px-3 text-right">
-                    <div className="h-3.5 w-20 bg-slate-200 rounded ml-auto" />
+                  <td className="px-3 align-middle text-right">
+                    <div className="h-3.5 w-16 bg-slate-200 rounded ml-auto mb-1" />
+                    <div className="h-2.5 w-14 bg-slate-100 rounded ml-auto" />
                   </td>
-                  <td className="px-3">
-                    <div className="h-3.5 w-36 bg-slate-200 rounded" />
+                  <td className="px-3 align-middle">
+                    <div className="h-3.5 w-24 bg-slate-200 rounded" />
                   </td>
-                  <td className="pl-3 pr-6 text-right">
+                  <td className="pl-3 pr-6 align-middle text-right">
                     <div className="h-3.5 w-12 bg-slate-200 rounded ml-auto" />
                   </td>
                 </tr>
