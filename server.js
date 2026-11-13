@@ -199,6 +199,15 @@ var init_User = __esm({
       Column2({ name: "photo_url", type: "text", nullable: true })
     ], User.prototype, "photoUrl", 2);
     __decorateClass([
+      Column2({ name: "photo_updated_at", type: "datetime", nullable: true })
+    ], User.prototype, "photoUpdatedAt", 2);
+    __decorateClass([
+      Column2({ name: "photo_updates_count", type: "int", default: 0 })
+    ], User.prototype, "photoUpdatesCount", 2);
+    __decorateClass([
+      Column2({ name: "photo_updates_year", type: "int", default: 0 })
+    ], User.prototype, "photoUpdatesYear", 2);
+    __decorateClass([
       Column2({ name: "last_login_at", type: "datetime", default: () => "CURRENT_TIMESTAMP" })
     ], User.prototype, "lastLoginAt", 2);
     __decorateClass([
@@ -1201,6 +1210,10 @@ function sanitizeUser(u, purchases = [], logins = []) {
     lastLoginAt: u.lastLoginAt ? new Date(u.lastLoginAt).toISOString() : (/* @__PURE__ */ new Date()).toISOString(),
     createdAt: u.createdAt ? new Date(u.createdAt).toISOString() : (/* @__PURE__ */ new Date()).toISOString(),
     photoURL: u.photo_url || u.photoUrl || null,
+    photoUrl: u.photo_url || u.photoUrl || null,
+    photoUpdatedAt: u.photo_updated_at || u.photoUpdatedAt ? new Date(u.photo_updated_at || u.photoUpdatedAt).toISOString() : null,
+    photoUpdatesCount: Number(u.photo_updates_count ?? u.photoUpdatesCount ?? 0),
+    photoUpdatesYear: Number(u.photo_updates_year ?? u.photoUpdatesYear ?? 0),
     authProvider: u.auth_provider || u.authProvider || "jwt"
   };
 }
@@ -1535,7 +1548,32 @@ async function updateSelfProfile(userId, data) {
     updates.company = data.company.trim();
   }
   if (typeof data.photoUrl === "string") {
-    updates.photoUrl = data.photoUrl;
+    const currentPhoto = user.photoUrl || "";
+    const newPhoto = data.photoUrl.trim();
+    if (newPhoto && newPhoto !== currentPhoto) {
+      const now = /* @__PURE__ */ new Date();
+      const currentYear = now.getFullYear();
+      const userYear = Number(user.photoUpdatesYear) || 0;
+      let yearlyCount = userYear === currentYear ? Number(user.photoUpdatesCount) || 0 : 0;
+      if (yearlyCount >= 2) {
+        throw new Error(`Profile picture can only be changed up to 2 times per calendar year. You have already changed it ${yearlyCount} times in ${currentYear}.`);
+      }
+      if (user.photoUpdatedAt) {
+        const lastUpdated = new Date(user.photoUpdatedAt).getTime();
+        const diffMs = now.getTime() - lastUpdated;
+        const thirtyDaysMs = 30 * 24 * 60 * 60 * 1e3;
+        if (diffMs < thirtyDaysMs) {
+          const daysLeft = Math.ceil((thirtyDaysMs - diffMs) / (24 * 60 * 60 * 1e3));
+          throw new Error(`Profile picture can only be changed once every 30 days. Please wait ${daysLeft} more day(s) before changing again.`);
+        }
+      }
+      updates.photoUrl = newPhoto;
+      updates.photoUpdatedAt = now;
+      updates.photoUpdatesCount = yearlyCount + 1;
+      updates.photoUpdatesYear = currentYear;
+    } else if (!newPhoto && currentPhoto) {
+      updates.photoUrl = null;
+    }
   }
   if (data.newPassword) {
     if (user.passwordHash && data.currentPassword) {

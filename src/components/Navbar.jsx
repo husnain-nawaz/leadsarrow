@@ -25,6 +25,8 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
       setActiveView('schema');
     } else if (viewKey === 'superadmin') {
       setActiveView('superadmin');
+    } else if (viewKey === 'profile') {
+      setActiveView('profile');
     }
   };
 

@@ -25,6 +25,7 @@ import LandingPage from './components/LandingPage.jsx';
 import PlanUpgradeModal from './components/PlanUpgradeModal.jsx';
 import SuperadminPanel from './components/SuperadminPanel.jsx';
 import ProfileModal from './components/ProfileModal.jsx';
+import ProfileSettingsPage from './components/ProfileSettingsPage.jsx';
 
 function WorkspaceContent({ onToggleLanding }) {
   const dispatch = useDispatch();
@@ -36,7 +37,7 @@ function WorkspaceContent({ onToggleLanding }) {
   const [activeView, setActiveView] = useState(() => {
     try {
       const savedView = localStorage.getItem('leadsarrow_active_nav_view');
-      if (savedView && ['finder', 'schema', 'superadmin'].includes(savedView)) {
+      if (savedView && ['finder', 'schema', 'superadmin', 'profile'].includes(savedView)) {
         return savedView;
       }
     } catch (e) {}
@@ -160,6 +161,10 @@ function WorkspaceContent({ onToggleLanding }) {
         <main className="flex-1">
           <SqlArchitectureView onBack={() => handleSetActiveView('finder')} />
         </main>
+      ) : activeView === 'profile' ? (
+        <main className="flex-1">
+          <ProfileSettingsPage onBack={() => handleSetActiveView('finder')} />
+        </main>
       ) : activeView === 'superadmin' ? (
         isSuperAdmin ? (
           <main className="flex-1">
@@ -191,7 +196,7 @@ function WorkspaceContent({ onToggleLanding }) {
       {isSuperAdmin && <AddLeadModal />}
       <ExportModal />
       <PlanUpgradeModal />
-      <ProfileModal />
+      <ProfileModal onOpenFullProfile={() => handleSetActiveView('profile')} />
     </div>
   );
 }
@@ -226,7 +231,7 @@ function MainApp() {
         <LandingPage onReturnDashboard={() => setShowLandingForLoggedIn(false)} />
         <AuthModal />
         <PlanUpgradeModal />
-        <ProfileModal />
+        <ProfileModal onOpenFullProfile={() => setShowLandingForLoggedIn(false)} />
       </div>
     );
   }

@@ -101,6 +101,10 @@ export function sanitizeUser(u: any, purchases: any[] = [], logins: any[] = []) 
     lastLoginAt: u.lastLoginAt ? new Date(u.lastLoginAt).toISOString() : new Date().toISOString(),
     createdAt: u.createdAt ? new Date(u.createdAt).toISOString() : new Date().toISOString(),
     photoURL: u.photo_url || u.photoUrl || null,
+    photoUrl: u.photo_url || u.photoUrl || null,
+    photoUpdatedAt: u.photo_updated_at || u.photoUpdatedAt ? new Date(u.photo_updated_at || u.photoUpdatedAt).toISOString() : null,
+    photoUpdatesCount: Number(u.photo_updates_count ?? u.photoUpdatesCount ?? 0),
+    photoUpdatesYear: Number(u.photo_updates_year ?? u.photoUpdatesYear ?? 0),
     authProvider: u.auth_provider || u.authProvider || 'jwt'
   };
 }
@@ -490,8 +494,45 @@ export async function updateSelfProfile(userId: string, data: { name?: string; c
     updates.company = data.company.trim();
   }
 
+  // Handle Photo Update & Enforce 30-Day and Max 2x/Year Restrictions
   if (typeof data.photoUrl === 'string') {
-    updates.photoUrl = data.photoUrl;
+    const currentPhoto = user.photoUrl || '';
+    const newPhoto = data.photoUrl.trim();
+
+    // Only enforce rules if photo is actually changing to a new photo
+    if (newPhoto && newPhoto !== currentPhoto) {
+      const now = new Date();
+      const currentYear = now.getFullYear();
+
+      // Check yearly count (reset if year rolled over)
+      const userYear = Number(user.photoUpdatesYear) || 0;
+      let yearlyCount = userYear === currentYear ? Number(user.photoUpdatesCount) || 0 : 0;
+
+      if (yearlyCount >= 2) {
+        throw new Error(`Profile picture can only be changed up to 2 times per calendar year. You have already changed it ${yearlyCount} times in ${currentYear}.`);
+      }
+
+      // Check 30-day cooldown if user has previously set a photo
+      if (user.photoUpdatedAt) {
+        const lastUpdated = new Date(user.photoUpdatedAt).getTime();
+        const diffMs = now.getTime() - lastUpdated;
+        const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+
+        if (diffMs < thirtyDaysMs) {
+          const daysLeft = Math.ceil((thirtyDaysMs - diffMs) / (24 * 60 * 60 * 1000));
+          throw new Error(`Profile picture can only be changed once every 30 days. Please wait ${daysLeft} more day(s) before changing again.`);
+        }
+      }
+
+      // Apply valid photo update
+      updates.photoUrl = newPhoto;
+      updates.photoUpdatedAt = now;
+      updates.photoUpdatesCount = yearlyCount + 1;
+      updates.photoUpdatesYear = currentYear;
+    } else if (!newPhoto && currentPhoto) {
+      // Removing photo
+      updates.photoUrl = null;
+    }
   }
 
   if (data.newPassword) {

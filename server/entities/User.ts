@@ -59,6 +59,15 @@ export class User {
   @Column({ name: 'photo_url', type: 'text', nullable: true })
   photoUrl: string | null;
 
+  @Column({ name: 'photo_updated_at', type: 'datetime', nullable: true })
+  photoUpdatedAt: Date | null;
+
+  @Column({ name: 'photo_updates_count', type: 'int', default: 0 })
+  photoUpdatesCount: number;
+
+  @Column({ name: 'photo_updates_year', type: 'int', default: 0 })
+  photoUpdatesYear: number;
+
   @Column({ name: 'last_login_at', type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   lastLoginAt: Date;
 

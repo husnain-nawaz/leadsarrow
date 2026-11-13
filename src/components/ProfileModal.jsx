@@ -12,15 +12,19 @@ import {
   Loader2,
   ShieldCheck,
   Zap,
-  KeyRound
+  KeyRound,
+  ExternalLink,
+  Clock,
+  Sparkles
 } from 'lucide-react';
 import { closeProfileModal, updateCurrentUserProfile } from '../store/authSlice.js';
 
-export default function ProfileModal() {
+export default function ProfileModal({ onOpenFullProfile }) {
   const dispatch = useDispatch();
   const { user, isProfileModalOpen, loading, error } = useSelector((state) => state.auth);
 
   const fileInputRef = useRef(null);
+  const wasOpenRef = useRef(false);
 
   const [name, setName] = useState('');
   const [company, setCompany] = useState('');
@@ -36,11 +40,13 @@ export default function ProfileModal() {
   const [formError, setFormError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Synchronize ONLY when the modal transitions from closed to open.
+  // This prevents background polling (every 5s) from wiping out chosen photos or form inputs!
   useEffect(() => {
-    if (user && isProfileModalOpen) {
+    if (isProfileModalOpen && !wasOpenRef.current && user) {
       setName(user.name || '');
       setCompany(user.company || '');
-      const existingPhoto = user.photoUrl || user.photo_url || '';
+      const existingPhoto = user.photoUrl || user.photoURL || user.photo_url || '';
       setPhotoUrl(existingPhoto);
       setPhotoPreview(existingPhoto);
       setCurrentPassword('');
@@ -49,13 +55,50 @@ export default function ProfileModal() {
       setFormSuccess('');
       setFormError('');
     }
-  }, [user, isProfileModalOpen]);
+    wasOpenRef.current = isProfileModalOpen;
+  }, [isProfileModalOpen]);
 
   if (!isProfileModalOpen || !user) return null;
+
+  // Calculate 30-Day Cooldown and Max 2x/Year Restrictions
+  const photoUpdatedAt = user.photoUpdatedAt || user.photo_updated_at;
+  const photoUpdatesCount = Number(user.photoUpdatesCount ?? user.photo_updates_count ?? 0);
+  const photoUpdatesYear = Number(user.photoUpdatesYear ?? user.photo_updates_year ?? 0);
+  const currentYear = new Date().getFullYear();
+
+  const effectiveYearlyCount = photoUpdatesYear === currentYear ? photoUpdatesCount : 0;
+  const isYearlyLimitReached = effectiveYearlyCount >= 2;
+
+  let cooldownDaysRemaining = 0;
+  let nextEligibleDate = null;
+  if (photoUpdatedAt) {
+    const lastUpdated = new Date(photoUpdatedAt).getTime();
+    const diffMs = Date.now() - lastUpdated;
+    const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+    if (diffMs < thirtyDaysMs) {
+      cooldownDaysRemaining = Math.ceil((thirtyDaysMs - diffMs) / (24 * 60 * 60 * 1000));
+      nextEligibleDate = new Date(lastUpdated + thirtyDaysMs).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    }
+  }
+
+  const isPhotoChangeBlocked = isYearlyLimitReached || cooldownDaysRemaining > 0;
 
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (isPhotoChangeBlocked) {
+      if (isYearlyLimitReached) {
+        setFormError(`Profile picture can only be changed up to 2 times per calendar year. You have already changed it 2 times in ${currentYear}.`);
+      } else {
+        setFormError(`Profile picture can only be changed once every 30 days. Next change eligible in ${cooldownDaysRemaining} day(s) (${nextEligibleDate}).`);
+      }
+      return;
+    }
 
     if (!file.type.startsWith('image/')) {
       setFormError('Please select a valid image file (JPEG, PNG, WebP).');
@@ -98,7 +141,12 @@ export default function ProfileModal() {
         })
       ).unwrap();
 
-      setFormSuccess('Profile details successfully updated and saved to Database 4.');
+      if (result?.user) {
+        const savedPhoto = result.user.photoUrl || result.user.photoURL || result.user.photo_url || '';
+        setPhotoUrl(savedPhoto);
+        setPhotoPreview(savedPhoto);
+      }
+      setFormSuccess('Profile details and photo successfully saved to Database 4.');
     } catch (err) {
       setFormError(typeof err === 'string' ? err : err?.message || 'Failed to update profile.');
     } finally {
@@ -130,7 +178,7 @@ export default function ProfileModal() {
         })
       ).unwrap();
 
-      setFormSuccess('Password successfully changed and re-encrypted.');
+      setFormSuccess('Password successfully changed and re-encrypted with bcrypt.');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
@@ -138,6 +186,13 @@ export default function ProfileModal() {
       setFormError(typeof err === 'string' ? err : err?.message || 'Failed to update password.');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleNavigateToFullPage = () => {
+    dispatch(closeProfileModal());
+    if (onOpenFullProfile) {
+      onOpenFullProfile();
     }
   };
 
@@ -155,13 +210,26 @@ export default function ProfileModal() {
               <p className="text-xs text-slate-500">Manage your profile, picture & security credentials</p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => dispatch(closeProfileModal())}
-            className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {onOpenFullProfile && (
+              <button
+                type="button"
+                onClick={handleNavigateToFullPage}
+                title="Open full profile settings page"
+                className="px-2.5 py-1 text-xs font-semibold text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+              >
+                <span>Full Page</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => dispatch(closeProfileModal())}
+              className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Tab Navigation */}
@@ -218,26 +286,38 @@ export default function ProfileModal() {
 
         {/* Tab 1: General Profile */}
         {activeTab === 'general' && (
-          <form onSubmit={handleSaveGeneral} className="p-6 pt-2 space-y-5">
+          <form onSubmit={handleSaveGeneral} className="p-6 pt-2 space-y-4">
             {/* Profile Avatar / Photo Upload */}
-            <div className="flex items-center gap-5 pb-2">
-              <div className="relative group">
+            <div className="flex items-center gap-4 pb-1">
+              <div className="relative group shrink-0">
                 {photoPreview ? (
                   <img
                     src={photoPreview}
                     alt={name || user.name}
-                    className="w-20 h-20 rounded-full object-cover border-2 border-orange-500 shadow-sm"
+                    className="w-16 h-16 rounded-full object-cover border-2 border-orange-500 shadow-sm"
                   />
                 ) : (
-                  <div className="w-20 h-20 rounded-full bg-orange-100 text-orange-700 font-bold flex items-center justify-center text-2xl border-2 border-orange-200 shadow-sm">
+                  <div className="w-16 h-16 rounded-full bg-orange-100 text-orange-700 font-bold flex items-center justify-center text-xl border-2 border-orange-200 shadow-sm">
                     {(name || user.name || user.email || 'U').charAt(0).toUpperCase()}
                   </div>
                 )}
                 <button
                   type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  title="Upload profile picture"
-                  className="absolute bottom-0 right-0 p-1.5 bg-orange-600 text-white rounded-full shadow hover:bg-orange-700 transition-colors cursor-pointer"
+                  onClick={() => {
+                    if (isPhotoChangeBlocked) {
+                      if (isYearlyLimitReached) {
+                        setFormError(`Profile picture can only be changed up to 2 times per calendar year. You have already changed it 2 times in ${currentYear}.`);
+                      } else {
+                        setFormError(`Profile picture can only be changed once every 30 days. Next change eligible in ${cooldownDaysRemaining} day(s).`);
+                      }
+                      return;
+                    }
+                    fileInputRef.current?.click();
+                  }}
+                  title={isPhotoChangeBlocked ? 'Photo change currently locked' : 'Upload profile picture'}
+                  className={`absolute bottom-0 right-0 p-1.5 rounded-full shadow text-white transition-colors cursor-pointer ${
+                    isPhotoChangeBlocked ? 'bg-slate-400 hover:bg-slate-500' : 'bg-orange-600 hover:bg-orange-700'
+                  }`}
                 >
                   <Camera className="w-3.5 h-3.5" />
                 </button>
@@ -251,17 +331,34 @@ export default function ProfileModal() {
               </div>
 
               <div className="space-y-1">
-                <div className="text-sm font-semibold text-slate-800">Profile Picture</div>
-                <p className="text-xs text-slate-500">
-                  Upload your avatar. Saved directly to Database 4 for this account.
+                <div className="text-xs font-semibold text-slate-800 flex items-center gap-2">
+                  <span>Profile Picture</span>
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
+                    {effectiveYearlyCount}/2 Used in {currentYear}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 leading-tight">
+                  Policy: 1 change every 30 days (max 2 times/year).
                 </p>
-                <div className="flex items-center gap-2 pt-1">
+                <div className="flex items-center gap-2 pt-0.5">
                   <button
                     type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="text-xs font-semibold text-orange-600 hover:text-orange-700 cursor-pointer"
+                    onClick={() => {
+                      if (isPhotoChangeBlocked) {
+                        if (isYearlyLimitReached) {
+                          setFormError(`Profile picture can only be changed up to 2 times per calendar year. You have already changed it 2 times in ${currentYear}.`);
+                        } else {
+                          setFormError(`Profile picture can only be changed once every 30 days. Next change eligible in ${cooldownDaysRemaining} day(s).`);
+                        }
+                        return;
+                      }
+                      fileInputRef.current?.click();
+                    }}
+                    className={`text-xs font-semibold cursor-pointer ${
+                      isPhotoChangeBlocked ? 'text-slate-400' : 'text-orange-600 hover:text-orange-700'
+                    }`}
                   >
-                    Change photo
+                    {isPhotoChangeBlocked ? 'Photo Locked' : 'Change photo'}
                   </button>
                   {photoPreview && (
                     <>
@@ -278,6 +375,24 @@ export default function ProfileModal() {
                 </div>
               </div>
             </div>
+
+            {/* Restriction Notification */}
+            {cooldownDaysRemaining > 0 && (
+              <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>
+                  Photo cooldown active: eligible in <strong>{cooldownDaysRemaining} day(s)</strong> ({nextEligibleDate}).
+                </span>
+              </div>
+            )}
+            {isYearlyLimitReached && (
+              <div className="p-2.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                <span>
+                  Yearly limit reached (2 of 2 changes used in {currentYear}).
+                </span>
+              </div>
+            )}
 
             {/* Email (Read only) */}
             <div>
@@ -311,7 +426,7 @@ export default function ProfileModal() {
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Alex Rivera"
                   required
-                  className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-slate-800"
+                  className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-slate-800"
                 />
               </div>
             </div>
@@ -328,7 +443,7 @@ export default function ProfileModal() {
                   value={company}
                   onChange={(e) => setCompany(e.target.value)}
                   placeholder="e.g. Acme Corp"
-                  className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-slate-800"
+                  className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-slate-800"
                 />
               </div>
             </div>
@@ -348,28 +463,40 @@ export default function ProfileModal() {
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => dispatch(closeProfileModal())}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting || loading}
-                className="px-5 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 disabled:opacity-50 rounded-lg shadow-sm transition-colors cursor-pointer flex items-center gap-2"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Saving...</span>
-                  </>
-                ) : (
-                  <span>Save Profile</span>
-                )}
-              </button>
+            <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+              {onOpenFullProfile ? (
+                <button
+                  type="button"
+                  onClick={handleNavigateToFullPage}
+                  className="text-xs font-semibold text-slate-500 hover:text-orange-600 flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Open Full Settings Page</span>
+                  <ExternalLink className="w-3 h-3" />
+                </button>
+              ) : <div />}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => dispatch(closeProfileModal())}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting || loading}
+                  className="px-5 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 disabled:opacity-50 rounded-lg shadow-sm transition-colors cursor-pointer flex items-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <span>Save Profile</span>
+                  )}
+                </button>
+              </div>
             </div>
           </form>
         )}
@@ -381,10 +508,10 @@ export default function ProfileModal() {
               Change your login password. Passwords are encrypted with bcrypt before saving to your profile in Database 4.
             </div>
 
-            {/* Current Password (optional for OAuth / initial accounts) */}
+            {/* Current Password */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Current Password <span className="text-slate-400 font-normal">(Leave blank if set up with Google)</span>
+                Current Password <span className="text-slate-400 font-normal">(Leave blank if signed up via Google)</span>
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
@@ -393,7 +520,7 @@ export default function ProfileModal() {
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   placeholder="Enter current password"
-                  className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-slate-800"
+                  className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-slate-800"
                 />
               </div>
             </div>
@@ -411,7 +538,7 @@ export default function ProfileModal() {
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="At least 6 characters"
                   required
-                  className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-slate-800"
+                  className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-slate-800"
                 />
               </div>
             </div>
@@ -429,7 +556,7 @@ export default function ProfileModal() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Re-enter new password"
                   required
-                  className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-slate-800"
+                  className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-slate-800"
                 />
               </div>
             </div>
@@ -437,33 +564,45 @@ export default function ProfileModal() {
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-start gap-2">
               <ShieldCheck className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
               <span>
-                Passwords are strictly salted and hashed with bcrypt. Never share your password with anyone.
+                Passwords are salted and hashed with bcrypt. Saved strictly into your isolated Database 4 account.
               </span>
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => dispatch(closeProfileModal())}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting || loading}
-                className="px-5 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 disabled:opacity-50 rounded-lg shadow-sm transition-colors cursor-pointer flex items-center gap-2"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Updating...</span>
-                  </>
-                ) : (
-                  <span>Update Password</span>
-                )}
-              </button>
+            <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+              {onOpenFullProfile ? (
+                <button
+                  type="button"
+                  onClick={handleNavigateToFullPage}
+                  className="text-xs font-semibold text-slate-500 hover:text-orange-600 flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Open Full Settings Page</span>
+                  <ExternalLink className="w-3 h-3" />
+                </button>
+              ) : <div />}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => dispatch(closeProfileModal())}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting || loading}
+                  className="px-5 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 disabled:opacity-50 rounded-lg shadow-sm transition-colors cursor-pointer flex items-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Updating...</span>
+                    </>
+                  ) : (
+                    <span>Update Password</span>
+                  )}
+                </button>
+              </div>
             </div>
           </form>
         )}
@@ -471,4 +610,3 @@ export default function ProfileModal() {
     </div>
   );
 }
-
