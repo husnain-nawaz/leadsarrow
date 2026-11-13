@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { openAuthModal, logoutUser, openUpgradeModal, openProfileModal } from '../store/authSlice.js';
 import { setOnlyCustom, resetAllFilters } from '../store/filtersSlice.js';
 import { setSavedListsModalOpen } from '../store/savedListsSlice.js';
-import { Zap, Sparkles, Shield, User as UserIcon } from 'lucide-react';
+import { Zap, Sparkles, Shield, User as UserIcon, Globe } from 'lucide-react';
 
 export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
   const dispatch = useDispatch();
@@ -99,9 +99,10 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
             <button
               type="button"
               onClick={onToggleLanding}
-              className="text-slate-500 hover:text-slate-900 transition-colors whitespace-nowrap shrink-0 cursor-pointer pb-0.5"
+              className="px-3 py-1.5 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-xs transition-all whitespace-nowrap shrink-0 cursor-pointer flex items-center gap-1.5"
             >
-              View Landing Page
+              <Globe className="w-3.5 h-3.5" />
+              <span>View Landing Page</span>
             </button>
           )}
         </nav>
