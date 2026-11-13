@@ -15,6 +15,7 @@ import {
   loginJwtUser,
   loginOrSyncGoogleUser,
   upgradeUserPlan,
+  updateSelfProfile,
   getAllUsersForAdmin,
   updateUserByAdmin,
   getAdminStats,
@@ -72,6 +73,15 @@ async function startServer() {
 
   app.get('/api/auth/me', requireJwtMiddleware, (req: any, res) => {
     res.json({ user: req.user });
+  });
+
+  app.put('/api/auth/profile', requireJwtMiddleware, async (req: any, res) => {
+    try {
+      const result = await updateSelfProfile(req.user.id, req.body || {});
+      res.json(result);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || 'Profile update failed' });
+    }
   });
 
   app.post('/api/auth/upgrade-plan', requireJwtMiddleware, async (req: any, res) => {

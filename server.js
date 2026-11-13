@@ -388,25 +388,19 @@ async function getSecondaryDataSource() {
   return SecondaryDataSource;
 }
 async function getTertiaryDataSource() {
-  if (AppDataSource.options.database === "u340392193_leadsarrow3" && AppDataSource.isInitialized) {
-    return AppDataSource;
-  }
-  if (process.env.MYSQL_DATABASE_DB3 || process.env.NODE_ENV === "production" || process.env.MYSQL_HOST?.includes("hstgr") || process.env.MYSQL_HOST === "193.203.184.241") {
-    if (!isDb3Initialized) {
-      if (!TertiaryDataSource.isInitialized) {
-        try {
-          await TertiaryDataSource.initialize();
-          console.log("Connected to Sharded Tertiary Database: u340392193_leadsarrow3");
-        } catch (e) {
-          console.warn("Tertiary DataSource not available:", e.message);
-          return null;
-        }
+  if (!isDb3Initialized) {
+    if (!TertiaryDataSource.isInitialized) {
+      try {
+        await TertiaryDataSource.initialize();
+        console.log("Connected to Sharded Tertiary Database: u340392193_leadsarrow3");
+      } catch (e) {
+        console.warn("Tertiary DataSource not available:", e.message);
+        return null;
       }
-      isDb3Initialized = true;
     }
-    return TertiaryDataSource;
+    isDb3Initialized = true;
   }
-  return null;
+  return TertiaryDataSource;
 }
 async function getDataSource() {
   if (!isInitialized) {
@@ -443,15 +437,15 @@ var init_dataSource = __esm({
     dotenv.config();
     AppDataSource = new DataSource({
       type: "mysql",
-      host: process.env.MYSQL_HOST_DB3 || (process.env.MYSQL_HOST && process.env.MYSQL_HOST !== "127.0.0.1" && process.env.MYSQL_HOST !== "localhost" ? process.env.MYSQL_HOST : "193.203.184.241"),
-      port: Number(process.env.MYSQL_PORT_DB3 || process.env.MYSQL_PORT || 3306),
-      username: process.env.MYSQL_USER_MAIN || process.env.MYSQL_USER_DB3 || "u340392193_leadsarrow3",
-      password: process.env.MYSQL_PASSWORD_MAIN || process.env.MYSQL_PASSWORD_DB3 || "Player74773/",
-      database: process.env.MYSQL_DATABASE_MAIN || process.env.MYSQL_DATABASE_DB3 || "u340392193_leadsarrow3",
+      host: process.env.MYSQL_HOST_DB4 || (process.env.MYSQL_HOST && process.env.MYSQL_HOST !== "127.0.0.1" && process.env.MYSQL_HOST !== "localhost" ? process.env.MYSQL_HOST : "193.203.184.241"),
+      port: Number(process.env.MYSQL_PORT_DB4 || process.env.MYSQL_PORT || 3306),
+      username: process.env.MYSQL_USER_MAIN || process.env.MYSQL_USER_DB4 || "u340392193_leadsarrow4",
+      password: process.env.MYSQL_PASSWORD_MAIN || process.env.MYSQL_PASSWORD_DB4 || "Player74773/",
+      database: process.env.MYSQL_DATABASE_MAIN || process.env.MYSQL_DATABASE_DB4 || "u340392193_leadsarrow4",
       synchronize: false,
       // Schema already exists and indexed
       logging: false,
-      entities: [Lead, User, UserPurchase, UserLogin, SavedList],
+      entities: [User, UserPurchase, UserLogin, SavedList],
       extra: {
         connectionLimit: 15,
         waitForConnections: true,
@@ -502,7 +496,7 @@ var init_dataSource = __esm({
       database: process.env.MYSQL_DATABASE_DB3 || "u340392193_leadsarrow3",
       synchronize: false,
       logging: false,
-      entities: [Lead, User, UserPurchase, UserLogin, SavedList],
+      entities: [Lead],
       extra: {
         connectionLimit: 10,
         waitForConnections: true,
@@ -1514,6 +1508,44 @@ async function decrementUserCreditsInDb(userId, amount) {
   const updated = await userRepo.findOne({ where: { id: user.id } });
   return updated ? sanitizeUser(updated) : null;
 }
+async function updateSelfProfile(userId, data) {
+  const ds = await getDataSource();
+  const userRepo = ds.getRepository(User);
+  const user = await userRepo.findOne({
+    where: [{ id: userId }, { email: userId }]
+  });
+  if (!user) {
+    throw new Error("User profile not found.");
+  }
+  const updates = {};
+  if (typeof data.name === "string" && data.name.trim()) {
+    updates.name = data.name.trim();
+  }
+  if (typeof data.company === "string") {
+    updates.company = data.company.trim();
+  }
+  if (typeof data.photoUrl === "string") {
+    updates.photoUrl = data.photoUrl;
+  }
+  if (data.newPassword) {
+    if (user.passwordHash && data.currentPassword) {
+      const match = bcrypt.compareSync(data.currentPassword, user.passwordHash);
+      if (!match) {
+        throw new Error("Current password does not match.");
+      }
+    }
+    if (data.newPassword.length < 6) {
+      throw new Error("New password must be at least 6 characters long.");
+    }
+    updates.passwordHash = bcrypt.hashSync(data.newPassword, 10);
+  }
+  if (Object.keys(updates).length > 0) {
+    await userRepo.update(user.id, updates);
+  }
+  const updatedUser = await getUserWithHistory(user.id);
+  const token = issueJwtToken(updatedUser, true);
+  return { user: updatedUser, token };
+}
 async function getAllUsersForAdmin() {
   const ds = await getDataSource();
   const userRepo = ds.getRepository(User);
@@ -1802,6 +1834,14 @@ async function startServer() {
   });
   app.get("/api/auth/me", requireJwtMiddleware, (req, res) => {
     res.json({ user: req.user });
+  });
+  app.put("/api/auth/profile", requireJwtMiddleware, async (req, res) => {
+    try {
+      const result = await updateSelfProfile(req.user.id, req.body || {});
+      res.json(result);
+    } catch (error) {
+      res.status(400).json({ error: error.message || "Profile update failed" });
+    }
   });
   app.post("/api/auth/upgrade-plan", requireJwtMiddleware, async (req, res) => {
     try {

@@ -469,6 +469,53 @@ export async function decrementUserCreditsInDb(userId: string, amount: number) {
   return updated ? sanitizeUser(updated) : null;
 }
 
+export async function updateSelfProfile(userId: string, data: { name?: string; company?: string; photoUrl?: string; currentPassword?: string; newPassword?: string }) {
+  const ds = await getDataSource();
+  const userRepo = ds.getRepository(User);
+
+  const user = await userRepo.findOne({
+    where: [{ id: userId }, { email: userId }]
+  });
+  if (!user) {
+    throw new Error('User profile not found.');
+  }
+
+  const updates: Partial<User> = {};
+
+  if (typeof data.name === 'string' && data.name.trim()) {
+    updates.name = data.name.trim();
+  }
+
+  if (typeof data.company === 'string') {
+    updates.company = data.company.trim();
+  }
+
+  if (typeof data.photoUrl === 'string') {
+    updates.photoUrl = data.photoUrl;
+  }
+
+  if (data.newPassword) {
+    if (user.passwordHash && data.currentPassword) {
+      const match = bcrypt.compareSync(data.currentPassword, user.passwordHash);
+      if (!match) {
+        throw new Error('Current password does not match.');
+      }
+    }
+    if (data.newPassword.length < 6) {
+      throw new Error('New password must be at least 6 characters long.');
+    }
+    updates.passwordHash = bcrypt.hashSync(data.newPassword, 10);
+  }
+
+  if (Object.keys(updates).length > 0) {
+    await userRepo.update(user.id, updates);
+  }
+
+  const updatedUser = await getUserWithHistory(user.id);
+  const token = issueJwtToken(updatedUser, true);
+  return { user: updatedUser, token };
+}
+
 export async function getAllUsersForAdmin() {
   const ds = await getDataSource();
   const userRepo = ds.getRepository(User);

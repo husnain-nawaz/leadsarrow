@@ -1,9 +1,9 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { openAuthModal, logoutUser, openUpgradeModal } from '../store/authSlice.js';
+import { openAuthModal, logoutUser, openUpgradeModal, openProfileModal } from '../store/authSlice.js';
 import { setOnlyCustom, resetAllFilters } from '../store/filtersSlice.js';
 import { setSavedListsModalOpen } from '../store/savedListsSlice.js';
-import { Zap, Sparkles, Shield } from 'lucide-react';
+import { Zap, Sparkles, Shield, User as UserIcon } from 'lucide-react';
 
 export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
   const dispatch = useDispatch();
@@ -152,14 +152,36 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
               <span>Upgrade Plan</span>
             </button>
 
+            {/* Profile Button */}
+            <button
+              type="button"
+              onClick={() => dispatch(openProfileModal())}
+              title="Manage Profile, Picture & Password"
+              className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-colors cursor-pointer"
+            >
+              {user.photoUrl || user.photo_url ? (
+                <img
+                  src={user.photoUrl || user.photo_url}
+                  alt={user.name || 'User'}
+                  className="w-5 h-5 rounded-full object-cover border border-slate-200"
+                />
+              ) : (
+                <div className="w-5 h-5 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-[10px]">
+                  {(user.name || user.email || 'U').charAt(0).toUpperCase()}
+                </div>
+              )}
+              <span className="hidden lg:inline max-w-[120px] truncate">{user.name || 'Profile'}</span>
+              <UserIcon className="w-3.5 h-3.5 text-slate-400" />
+            </button>
+
             {/* Sign Out */}
             <button
               type="button"
               onClick={() => dispatch(logoutUser())}
               title="Click to sign out"
-              className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-200 transition-colors whitespace-nowrap cursor-pointer"
+              className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-200 hover:text-red-700 transition-colors whitespace-nowrap cursor-pointer"
             >
-              {user.name?.split(' ')[0] || 'User'} · Sign Out
+              Sign Out
             </button>
           </>
         ) : (

@@ -11,9 +11,31 @@ import {
   syncGoogleAuthWithBackendApi,
   upgradeUserPlanApi,
   decrementCreditsApi,
-  fetchCurrentUserProfileApi
+  fetchCurrentUserProfileApi,
+  updateProfileApi
 } from '../services/api.js';
 import { auth, googleProvider, signInWithPopup, firebaseSignOut } from '../firebase.js';
+
+export const updateCurrentUserProfile = createAsyncThunk(
+  'auth/updateCurrentUserProfile',
+  async (payload, { getState, rejectWithValue }) => {
+    try {
+      const response = await updateProfileApi(payload);
+      if (response?.user) {
+        const { auth } = getState();
+        persistAuthSession({
+          user: response.user,
+          token: response.token || auth.token || getStoredToken(),
+          rememberMe: true
+        });
+        return response;
+      }
+      return null;
+    } catch (err) {
+      return rejectWithValue(err.message || 'Profile update failed');
+    }
+  }
+);
 
 export const refreshCurrentUserProfile = createAsyncThunk(
   'auth/refreshCurrentUserProfile',
@@ -198,6 +220,7 @@ const initialState = {
   authModalInitialTab: 'login',
   isUpgradeModalOpen: false,
   upgradeTargetPlan: null,
+  isProfileModalOpen: false,
   loading: false,
   error: null
 };
@@ -206,6 +229,14 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
+    openProfileModal(state) {
+      state.isProfileModalOpen = true;
+      state.error = null;
+    },
+    closeProfileModal(state) {
+      state.isProfileModalOpen = false;
+      state.error = null;
+    },
     openAuthModal(state, action) {
       state.isAuthModalOpen = true;
       state.authModalInitialTab = action.payload || 'login';
@@ -253,6 +284,21 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(updateCurrentUserProfile.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateCurrentUserProfile.fulfilled, (state, action) => {
+        state.loading = false;
+        if (action.payload?.user) {
+          state.user = action.payload.user;
+          if (action.payload.token) state.token = action.payload.token;
+        }
+      })
+      .addCase(updateCurrentUserProfile.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
       .addCase(refreshCurrentUserProfile.fulfilled, (state, action) => {
         if (action.payload) {
           state.user = action.payload;
@@ -333,6 +379,8 @@ const authSlice = createSlice({
 export const {
   openAuthModal,
   closeAuthModal,
+  openProfileModal,
+  closeProfileModal,
   openUpgradeModal,
   closeUpgradeModal,
   clearAuthError,

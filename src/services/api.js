@@ -161,6 +161,13 @@ export async function upgradeUserPlanApi(payload) {
   });
 }
 
+export async function updateProfileApi(payload) {
+  return apiRequest('/api/auth/profile', {
+    method: 'PUT',
+    body: JSON.stringify(payload)
+  });
+}
+
 export async function decrementCreditsApi(amount) {
   return apiRequest('/api/auth/decrement-credits', {
     method: 'POST',

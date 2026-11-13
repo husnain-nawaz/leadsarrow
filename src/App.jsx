@@ -24,6 +24,7 @@ import SqlArchitectureView from './components/SqlArchitectureView.jsx';
 import LandingPage from './components/LandingPage.jsx';
 import PlanUpgradeModal from './components/PlanUpgradeModal.jsx';
 import SuperadminPanel from './components/SuperadminPanel.jsx';
+import ProfileModal from './components/ProfileModal.jsx';
 
 function WorkspaceContent({ onToggleLanding }) {
   const dispatch = useDispatch();
@@ -190,6 +191,7 @@ function WorkspaceContent({ onToggleLanding }) {
       {isSuperAdmin && <AddLeadModal />}
       <ExportModal />
       <PlanUpgradeModal />
+      <ProfileModal />
     </div>
   );
 }
@@ -217,28 +219,14 @@ function MainApp() {
     );
   }
 
-  // If user is logged in, but clicked "View Landing Page", allow toggle with a sticky return banner
+  // If user is logged in, but clicked "View Landing Page", allow toggle
   if (showLandingForLoggedIn) {
     return (
       <div className="relative min-h-screen">
-        <div className="sticky top-0 z-50 bg-slate-900 text-white px-6 py-2.5 flex items-center justify-between text-xs font-medium border-b border-slate-800">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
-            <span>
-              Signed in as <strong>{user.name}</strong> ({user.plan || 'Free Starter'} · {user.planId === 'unlimited' ? 'Unlimited Credits' : `${user.creditsRemaining ?? 100} credits daily`})
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowLandingForLoggedIn(false)}
-            className="px-3.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg transition-colors cursor-pointer"
-          >
-            ← Return to Dashboard
-          </button>
-        </div>
-        <LandingPage />
+        <LandingPage onReturnDashboard={() => setShowLandingForLoggedIn(false)} />
         <AuthModal />
         <PlanUpgradeModal />
+        <ProfileModal />
       </div>
     );
   }

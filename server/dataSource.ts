@@ -9,16 +9,17 @@ import { SavedList } from './entities/SavedList.ts';
 
 dotenv.config();
 
+// Primary Application & Auth Database (Database 4: u340392193_leadsarrow4 - Dedicated for Users, Profiles, Auth, Lists, Revealed Leads)
 export const AppDataSource = new DataSource({
   type: 'mysql',
-  host: process.env.MYSQL_HOST_DB3 || (process.env.MYSQL_HOST && process.env.MYSQL_HOST !== '127.0.0.1' && process.env.MYSQL_HOST !== 'localhost' ? process.env.MYSQL_HOST : '193.203.184.241'),
-  port: Number(process.env.MYSQL_PORT_DB3 || process.env.MYSQL_PORT || 3306),
-  username: process.env.MYSQL_USER_MAIN || process.env.MYSQL_USER_DB3 || 'u340392193_leadsarrow3',
-  password: process.env.MYSQL_PASSWORD_MAIN || process.env.MYSQL_PASSWORD_DB3 || 'Player74773/',
-  database: process.env.MYSQL_DATABASE_MAIN || process.env.MYSQL_DATABASE_DB3 || 'u340392193_leadsarrow3',
+  host: process.env.MYSQL_HOST_DB4 || (process.env.MYSQL_HOST && process.env.MYSQL_HOST !== '127.0.0.1' && process.env.MYSQL_HOST !== 'localhost' ? process.env.MYSQL_HOST : '193.203.184.241'),
+  port: Number(process.env.MYSQL_PORT_DB4 || process.env.MYSQL_PORT || 3306),
+  username: process.env.MYSQL_USER_MAIN || process.env.MYSQL_USER_DB4 || 'u340392193_leadsarrow4',
+  password: process.env.MYSQL_PASSWORD_MAIN || process.env.MYSQL_PASSWORD_DB4 || 'Player74773/',
+  database: process.env.MYSQL_DATABASE_MAIN || process.env.MYSQL_DATABASE_DB4 || 'u340392193_leadsarrow4',
   synchronize: false, // Schema already exists and indexed
   logging: false,
-  entities: [Lead, User, UserPurchase, UserLogin, SavedList],
+  entities: [User, UserPurchase, UserLogin, SavedList],
   extra: {
     connectionLimit: 15,
     waitForConnections: true,
@@ -100,7 +101,7 @@ export async function getSecondaryDataSource(): Promise<DataSource | null> {
   return SecondaryDataSource;
 }
 
-// Tertiary Sharded Database (Hostinger Database 3 - Holds Saved Lists, Users & Leads Node)
+// Tertiary Sharded Database (Hostinger Database 3 - Dedicated 4.15M Leads Node)
 export const TertiaryDataSource = new DataSource({
   type: 'mysql',
   host: process.env.MYSQL_HOST_DB3 || (process.env.MYSQL_HOST && process.env.MYSQL_HOST !== '127.0.0.1' && process.env.MYSQL_HOST !== 'localhost' ? process.env.MYSQL_HOST : '193.203.184.241'),
@@ -110,7 +111,7 @@ export const TertiaryDataSource = new DataSource({
   database: process.env.MYSQL_DATABASE_DB3 || 'u340392193_leadsarrow3',
   synchronize: false,
   logging: false,
-  entities: [Lead, User, UserPurchase, UserLogin, SavedList],
+  entities: [Lead],
   extra: {
     connectionLimit: 10,
     waitForConnections: true,
@@ -121,25 +122,19 @@ export const TertiaryDataSource = new DataSource({
 let isDb3Initialized = false;
 
 export async function getTertiaryDataSource(): Promise<DataSource | null> {
-  if (AppDataSource.options.database === 'u340392193_leadsarrow3' && AppDataSource.isInitialized) {
-    return AppDataSource;
-  }
-  if (process.env.MYSQL_DATABASE_DB3 || process.env.NODE_ENV === 'production' || process.env.MYSQL_HOST?.includes('hstgr') || process.env.MYSQL_HOST === '193.203.184.241') {
-    if (!isDb3Initialized) {
-      if (!TertiaryDataSource.isInitialized) {
-        try {
-          await TertiaryDataSource.initialize();
-          console.log('Connected to Sharded Tertiary Database: u340392193_leadsarrow3');
-        } catch (e: any) {
-          console.warn('Tertiary DataSource not available:', e.message);
-          return null;
-        }
+  if (!isDb3Initialized) {
+    if (!TertiaryDataSource.isInitialized) {
+      try {
+        await TertiaryDataSource.initialize();
+        console.log('Connected to Sharded Tertiary Database: u340392193_leadsarrow3');
+      } catch (e: any) {
+        console.warn('Tertiary DataSource not available:', e.message);
+        return null;
       }
-      isDb3Initialized = true;
     }
-    return TertiaryDataSource;
+    isDb3Initialized = true;
   }
-  return null;
+  return TertiaryDataSource;
 }
 
 export async function getDataSource(): Promise<DataSource> {
