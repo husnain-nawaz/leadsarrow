@@ -10,9 +10,31 @@ import {
   registerWithJwtApi,
   syncGoogleAuthWithBackendApi,
   upgradeUserPlanApi,
-  decrementCreditsApi
+  decrementCreditsApi,
+  fetchCurrentUserProfileApi
 } from '../services/api.js';
 import { auth, googleProvider, signInWithPopup, firebaseSignOut } from '../firebase.js';
+
+export const refreshCurrentUserProfile = createAsyncThunk(
+  'auth/refreshCurrentUserProfile',
+  async (_, { getState, rejectWithValue }) => {
+    try {
+      const response = await fetchCurrentUserProfileApi();
+      if (response?.user) {
+        const { auth } = getState();
+        persistAuthSession({
+          user: response.user,
+          token: auth.token || getStoredToken(),
+          rememberMe: true
+        });
+        return response.user;
+      }
+      return null;
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
 
 export const consumeCredits = createAsyncThunk(
   'auth/consumeCredits',
@@ -231,6 +253,11 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(refreshCurrentUserProfile.fulfilled, (state, action) => {
+        if (action.payload) {
+          state.user = action.payload;
+        }
+      })
       .addCase(consumeCredits.fulfilled, (state, action) => {
         if (action.payload) {
           state.user = action.payload;

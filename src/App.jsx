@@ -3,7 +3,7 @@ import { Provider, useSelector, useDispatch } from 'react-redux';
 import store from './store/store.js';
 import { fetchLeads, setFirestoreCustomLeads } from './store/leadsSlice.js';
 import { fetchSavedLists, setFirestoreSavedLists } from './store/savedListsSlice.js';
-import { syncFirebaseSession } from './store/authSlice.js';
+import { syncFirebaseSession, refreshCurrentUserProfile } from './store/authSlice.js';
 import {
   auth,
   onAuthStateChanged,
@@ -82,10 +82,22 @@ function WorkspaceContent({ onToggleLanding }) {
     filters.pageSize
   ]);
 
-  // Initial load of saved lists
+  // Initial load of saved lists & real-time user profile sync
   useEffect(() => {
     dispatch(fetchSavedLists());
-  }, [dispatch]);
+    if (user?.id) {
+      dispatch(refreshCurrentUserProfile());
+    }
+
+    // Keep active user's credit balance and plan status synchronized in real time from database
+    const profileInterval = setInterval(() => {
+      if (user?.id) {
+        dispatch(refreshCurrentUserProfile());
+      }
+    }, 5000);
+
+    return () => clearInterval(profileInterval);
+  }, [dispatch, user?.id]);
 
   // Listen to Firebase Auth state & attach Firestore real-time listeners when authenticated
   useEffect(() => {

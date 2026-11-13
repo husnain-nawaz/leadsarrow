@@ -129,6 +129,10 @@ export async function fetchLeadsByIdsApi(ids) {
   });
 }
 
+export async function fetchCurrentUserProfileApi() {
+  return apiRequest('/api/auth/me');
+}
+
 export async function loginWithJwtApi(payload) {
   return apiRequest('/api/auth/login', {
     method: 'POST',

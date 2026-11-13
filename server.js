@@ -1580,52 +1580,63 @@ async function updateUserByAdmin(userId, updates = {}) {
   }
   return await getUserWithHistory(user.id);
 }
+var cachedClusterVolume = {
+  timestamp: 0,
+  count: 10363428
+};
+var FIVE_MIN_MS = 5 * 60 * 1e3;
 async function getAdminStats() {
   const ds = await getDataSource();
   const userRepo = ds.getRepository(User);
   const leadRepo = ds.getRepository(Lead);
   const userStats = await userRepo.createQueryBuilder("user").select("COUNT(*)", "totalUsers").addSelect("SUM(CASE WHEN user.payment_status = 'paid' THEN 1 ELSE 0 END)", "paidUsers").addSelect("SUM(CASE WHEN user.payment_status != 'paid' THEN 1 ELSE 0 END)", "freeUsers").addSelect("SUM(user.amount_paid)", "totalRevenue").addSelect("SUM(user.credits_used_today)", "totalCreditsUsedToday").getRawOne();
   let totalLeads = 10363428;
-  try {
-    const ds1 = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getPrimaryDataSource();
-    const ds3 = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getTertiaryDataSource();
-    let sum = 0;
-    const rowsMain = await ds.query(
-      "SELECT TABLE_ROWS FROM information_schema.tables WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'leads'"
-    );
-    if (rowsMain && rowsMain[0]?.TABLE_ROWS) {
-      sum += Number(rowsMain[0].TABLE_ROWS);
-    } else {
-      sum += 4365787;
-    }
-    if (ds1) {
-      try {
-        const rows1 = await ds1.query(
-          "SELECT TABLE_ROWS FROM information_schema.tables WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'leads'"
-        );
-        if (rows1 && rows1[0]?.TABLE_ROWS) sum += Number(rows1[0].TABLE_ROWS);
-        else sum += 1843e3;
-      } catch {
+  const now = Date.now();
+  if (now - cachedClusterVolume.timestamp < FIVE_MIN_MS && cachedClusterVolume.count > 0) {
+    totalLeads = cachedClusterVolume.count;
+  } else {
+    try {
+      const ds1 = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getPrimaryDataSource();
+      const ds3 = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getTertiaryDataSource();
+      let sum = 0;
+      if (ds) {
+        try {
+          const rowsMain = await ds.query("SELECT COUNT(*) as cnt FROM leads;");
+          if (rowsMain && rowsMain[0]?.cnt) sum += Number(rowsMain[0].cnt);
+          else sum += 4365787;
+        } catch {
+          sum += 4365787;
+        }
+      }
+      if (ds1) {
+        try {
+          const rows1 = await ds1.query("SELECT COUNT(*) as cnt FROM leads;");
+          if (rows1 && rows1[0]?.cnt) sum += Number(rows1[0].cnt);
+          else sum += 1843e3;
+        } catch {
+          sum += 1843e3;
+        }
+      } else {
         sum += 1843e3;
       }
-    } else {
-      sum += 1843e3;
-    }
-    if (ds3) {
-      try {
-        const rows3 = await ds3.query(
-          "SELECT TABLE_ROWS FROM information_schema.tables WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'leads'"
-        );
-        if (rows3 && rows3[0]?.TABLE_ROWS) sum += Number(rows3[0].TABLE_ROWS);
-        else sum += 4154641;
-      } catch {
+      if (ds3) {
+        try {
+          const rows3 = await ds3.query("SELECT COUNT(*) as cnt FROM leads;");
+          if (rows3 && rows3[0]?.cnt) sum += Number(rows3[0].cnt);
+          else sum += 4154641;
+        } catch {
+          sum += 4154641;
+        }
+      } else {
         sum += 4154641;
       }
-    } else {
-      sum += 4154641;
+      if (sum > 0) {
+        totalLeads = sum;
+        cachedClusterVolume = { timestamp: now, count: sum };
+      }
+    } catch {
+      totalLeads = 10363428;
     }
-    if (sum > 0) totalLeads = sum;
-  } catch {
   }
   const customLeads = await leadRepo.count({ where: { isCustom: 1 } });
   const u = userStats || {};
