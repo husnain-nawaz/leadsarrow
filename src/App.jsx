@@ -26,6 +26,7 @@ import PlanUpgradeModal from './components/PlanUpgradeModal.jsx';
 import SuperadminPanel from './components/SuperadminPanel.jsx';
 import ProfileModal from './components/ProfileModal.jsx';
 import ProfileSettingsPage from './components/ProfileSettingsPage.jsx';
+import SignOutModal from './components/SignOutModal.jsx';
 import { ThemeProvider } from './context/ThemeContext.jsx';
 
 function WorkspaceContent({ activeView, setActiveView, onToggleLanding }) {
@@ -180,6 +181,7 @@ function WorkspaceContent({ activeView, setActiveView, onToggleLanding }) {
       <ExportModal />
       <PlanUpgradeModal />
       <ProfileModal onOpenFullProfile={() => setActiveView('profile')} />
+      <SignOutModal />
     </div>
   );
 }
@@ -241,6 +243,7 @@ function MainApp() {
         <AuthModal />
         <PlanUpgradeModal />
         <ProfileModal onOpenFullProfile={handleOpenProfileDirectly} />
+        <SignOutModal />
       </div>
     );
   }

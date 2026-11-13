@@ -31,7 +31,7 @@ import {
   Sun,
   Moon
 } from 'lucide-react';
-import { openAuthModal, logoutUser, openProfileModal, openUpgradeModal } from '../store/authSlice.js';
+import { openAuthModal, openSignOutModal, openProfileModal, openUpgradeModal } from '../store/authSlice.js';
 import { PRICING_PLANS } from '../data/plans.js';
 import { useTheme } from '../context/ThemeContext.jsx';
 
@@ -204,7 +204,7 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
                 {/* Sign Out Button */}
                 <button
                   type="button"
-                  onClick={() => dispatch(logoutUser())}
+                  onClick={() => dispatch(openSignOutModal())}
                   className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 ${
                     isDark
                       ? 'text-slate-400 hover:text-red-400 hover:bg-slate-800'

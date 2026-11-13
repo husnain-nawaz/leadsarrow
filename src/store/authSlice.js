@@ -221,6 +221,7 @@ const initialState = {
   isUpgradeModalOpen: false,
   upgradeTargetPlan: null,
   isProfileModalOpen: false,
+  isSignOutModalOpen: false,
   loading: false,
   error: null
 };
@@ -229,6 +230,12 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
+    openSignOutModal(state) {
+      state.isSignOutModalOpen = true;
+    },
+    closeSignOutModal(state) {
+      state.isSignOutModalOpen = false;
+    },
     openProfileModal(state) {
       state.isProfileModalOpen = true;
       state.error = null;
@@ -379,6 +386,8 @@ const authSlice = createSlice({
 export const {
   openAuthModal,
   closeAuthModal,
+  openSignOutModal,
+  closeSignOutModal,
   openProfileModal,
   closeProfileModal,
   openUpgradeModal,

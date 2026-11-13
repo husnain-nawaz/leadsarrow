@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { openAuthModal, logoutUser, openUpgradeModal, openProfileModal } from '../store/authSlice.js';
+import { openAuthModal, openSignOutModal, openUpgradeModal, openProfileModal } from '../store/authSlice.js';
 import { setOnlyCustom, resetAllFilters } from '../store/filtersSlice.js';
 import { setSavedListsModalOpen } from '../store/savedListsSlice.js';
 import { Zap, Sparkles, Shield, User as UserIcon, Globe, Sun, Moon, LogOut } from 'lucide-react';
@@ -201,7 +201,7 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
             {/* Sign Out */}
             <button
               type="button"
-              onClick={() => dispatch(logoutUser())}
+              onClick={() => dispatch(openSignOutModal())}
               title="Click to sign out"
               className="px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-red-700 dark:hover:text-red-400 transition-colors whitespace-nowrap cursor-pointer flex items-center gap-1 shrink-0"
             >
