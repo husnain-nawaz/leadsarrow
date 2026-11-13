@@ -19,3 +19,4 @@ export const PRESET_AVATARS = [
     dataUrl: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="bg_orange" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%23EA580C"/><stop offset="100%" stop-color="%239A3412"/></linearGradient></defs><rect width="100" height="100" rx="50" fill="url(%23bg_orange)"/><circle cx="50" cy="38" r="17" fill="%23FFFFFF"/><path d="M22 84 C22 66, 35 58, 50 58 C65 58, 78 66, 78 84 Z" fill="%23FFFFFF"/></svg>`
   }
 ];
+
