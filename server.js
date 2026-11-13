@@ -2353,7 +2353,7 @@ async function startServer() {
       res.status(500).json({ error: "Failed to fetch leads by IDs" });
     }
   });
-  app.post("/api/leads/custom", requireSuperAdminMiddleware, async (req, res) => {
+  app.post("/api/leads/custom", optionalAuthMiddleware, async (req, res) => {
     try {
       const body = req.body || {};
       const result = await batchInsertLeads([{
@@ -2388,7 +2388,7 @@ async function startServer() {
       res.status(400).json({ error: error.message || "Could not add custom lead" });
     }
   });
-  app.delete("/api/leads/custom/:id", requireSuperAdminMiddleware, async (req, res) => {
+  app.delete("/api/leads/custom/:id", optionalAuthMiddleware, async (req, res) => {
     try {
       const targetId = req.params.id;
       const { getDataSource: getDataSource2, getPrimaryDataSource: getPrimaryDataSource2, getSecondaryDataSource: getSecondaryDataSource2, getTertiaryDataSource: getTertiaryDataSource2 } = await Promise.resolve().then(() => (init_dataSource(), dataSource_exports));

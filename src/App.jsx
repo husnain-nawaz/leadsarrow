@@ -177,7 +177,7 @@ function WorkspaceContent({ activeView, setActiveView, onToggleLanding }) {
       <LeadDetailDrawer />
       <AuthModal />
       <SavedListsModal />
-      {isSuperAdmin && <AddLeadModal />}
+      <AddLeadModal />
       <ExportModal />
       <PlanUpgradeModal />
       <ProfileModal onOpenFullProfile={() => setActiveView('profile')} />

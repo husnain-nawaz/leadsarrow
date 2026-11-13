@@ -143,16 +143,14 @@ export default function AnalyticsBar() {
             Save / Load List
           </button>
 
-          {Boolean(user && (user.isSuperAdmin || user.role === 'superadmin' || user.email === 'alex@leadsarrow.io' || user.email === 'alex@nexuslead.io')) && (
-            <button
-              type="button"
-              onClick={() => dispatch(setAddLeadModalOpen(true))}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-              Add B2B Lead
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => dispatch(setAddLeadModalOpen(true))}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+            Add B2B Lead
+          </button>
 
           <button
             type="button"
