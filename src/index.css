@@ -23,6 +23,14 @@
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
   }
+
+  input, textarea, select {
+    color: #0f172a;
+  }
+
+  .dark input, .dark textarea, .dark select {
+    color: #f8fafc;
+  }
 }
 
 /* Custom subtle scrollbars for filter sidebar and dense data table */
