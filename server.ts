@@ -665,10 +665,27 @@ async function startServer() {
 
   app.delete('/api/leads/custom/:id', requireSuperAdminMiddleware, async (req, res) => {
     try {
-      const ds = await (await import('./server/dataSource.ts')).getDataSource();
-      const leadRepo = ds.getRepository((await import('./server/entities/Lead.ts')).Lead);
-      await leadRepo.delete(req.params.id);
-      res.json({ deleted: true, id: req.params.id });
+      const targetId = req.params.id;
+      const { getDataSource, getPrimaryDataSource, getSecondaryDataSource, getTertiaryDataSource } = await import('./server/dataSource.ts');
+      
+      const dsList = [
+        await getDataSource(),
+        await getTertiaryDataSource(),
+        await getSecondaryDataSource(),
+        await getPrimaryDataSource()
+      ].filter(Boolean);
+
+      let deleted = false;
+      for (const ds of dsList) {
+        try {
+          const result = await ds!.query('DELETE FROM leads WHERE id = ?', [targetId]);
+          if (result && result.affectedRows > 0) {
+            deleted = true;
+          }
+        } catch (_) {}
+      }
+
+      res.json({ deleted, id: targetId });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }

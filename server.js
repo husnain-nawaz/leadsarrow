@@ -18,10 +18,6 @@ var __decorateClass = (decorators, target, key, kind) => {
 };
 
 // server/entities/Lead.ts
-var Lead_exports = {};
-__export(Lead_exports, {
-  Lead: () => Lead
-});
 import { Entity, PrimaryColumn, Column, Index, CreateDateColumn } from "typeorm";
 var Lead;
 var init_Lead = __esm({
@@ -2294,10 +2290,25 @@ async function startServer() {
   });
   app.delete("/api/leads/custom/:id", requireSuperAdminMiddleware, async (req, res) => {
     try {
-      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
-      const leadRepo = ds.getRepository((await Promise.resolve().then(() => (init_Lead(), Lead_exports))).Lead);
-      await leadRepo.delete(req.params.id);
-      res.json({ deleted: true, id: req.params.id });
+      const targetId = req.params.id;
+      const { getDataSource: getDataSource2, getPrimaryDataSource: getPrimaryDataSource2, getSecondaryDataSource: getSecondaryDataSource2, getTertiaryDataSource: getTertiaryDataSource2 } = await Promise.resolve().then(() => (init_dataSource(), dataSource_exports));
+      const dsList = [
+        await getDataSource2(),
+        await getTertiaryDataSource2(),
+        await getSecondaryDataSource2(),
+        await getPrimaryDataSource2()
+      ].filter(Boolean);
+      let deleted = false;
+      for (const ds of dsList) {
+        try {
+          const result = await ds.query("DELETE FROM leads WHERE id = ?", [targetId]);
+          if (result && result.affectedRows > 0) {
+            deleted = true;
+          }
+        } catch (_) {
+        }
+      }
+      res.json({ deleted, id: targetId });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }

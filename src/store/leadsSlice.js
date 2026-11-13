@@ -76,7 +76,7 @@ export const addCustomLead = createAsyncThunk(
 
 export const deleteCustomLead = createAsyncThunk(
   'leads/deleteCustomLead',
-  async (leadId, { rejectWithValue }) => {
+  async (leadId, { dispatch, getState, rejectWithValue }) => {
     try {
       try {
         await removeCustomLeadFromFirestore(leadId);
@@ -84,6 +84,8 @@ export const deleteCustomLead = createAsyncThunk(
         // Ignore if not stored in Firestore
       }
       await deleteCustomLeadOnServerApi(leadId);
+      const { filters } = getState();
+      dispatch(fetchLeads(filters));
       return leadId;
     } catch (error) {
       return rejectWithValue(error.message || 'Failed to delete custom lead');
