@@ -44,6 +44,10 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
 
   const { isDark, toggleTheme } = useTheme();
 
+  const isUnlimited = user?.planId === 'unlimited' || user?.plan?.toLowerCase().includes('unlimited');
+  const userPlanName = user?.plan || 'Free Starter';
+  const userFirstName = (user?.name || 'User').split(' ')[0];
+
   useEffect(() => {
     let isMounted = true;
     const fetchPreviewLeads = async () => {
@@ -175,45 +179,83 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
 
             {user ? (
               <>
-                {/* Profile Button */}
-                <button
-                  type="button"
-                  onClick={() => dispatch(openProfileModal())}
-                  title="Manage Profile & Settings"
-                  className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${
-                    isDark
-                      ? 'text-slate-200 bg-slate-800/90 border-slate-700 hover:border-slate-600'
-                      : 'text-slate-700 bg-white border-slate-200 hover:bg-slate-50'
-                  }`}
-                >
-                  {user.photoUrl || user.photoURL || user.photo_url ? (
-                    <img
-                      src={user.photoUrl || user.photoURL || user.photo_url}
-                      alt={user.name || 'User'}
-                      className="w-5 h-5 rounded-full object-cover border border-slate-600"
-                    />
-                  ) : (
-                    <div className="w-5 h-5 rounded-full bg-orange-600 text-white flex items-center justify-center font-bold text-[10px]">
-                      {(user.name || user.email || 'U').charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                  <span className="hidden sm:inline max-w-[120px] truncate">{user.name?.split(' ')[0] || 'Profile'}</span>
-                  <UserIcon className="w-3.5 h-3.5 text-slate-400" />
-                </button>
+                {/* Profile Button with Hover Dropdown (Identical to Dashboard) */}
+                <div className="relative group shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => dispatch(openProfileModal())}
+                    title={`Profile: ${user.name || user.email} (${userPlanName})`}
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer shrink-0 ${
+                      isDark
+                        ? 'text-slate-200 bg-slate-800/90 border-slate-700 hover:border-slate-600 hover:bg-slate-800'
+                        : 'text-slate-700 bg-white border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    {user.photoUrl || user.photoURL || user.photo_url ? (
+                      <img
+                        src={user.photoUrl || user.photoURL || user.photo_url}
+                        alt={user.name || 'User'}
+                        className="w-5 h-5 rounded-full object-cover border border-slate-600 shrink-0"
+                      />
+                    ) : (
+                      <div className="w-5 h-5 rounded-full bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-400 flex items-center justify-center font-bold text-[10px] shrink-0">
+                        {(user.name || user.email || 'U').charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <span className="hidden sm:inline max-w-[90px] truncate">{userFirstName}</span>
+                    <UserIcon className="w-3.5 h-3.5 text-slate-400" />
+                  </button>
 
-                {/* Sign Out Button */}
-                <button
-                  type="button"
-                  onClick={() => dispatch(openSignOutModal())}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 ${
-                    isDark
-                      ? 'text-slate-400 hover:text-red-400 hover:bg-slate-800'
-                      : 'text-slate-600 hover:text-red-600 hover:bg-red-50'
-                  }`}
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Sign Out</span>
-                </button>
+                  {/* Hover Dropdown Menu showing Plan and Sign Out */}
+                  <div className="absolute right-0 top-full pt-1.5 opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto transition-all duration-150 z-50">
+                    <div className="w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl p-2.5 space-y-2 text-slate-900 dark:text-slate-100 text-left">
+                      {/* User info & Plan */}
+                      <div className="px-2 py-1.5 bg-slate-50 dark:bg-slate-800/60 rounded-lg border border-slate-100 dark:border-slate-800 space-y-1">
+                        <div className="text-[11px] font-bold text-slate-900 dark:text-white truncate">
+                          {user.name || 'User'}
+                        </div>
+                        <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono truncate">
+                          {user.email}
+                        </div>
+                        <div className="pt-1 flex items-center justify-between border-t border-slate-200/60 dark:border-slate-700/60 mt-1">
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Active Plan:</span>
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300">
+                            {userPlanName}
+                          </span>
+                        </div>
+                        {!isUnlimited && (
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                            <span>Credits:</span>
+                            <span className="font-mono font-semibold text-slate-700 dark:text-slate-300">
+                              {user.creditsRemaining ?? 100} / {user.dailyCreditsLimit || 100}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Actions inside hover dropdown */}
+                      <div className="space-y-0.5">
+                        <button
+                          type="button"
+                          onClick={() => dispatch(openProfileModal())}
+                          className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer text-left"
+                        >
+                          <UserIcon className="w-3.5 h-3.5 text-slate-400" />
+                          <span>Account Profile</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => dispatch(openSignOutModal())}
+                          className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer text-left"
+                        >
+                          <LogOut className="w-3.5 h-3.5" />
+                          <span>Sign Out</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
                 {/* Dashboard Button */}
                 <button
