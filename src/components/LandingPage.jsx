@@ -43,6 +43,7 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
   const [previewLoading, setPreviewLoading] = useState(true);
 
   const { isDark, toggleTheme } = useTheme();
+  const [avatarError, setAvatarError] = useState(false);
 
   const isUnlimited = user?.planId === 'unlimited' || user?.plan?.toLowerCase().includes('unlimited');
   const userPlanName = user?.plan || 'Free Starter';
@@ -191,10 +192,11 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
                         : 'text-slate-700 bg-white border-slate-200 hover:bg-slate-50'
                     }`}
                   >
-                    {user.photoUrl || user.photoURL || user.photo_url ? (
+                    {(user.photoUrl || user.photoURL || user.photo_url) && !avatarError ? (
                       <img
                         src={user.photoUrl || user.photoURL || user.photo_url}
-                        alt={user.name || 'User'}
+                        alt=""
+                        onError={() => setAvatarError(true)}
                         className="w-5 h-5 rounded-full object-cover border border-slate-600 shrink-0"
                       />
                     ) : (

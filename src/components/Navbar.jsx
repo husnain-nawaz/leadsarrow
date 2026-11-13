@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { openAuthModal, openSignOutModal, openUpgradeModal, openProfileModal } from '../store/authSlice.js';
 import { setOnlyCustom, resetAllFilters } from '../store/filtersSlice.js';
@@ -11,6 +11,7 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
   const { user } = useSelector((state) => state.auth);
   const { onlyCustom, savedListLeadIds } = useSelector((state) => state.filters);
   const { theme, toggleTheme, isDark } = useTheme();
+  const [avatarError, setAvatarError] = useState(false);
 
   const handleNavClick = (viewKey) => {
     if (viewKey === 'finder') {
@@ -184,10 +185,11 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
                 title={`Profile: ${user.name || user.email} (${userPlanName})`}
                 className="flex items-center gap-1.5 px-2 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors cursor-pointer shrink-0"
               >
-                {user.photoUrl || user.photoURL || user.photo_url ? (
+                {(user.photoUrl || user.photoURL || user.photo_url) && !avatarError ? (
                   <img
                     src={user.photoUrl || user.photoURL || user.photo_url}
-                    alt={user.name || 'User'}
+                    alt=""
+                    onError={() => setAvatarError(true)}
                     className="w-5 h-5 rounded-full object-cover border border-slate-200 dark:border-slate-600 shrink-0"
                   />
                 ) : (
