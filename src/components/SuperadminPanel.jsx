@@ -30,7 +30,9 @@ import {
   UserX,
   UserCheck,
   AlertTriangle,
-  X
+  X,
+  Sun,
+  Moon
 } from 'lucide-react';
 import {
   fetchAdminUsersApi,
@@ -45,9 +47,11 @@ import { fetchLeads } from '../store/leadsSlice.js';
 import { fetchSavedLists } from '../store/savedListsSlice.js';
 import { FILTER_TAXONOMY } from '../data/taxonomy.js';
 import * as XLSX from 'xlsx';
+import { useTheme } from '../context/ThemeContext';
 
 export default function SuperadminPanel({ onBack }) {
   const dispatch = useDispatch();
+  const { theme, toggleTheme } = useTheme();
   const { user } = useSelector((state) => state.auth);
   const filters = useSelector((state) => state.filters);
 
@@ -641,34 +645,44 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col font-sans selection:bg-orange-600 selection:text-white">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 flex flex-col font-sans selection:bg-orange-600 selection:text-white transition-colors">
       {/* Superadmin Top Bar */}
-      <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-md px-6 py-4 sticky top-0 z-30 flex items-center justify-between gap-4">
+      <header className="border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md px-6 py-4 sticky top-0 z-30 flex items-center justify-between gap-4 transition-colors">
         <div className="flex items-center gap-4">
           <div className="w-9 h-9 rounded-xl bg-orange-600 flex items-center justify-center text-white font-bold shadow-md shadow-orange-600/30">
             <Shield className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-base font-bold text-white font-display">
+              <h1 className="text-base font-bold text-slate-900 dark:text-white font-display">
                 LeadsArrow Superadmin Mission Control
               </h1>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-orange-500/20 text-orange-400 border border-orange-500/30">
                 Superadmin Mode
               </span>
             </div>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Manage user logins, subscriptions, payments & multi-channel data ingestion
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Light / Dark Mode Toggle Button */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            className="p-1.5 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 rounded-lg transition-colors cursor-pointer flex items-center justify-center shadow-xs"
+          >
+            {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
+          </button>
+
           <button
             type="button"
             onClick={loadAdminData}
             disabled={loadingUsers}
-            className="px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loadingUsers ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
@@ -693,27 +707,27 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
 
       {/* Active High-Capacity Streaming Progress Widget (Non-blocking, Multitasking enabled) */}
       {jobProgress && (activeJobId || jobProgress.status === 'ingesting' || jobProgress.status === 'parsing') && (
-        <div className="bg-slate-950/95 border-b border-orange-500/40 px-6 py-3.5 shadow-xl sticky top-[73px] z-20 backdrop-blur-md">
+        <div className="bg-white/95 dark:bg-slate-950/95 border-b border-orange-500/40 px-6 py-3.5 shadow-xl sticky top-[73px] z-20 backdrop-blur-md transition-colors">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3 w-full md:w-auto">
               <div className="w-8 h-8 rounded-lg bg-orange-600/20 border border-orange-500/40 flex items-center justify-center text-orange-400 shrink-0">
                 <RefreshCw className="w-4 h-4 animate-spin" />
               </div>
               <div>
-                <div className="text-xs font-bold text-white flex items-center gap-2">
+                <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <span>Adding High-Capacity Data to Database...</span>
                   <span className="text-orange-400 font-mono font-bold text-sm">
                     {jobProgress.percent}%
                   </span>
                 </div>
-                <div className="text-[11px] text-slate-400 mt-0.5">
-                  File: <span className="text-slate-200 font-medium">{jobProgress.fileName}</span> &bull;{' '}
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  File: <span className="text-slate-800 dark:text-slate-200 font-medium">{jobProgress.fileName}</span> &bull;{' '}
                   {jobProgress.status === 'parsing' ? (
-                    <span className="text-amber-400">Parsing and mapping spreadsheet structure...</span>
+                    <span className="text-amber-500 dark:text-amber-400">Parsing and mapping spreadsheet structure...</span>
                   ) : (
                     <span>
-                      Inserted <strong className="text-emerald-400">{(jobProgress.insertedCount || jobProgress.processedRows || 0).toLocaleString()}</strong> of{' '}
-                      <strong className="text-slate-300">{(jobProgress.totalRows || 0).toLocaleString()}</strong> rows into MySQL
+                      Inserted <strong className="text-emerald-600 dark:text-emerald-400">{(jobProgress.insertedCount || jobProgress.processedRows || 0).toLocaleString()}</strong> of{' '}
+                      <strong className="text-slate-700 dark:text-slate-300">{(jobProgress.totalRows || 0).toLocaleString()}</strong> rows into MySQL
                     </span>
                   )}
                 </div>
@@ -722,7 +736,7 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
 
             <div className="flex items-center gap-4 w-full md:w-auto justify-end">
               {/* Progress bar line */}
-              <div className="w-full md:w-72 bg-slate-800 rounded-full h-2.5 overflow-hidden border border-slate-700">
+              <div className="w-full md:w-72 bg-slate-200 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden border border-slate-300 dark:border-slate-700">
                 <div
                   className="bg-gradient-to-r from-orange-500 to-emerald-500 h-full rounded-full transition-all duration-300 ease-out"
                   style={{ width: `${Math.max(4, jobProgress.percent || 0)}%` }}
@@ -730,7 +744,7 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
               </div>
 
               {/* Multitask reminder tag */}
-              <span className="hidden lg:inline-block text-[11px] text-slate-400 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-md">
+              <span className="hidden lg:inline-block text-[11px] text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1 rounded-md">
                 Background Active (Multitasking enabled)
               </span>
 
@@ -738,7 +752,7 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
               <button
                 type="button"
                 onClick={handleCancelActiveJob}
-                className="px-3.5 py-1.5 bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/40 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-sm"
+                className="px-3.5 py-1.5 bg-red-600/10 dark:bg-red-600/20 hover:bg-red-600 text-red-600 dark:text-red-300 hover:text-white border border-red-500/40 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-sm"
                 title="Cancel and halt ingestion immediately"
               >
                 <X className="w-3.5 h-3.5" />
@@ -750,69 +764,69 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
       )}
 
       {/* KPI Stats Bar */}
-      <div className="bg-slate-950 border-b border-slate-800/80 px-6 py-4">
+      <div className="bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800/80 px-6 py-4 transition-colors">
         <div className="max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-          <div className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-xl">
-            <div className="flex items-center justify-between text-slate-400 text-xs">
+          <div className="bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-3.5 rounded-xl shadow-xs transition-colors">
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs">
               <span>Total Logins / Users</span>
-              <Users className="w-4 h-4 text-blue-400" />
+              <Users className="w-4 h-4 text-blue-500 dark:text-blue-400" />
             </div>
-            <div className="text-2xl font-bold text-white mt-1 font-display">
+            <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1 font-display">
               {stats?.totalUsers ?? usersList.length}
             </div>
-            <div className="text-[11px] text-slate-400 mt-0.5">
+            <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
               {stats?.paidUsers ?? 0} Paid · {stats?.freeUsers ?? 0} Free
             </div>
           </div>
 
-          <div className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-xl">
-            <div className="flex items-center justify-between text-slate-400 text-xs">
+          <div className="bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-3.5 rounded-xl shadow-xs transition-colors">
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs">
               <span>Paid Subscriptions</span>
-              <CreditCard className="w-4 h-4 text-emerald-400" />
+              <CreditCard className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
             </div>
-            <div className="text-2xl font-bold text-emerald-400 mt-1 font-display">
+            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1 font-display">
               {stats?.paidUsers ?? 0} Accounts
             </div>
-            <div className="text-[11px] text-slate-400 mt-0.5">
+            <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
               Starter ($10), Pro ($39), Unlimited ($79)
             </div>
           </div>
 
-          <div className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-xl">
-            <div className="flex items-center justify-between text-slate-400 text-xs">
+          <div className="bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-3.5 rounded-xl shadow-xs transition-colors">
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs">
               <span>Estimated MRR</span>
-              <DollarSign className="w-4 h-4 text-orange-400" />
+              <DollarSign className="w-4 h-4 text-orange-500 dark:text-orange-400" />
             </div>
-            <div className="text-2xl font-bold text-orange-400 mt-1 font-display">
+            <div className="text-2xl font-bold text-orange-600 dark:text-orange-400 mt-1 font-display">
               ${stats?.totalRevenue ?? 0} / mo
             </div>
-            <div className="text-[11px] text-slate-400 mt-0.5">
+            <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
               Active recurring revenue
             </div>
           </div>
 
-          <div className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-xl">
-            <div className="flex items-center justify-between text-slate-400 text-xs">
+          <div className="bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-3.5 rounded-xl shadow-xs transition-colors">
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs">
               <span>Credits Used Today</span>
-              <Zap className="w-4 h-4 text-amber-400" />
+              <Zap className="w-4 h-4 text-amber-500 dark:text-amber-400" />
             </div>
-            <div className="text-2xl font-bold text-amber-400 mt-1 font-display">
+            <div className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1 font-display">
               {(stats?.totalCreditsUsedToday ?? 0).toLocaleString()}
             </div>
-            <div className="text-[11px] text-slate-400 mt-0.5">
+            <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
               Across all user sessions
             </div>
           </div>
 
-          <div className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-xl col-span-2 sm:col-span-1">
-            <div className="flex items-center justify-between text-slate-400 text-xs">
+          <div className="bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-3.5 rounded-xl col-span-2 sm:col-span-1 shadow-xs transition-colors">
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs">
               <span>Database Volume</span>
-              <Database className="w-4 h-4 text-purple-400" />
+              <Database className="w-4 h-4 text-purple-500 dark:text-purple-400" />
             </div>
-            <div className="text-2xl font-bold text-purple-400 mt-1 font-display">
+            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400 mt-1 font-display">
               {(stats?.totalDatabaseLeads ?? 0).toLocaleString()}
             </div>
-            <div className="text-[11px] text-slate-400 mt-0.5">
+            <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
               Live records in MySQL B2B_database
             </div>
           </div>
@@ -822,14 +836,14 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
       {/* Main Container */}
       <main className="max-w-7xl mx-auto w-full px-6 py-6 flex-1 flex flex-col gap-6">
         {/* Navigation Tabs */}
-        <div className="flex border-b border-slate-800 gap-2">
+        <div className="flex border-b border-slate-200 dark:border-slate-800 gap-2">
           <button
             type="button"
             onClick={() => setActiveTab('users')}
             className={`px-5 py-2.5 text-xs font-bold transition-all rounded-t-lg flex items-center gap-2 cursor-pointer ${
               activeTab === 'users'
-                ? 'bg-slate-800 text-orange-400 border-b-2 border-orange-500'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                ? 'bg-white dark:bg-slate-800 text-orange-600 dark:text-orange-400 border-b-2 border-orange-500 shadow-xs'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50'
             }`}
           >
             <Users className="w-4 h-4" />
@@ -841,8 +855,8 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
             onClick={() => setActiveTab('ingestion')}
             className={`px-5 py-2.5 text-xs font-bold transition-all rounded-t-lg flex items-center gap-2 cursor-pointer ${
               activeTab === 'ingestion'
-                ? 'bg-slate-800 text-orange-400 border-b-2 border-orange-500'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                ? 'bg-white dark:bg-slate-800 text-orange-600 dark:text-orange-400 border-b-2 border-orange-500 shadow-xs'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50'
             }`}
           >
             <Database className="w-4 h-4" />
@@ -854,7 +868,7 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
         {activeTab === 'users' && (
           <div className="space-y-4">
             {/* Filters Bar */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-950 p-4 rounded-xl border border-slate-800">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs transition-colors">
               <div className="relative w-full sm:w-72">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
@@ -862,7 +876,7 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                   placeholder="Search user name or email..."
                   value={userSearchQuery}
                   onChange={(e) => setUserSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-orange-500"
+                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-orange-500 transition-colors"
                 />
               </div>
 
@@ -871,7 +885,7 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                 <select
                   value={selectedPlanFilter}
                   onChange={(e) => setSelectedPlanFilter(e.target.value)}
-                  className="px-3 py-2 text-xs bg-slate-900 border border-slate-700 rounded-lg text-slate-200 focus:outline-none"
+                  className="px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none transition-colors"
                 >
                   <option value="all">All Plans</option>
                   <option value="free">Free Starter ($0 - 100/day)</option>
@@ -884,7 +898,7 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                 <select
                   value={selectedPaymentFilter}
                   onChange={(e) => setSelectedPaymentFilter(e.target.value)}
-                  className="px-3 py-2 text-xs bg-slate-900 border border-slate-700 rounded-lg text-slate-200 focus:outline-none"
+                  className="px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none transition-colors"
                 >
                   <option value="all">All Payment Statuses</option>
                   <option value="paid">Paid Customers</option>
@@ -894,20 +908,20 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                 <button
                   type="button"
                   onClick={handleExportUsersCsv}
-                  className="px-3 py-2 text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg flex items-center gap-1.5 whitespace-nowrap cursor-pointer transition-colors"
+                  className="px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 rounded-lg flex items-center gap-1.5 whitespace-nowrap cursor-pointer transition-colors shadow-xs"
                 >
-                  <FileText className="w-3.5 h-3.5 text-orange-400" />
+                  <FileText className="w-3.5 h-3.5 text-orange-500 dark:text-orange-400" />
                   <span>Export Users CSV</span>
                 </button>
               </div>
             </div>
 
             {/* Users Table */}
-            <div className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+            <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs transition-colors">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="border-b border-slate-800 bg-slate-900/60 text-slate-400 text-[11px] uppercase tracking-wider">
+                    <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 text-[11px] uppercase tracking-wider">
                       <th className="py-3 px-4">User & Login Profile</th>
                       <th className="py-3 px-4">Plan Tier</th>
                       <th className="py-3 px-4">Payment Status</th>
@@ -919,10 +933,10 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                       <th className="py-3 px-4 text-right">Superadmin Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60 text-slate-300">
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300">
                     {filteredUsers.length === 0 ? (
                       <tr>
-                        <td colSpan={9} className="py-8 text-center text-slate-500">
+                        <td colSpan={9} className="py-8 text-center text-slate-400 dark:text-slate-500">
                           No users found matching your criteria.
                         </td>
                       </tr>
@@ -938,29 +952,29 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                             onClick={() => setSelectedCustomer(u)}
                             className={`transition-colors cursor-pointer group ${
                               u.isDeactivated
-                                ? 'bg-rose-950/20 hover:bg-rose-950/30 opacity-75'
-                                : 'hover:bg-slate-900/60'
+                                ? 'bg-rose-50 dark:bg-rose-950/20 hover:bg-rose-100/60 dark:hover:bg-rose-950/30 opacity-75'
+                                : 'hover:bg-slate-50 dark:hover:bg-slate-900/60'
                             }`}
                           >
                             {/* User & Login */}
                             <td className="py-3 px-4">
-                              <div className="font-semibold text-white group-hover:text-orange-400 transition-colors flex items-center gap-1.5">
+                              <div className="font-semibold text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors flex items-center gap-1.5">
                                 <span>{u.name}</span>
                                 {u.isSuperAdmin && (
-                                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-orange-600/30 text-orange-400 font-bold border border-orange-500/30">
+                                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-orange-100 dark:bg-orange-600/30 text-orange-700 dark:text-orange-400 font-bold border border-orange-300 dark:border-orange-500/30">
                                     ADMIN
                                   </span>
                                 )}
                                 {u.isDeactivated && (
-                                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-rose-600/30 text-rose-300 font-bold border border-rose-500/40">
+                                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-rose-100 dark:bg-rose-600/30 text-rose-700 dark:text-rose-300 font-bold border border-rose-300 dark:border-rose-500/40">
                                     DEACTIVATED
                                   </span>
                                 )}
                               </div>
-                              <div className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1 font-mono">
+                              <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1 font-mono">
                                 <span>{u.email}</span>
-                                <span className="text-slate-600">·</span>
-                                <span className="uppercase text-[9px] px-1 rounded bg-slate-800 text-slate-400">
+                                <span className="text-slate-400 dark:text-slate-600">·</span>
+                                <span className="uppercase text-[9px] px-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-transparent">
                                   {u.authProvider || 'jwt'}
                                 </span>
                               </div>
@@ -971,12 +985,12 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                               <span
                                 className={`inline-block px-2.5 py-1 rounded-md text-xs font-bold border ${
                                   u.planId === 'unlimited'
-                                    ? 'bg-purple-950/80 text-purple-300 border-purple-800'
+                                    ? 'bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-800'
                                     : u.planId === 'pro'
-                                    ? 'bg-orange-950/80 text-orange-300 border-orange-800'
+                                    ? 'bg-orange-100 dark:bg-orange-950/80 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-orange-800'
                                     : u.planId === 'starter'
-                                    ? 'bg-emerald-950/80 text-emerald-300 border-emerald-800'
-                                    : 'bg-slate-800 text-slate-300 border-slate-700'
+                                    ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
+                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
                                 }`}
                               >
                                 {u.plan || 'Free Starter'}
@@ -989,8 +1003,8 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                                 <span
                                   className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border flex items-center gap-1 ${
                                     isPaid
-                                      ? 'bg-emerald-950 text-emerald-400 border-emerald-800'
-                                      : 'bg-slate-800 text-slate-400 border-slate-700'
+                                      ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800'
+                                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
                                   }`}
                                 >
                                   {isPaid ? <Check className="w-3 h-3" /> : null}
@@ -1001,13 +1015,13 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
 
                             {/* Total Paid (LTV) */}
                             <td className="py-3 px-4 font-mono">
-                              <span className={`font-bold text-xs ${totalSpent > 0 ? 'text-emerald-400 font-semibold' : 'text-slate-500'}`}>
+                              <span className={`font-bold text-xs ${totalSpent > 0 ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-slate-400 dark:text-slate-500'}`}>
                                 ${totalSpent.toFixed(2)}
                               </span>
                             </td>
 
                             {/* Daily Limit */}
-                            <td className="py-3 px-4 font-mono font-medium">
+                            <td className="py-3 px-4 font-mono font-medium text-slate-800 dark:text-slate-200">
                               {isUnlimited ? '∞ Unlimited' : `${(u.dailyCreditsLimit || 100).toLocaleString()} / day`}
                             </td>
 
@@ -1016,10 +1030,10 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                               <span
                                 className={`font-bold ${
                                   isUnlimited
-                                    ? 'text-purple-400'
+                                    ? 'text-purple-600 dark:text-purple-400'
                                     : (u.creditsRemaining ?? 100) > 0
-                                    ? 'text-emerald-400'
-                                    : 'text-rose-400'
+                                    ? 'text-emerald-600 dark:text-emerald-400'
+                                    : 'text-rose-600 dark:text-rose-400'
                                 }`}
                               >
                                 {isUnlimited ? '∞ Uncapped' : (u.creditsRemaining ?? 100).toLocaleString()}
@@ -1027,17 +1041,17 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                             </td>
 
                             {/* Credits Used Today */}
-                            <td className="py-3 px-4 font-mono text-slate-300">
+                            <td className="py-3 px-4 font-mono text-slate-700 dark:text-slate-300">
                               <span className="font-semibold">{u.creditsUsedToday ?? 0}</span>
-                              <span className="text-[10px] text-slate-500 ml-1">
+                              <span className="text-[10px] text-slate-400 dark:text-slate-500 ml-1">
                                 (tot: {(u.totalCreditsUsed ?? 0).toLocaleString()})
                               </span>
                             </td>
 
                             {/* Last Active */}
-                            <td className="py-3 px-4 text-[11px] text-slate-400">
+                            <td className="py-3 px-4 text-[11px] text-slate-500 dark:text-slate-400">
                               {new Date(u.lastLoginAt || u.createdAt).toLocaleDateString()}{' '}
-                              <span className="text-slate-500">
+                              <span className="text-slate-400 dark:text-slate-500">
                                 {new Date(u.lastLoginAt || u.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </span>
                             </td>
@@ -1048,14 +1062,14 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                                 <button
                                   type="button"
                                   onClick={() => setSelectedCustomer(u)}
-                                  className="px-2.5 py-1 text-xs font-semibold text-orange-400 hover:text-white bg-orange-950/40 hover:bg-orange-600 border border-orange-800 rounded-md transition-colors cursor-pointer flex items-center gap-1"
+                                  className="px-2.5 py-1 text-xs font-semibold text-orange-600 dark:text-orange-400 hover:text-white bg-orange-100 dark:bg-orange-950/40 hover:bg-orange-600 dark:hover:bg-orange-600 border border-orange-300 dark:border-orange-800 rounded-md transition-colors cursor-pointer flex items-center gap-1"
                                 >
                                   <Receipt className="w-3 h-3" />
                                   <span>History</span>
                                 </button>
                                 {u.isSuperAdmin ? (
-                                  <span className="px-2.5 py-1 text-xs font-semibold text-slate-500 bg-slate-900 border border-slate-800 rounded-md select-none cursor-not-allowed flex items-center gap-1">
-                                    <Shield className="w-3 h-3 text-orange-400" />
+                                  <span className="px-2.5 py-1 text-xs font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md select-none cursor-not-allowed flex items-center gap-1">
+                                    <Shield className="w-3 h-3 text-orange-500 dark:text-orange-400" />
                                     <span>Locked</span>
                                   </span>
                                 ) : (
@@ -1070,7 +1084,7 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                                           paymentStatus: u.paymentStatus || 'free'
                                         });
                                       }}
-                                      className="px-2.5 py-1 text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-md transition-colors cursor-pointer"
+                                      className="px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 rounded-md transition-colors cursor-pointer"
                                     >
                                       Edit
                                     </button>
@@ -1080,8 +1094,8 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                                       title={u.isDeactivated ? 'Reactivate User' : 'Deactivate User'}
                                       className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer flex items-center gap-1 border ${
                                         u.isDeactivated
-                                          ? 'bg-emerald-950/40 hover:bg-emerald-600 text-emerald-400 hover:text-white border-emerald-800'
-                                          : 'bg-rose-950/40 hover:bg-rose-600 text-rose-400 hover:text-white border-rose-800'
+                                          ? 'bg-emerald-100 dark:bg-emerald-950/40 hover:bg-emerald-600 text-emerald-700 dark:text-emerald-400 hover:text-white border-emerald-300 dark:border-emerald-800'
+                                          : 'bg-rose-100 dark:bg-rose-950/40 hover:bg-rose-600 text-rose-700 dark:text-rose-400 hover:text-white border-rose-300 dark:border-rose-800'
                                       }`}
                                     >
                                       {u.isDeactivated ? (
@@ -1111,39 +1125,39 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
 
             {/* Customer Detailed Dossier & Purchase History Modal */}
             {selectedCustomer && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs overflow-y-auto">
-                <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl my-8">
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 dark:bg-slate-950/80 backdrop-blur-xs overflow-y-auto">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl my-8 text-slate-900 dark:text-slate-100 transition-colors">
                   {/* Header */}
-                  <div className="flex items-start justify-between border-b border-slate-800 pb-4">
+                  <div className="flex items-start justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-bold text-white font-display">
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white font-display">
                           {selectedCustomer.name}
                         </h3>
                         {selectedCustomer.isSuperAdmin && (
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-600/30 text-orange-400 font-extrabold border border-orange-500/30">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-600/30 text-orange-700 dark:text-orange-400 font-extrabold border border-orange-300 dark:border-orange-500/30">
                             SUPERADMIN
                           </span>
                         )}
                         {selectedCustomer.isDeactivated && (
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-600/30 text-rose-300 font-extrabold border border-rose-500/40">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-600/30 text-rose-700 dark:text-rose-300 font-extrabold border border-rose-300 dark:border-rose-500/40">
                             DEACTIVATED
                           </span>
                         )}
                         <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
                           selectedCustomer.paymentStatus === 'paid'
-                            ? 'bg-emerald-950 text-emerald-400 border-emerald-800'
-                            : 'bg-slate-800 text-slate-400 border-slate-700'
+                            ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
                         }`}>
                           {selectedCustomer.paymentStatus === 'paid' ? 'Paid Customer' : 'Free Tier'}
                         </span>
                       </div>
-                      <div className="text-xs text-slate-400 mt-1 flex flex-wrap items-center gap-2 font-mono">
+                      <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex flex-wrap items-center gap-2 font-mono">
                         <span>{selectedCustomer.email}</span>
                         <span>·</span>
                         <span>{selectedCustomer.company || 'Enterprise Workspace'}</span>
                         <span>·</span>
-                        <span className="uppercase text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300">
+                        <span className="uppercase text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-transparent">
                           {selectedCustomer.authProvider || 'jwt'}
                         </span>
                       </div>
@@ -1152,7 +1166,7 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                     <button
                       type="button"
                       onClick={() => setSelectedCustomer(null)}
-                      className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+                      className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                     >
                       <X className="w-5 h-5" />
                     </button>
@@ -1160,23 +1174,23 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
 
                   {/* 4 Financial & Account KPI Summary Cards */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                    <div className="bg-slate-950 border border-slate-800 p-3 rounded-xl">
-                      <div className="text-slate-400 text-[11px] font-medium flex items-center gap-1">
-                        <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
+                    <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 rounded-xl">
+                      <div className="text-slate-500 dark:text-slate-400 text-[11px] font-medium flex items-center gap-1">
+                        <DollarSign className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
                         <span>Total Paid (LTV)</span>
                       </div>
-                      <div className="text-lg font-extrabold text-emerald-400 mt-1 font-mono">
+                      <div className="text-lg font-extrabold text-emerald-600 dark:text-emerald-400 mt-1 font-mono">
                         ${(selectedCustomer.totalPaid ?? (selectedCustomer.paymentStatus === 'paid' ? selectedCustomer.amountPaid : 0) ?? 0).toFixed(2)}
                       </div>
                       <div className="text-[10px] text-slate-500 mt-0.5">Cumulative spend</div>
                     </div>
 
-                    <div className="bg-slate-950 border border-slate-800 p-3 rounded-xl">
-                      <div className="text-slate-400 text-[11px] font-medium flex items-center gap-1">
-                        <CreditCard className="w-3.5 h-3.5 text-orange-400" />
+                    <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 rounded-xl">
+                      <div className="text-slate-500 dark:text-slate-400 text-[11px] font-medium flex items-center gap-1">
+                        <CreditCard className="w-3.5 h-3.5 text-orange-500 dark:text-orange-400" />
                         <span>Current Plan</span>
                       </div>
-                      <div className="text-xs font-bold text-white mt-1 truncate">
+                      <div className="text-xs font-bold text-slate-900 dark:text-white mt-1 truncate">
                         {selectedCustomer.plan || 'Free Starter'}
                       </div>
                       <div className="text-[10px] text-orange-400 mt-0.5">
@@ -1184,23 +1198,23 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                       </div>
                     </div>
 
-                    <div className="bg-slate-950 border border-slate-800 p-3 rounded-xl">
-                      <div className="text-slate-400 text-[11px] font-medium flex items-center gap-1">
-                        <Zap className="w-3.5 h-3.5 text-amber-400" />
+                    <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 rounded-xl">
+                      <div className="text-slate-500 dark:text-slate-400 text-[11px] font-medium flex items-center gap-1">
+                        <Zap className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
                         <span>Daily Credit Quota</span>
                       </div>
-                      <div className="text-sm font-bold text-white mt-1 font-mono">
+                      <div className="text-sm font-bold text-slate-900 dark:text-white mt-1 font-mono">
                         {selectedCustomer.planId === 'unlimited' ? '∞ Unlimited' : `${(selectedCustomer.dailyCreditsLimit || 100).toLocaleString()}`}
                       </div>
                       <div className="text-[10px] text-slate-500 mt-0.5">Refreshes every 24h</div>
                     </div>
 
-                    <div className="bg-slate-950 border border-slate-800 p-3 rounded-xl">
-                      <div className="text-slate-400 text-[11px] font-medium flex items-center gap-1">
-                        <Activity className="w-3.5 h-3.5 text-purple-400" />
+                    <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 rounded-xl">
+                      <div className="text-slate-500 dark:text-slate-400 text-[11px] font-medium flex items-center gap-1">
+                        <Activity className="w-3.5 h-3.5 text-purple-500 dark:text-purple-400" />
                         <span>Credits Left</span>
                       </div>
-                      <div className="text-sm font-bold text-purple-400 mt-1 font-mono">
+                      <div className="text-sm font-bold text-purple-600 dark:text-purple-400 mt-1 font-mono">
                         {selectedCustomer.planId === 'unlimited' ? '∞ Uncapped' : (selectedCustomer.creditsRemaining ?? 100).toLocaleString()}
                       </div>
                       <div className="text-[10px] text-slate-500 mt-0.5">Used today: {selectedCustomer.creditsUsedToday ?? 0}</div>
@@ -1210,7 +1224,7 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                   {/* History of Buying / Purchases & Invoices */}
                   <div className="space-y-2 text-xs">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-bold text-white flex items-center gap-1.5 font-display text-sm">
+                      <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5 font-display text-sm">
                         <Receipt className="w-4 h-4 text-orange-400" />
                         <span>History of Buying & Transactions</span>
                       </h4>
@@ -1219,9 +1233,9 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                       </span>
                     </div>
 
-                    <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-950 max-h-48 overflow-y-auto">
+                    <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-950 max-h-48 overflow-y-auto">
                       <table className="w-full text-left text-xs">
-                        <thead className="bg-slate-900/80 text-slate-400 text-[10px] uppercase border-b border-slate-800 sticky top-0">
+                        <thead className="bg-slate-100 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 text-[10px] uppercase border-b border-slate-200 dark:border-slate-800 sticky top-0">
                           <tr>
                             <th className="py-2.5 px-3">Invoice / ID</th>
                             <th className="py-2.5 px-3">Date</th>
@@ -1231,27 +1245,27 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                             <th className="py-2.5 px-3 text-right">Status</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-800 text-slate-300">
+                        <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
                           {(selectedCustomer.purchaseHistory && selectedCustomer.purchaseHistory.length > 0) ? (
                             selectedCustomer.purchaseHistory.map((item, idx) => (
-                              <tr key={idx} className="hover:bg-slate-900/40">
+                              <tr key={idx} className="hover:bg-slate-100/60 dark:hover:bg-slate-900/40">
                                 <td className="py-2.5 px-3 font-mono text-[11px] text-orange-400 font-semibold">
                                   {item.invoiceNumber || item.id}
                                 </td>
                                 <td className="py-2.5 px-3 text-slate-400">
                                   {new Date(item.date).toLocaleDateString()}
                                 </td>
-                                <td className="py-2.5 px-3 font-medium text-white">
+                                <td className="py-2.5 px-3 font-medium text-slate-900 dark:text-white">
                                   {item.planName || item.description || selectedCustomer.plan}
                                 </td>
-                                <td className="py-2.5 px-3 font-mono text-emerald-400 font-bold">
+                                <td className="py-2.5 px-3 font-mono text-emerald-600 dark:text-emerald-400 font-bold">
                                   ${Number(item.amount || 0).toFixed(2)}
                                 </td>
                                 <td className="py-2.5 px-3 text-slate-400 text-[11px]">
                                   {item.paymentMethod || 'Credit Card'}
                                 </td>
                                 <td className="py-2.5 px-3 text-right">
-                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-400 border border-emerald-800">
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
                                     {item.status || 'Completed'}
                                   </span>
                                 </td>
@@ -1271,14 +1285,14 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
 
                   {/* Login Sessions & Activity History */}
                   <div className="space-y-2 text-xs">
-                    <h4 className="font-bold text-white flex items-center gap-1.5 font-display text-sm">
+                    <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5 font-display text-sm">
                       <History className="w-4 h-4 text-blue-400" />
                       <span>Login & Session Activity History</span>
                     </h4>
 
-                    <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-950 max-h-36 overflow-y-auto">
+                    <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-950 max-h-36 overflow-y-auto">
                       <table className="w-full text-left text-xs">
-                        <thead className="bg-slate-900/80 text-slate-400 text-[10px] uppercase border-b border-slate-800 sticky top-0">
+                        <thead className="bg-slate-100 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 text-[10px] uppercase border-b border-slate-200 dark:border-slate-800 sticky top-0">
                           <tr>
                             <th className="py-2 px-3">Session Timestamp</th>
                             <th className="py-2 px-3">IP Address</th>
@@ -1286,17 +1300,17 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                             <th className="py-2 px-3 text-right">Device / Client</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-800 text-slate-300">
+                        <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
                           {(selectedCustomer.loginHistory && selectedCustomer.loginHistory.length > 0) ? (
                             selectedCustomer.loginHistory.map((sess, idx) => (
-                              <tr key={idx} className="hover:bg-slate-900/40">
-                                <td className="py-2 px-3 text-slate-300 font-mono text-[11px]">
+                              <tr key={idx} className="hover:bg-slate-100/60 dark:hover:bg-slate-900/40">
+                                <td className="py-2 px-3 text-slate-800 dark:text-slate-300 font-mono text-[11px]">
                                   {new Date(sess.timestamp).toLocaleString()}
                                 </td>
                                 <td className="py-2 px-3 font-mono text-slate-400 text-[11px]">
                                   {sess.ip || '192.168.1.1'}
                                 </td>
-                                <td className="py-2 px-3 text-slate-300">
+                                <td className="py-2 px-3 text-slate-700 dark:text-slate-300">
                                   {sess.location || 'United States'}
                                 </td>
                                 <td className="py-2 px-3 text-right text-slate-400 text-[11px]">
@@ -1317,7 +1331,7 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                   </div>
 
                   {/* Footer Actions */}
-                  <div className="flex items-center justify-between pt-3 border-t border-slate-800 text-xs">
+                  <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-800 text-xs">
                     <div className="text-slate-400 text-[11px]">
                       Registered on {new Date(selectedCustomer.createdAt).toLocaleDateString()}
                     </div>
@@ -1358,7 +1372,7 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                             });
                             setSelectedCustomer(null);
                           }}
-                          className="px-4 py-2 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors cursor-pointer"
+                          className="px-4 py-2 text-xs font-bold text-slate-700 dark:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 rounded-lg transition-colors cursor-pointer"
                         >
                           Edit Plan / Credits
                         </button>
@@ -1378,10 +1392,10 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
 
             {/* Edit User Modal Dialog */}
             {editingUserId && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs">
-                <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                    <h3 className="text-sm font-bold text-white font-display">
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 dark:bg-slate-950/80 backdrop-blur-xs">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl text-slate-900 dark:text-slate-100 transition-colors">
+                  <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white font-display">
                       Superadmin: Edit User Plan & Credits
                     </h3>
                     <button
@@ -1395,7 +1409,7 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
 
                   <div className="space-y-3 text-xs">
                     <div>
-                      <label className="block text-slate-300 font-medium mb-1">
+                      <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">
                         Select Plan Tier
                       </label>
                       <select
@@ -1407,7 +1421,7 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                             paymentStatus: e.target.value === 'free' ? 'free' : 'paid'
                           })
                         }
-                        className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white"
+                        className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
                       >
                         <option value="free">Free Starter ($0 · 100 credits/day)</option>
                         <option value="starter">Growth Starter ($10 · 2,000 credits/day)</option>
@@ -1417,7 +1431,7 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                     </div>
 
                     <div>
-                      <label className="block text-slate-300 font-medium mb-1">
+                      <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">
                         Override Credits Balance
                       </label>
                       <input
@@ -1426,12 +1440,12 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                         onChange={(e) =>
                           setEditFormData({ ...editFormData, creditsRemaining: Number(e.target.value) })
                         }
-                        className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white font-mono"
+                        className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white font-mono"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-slate-300 font-medium mb-1">
+                      <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">
                         Payment Status
                       </label>
                       <select
@@ -1439,7 +1453,7 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                         onChange={(e) =>
                           setEditFormData({ ...editFormData, paymentStatus: e.target.value })
                         }
-                        className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white"
+                        className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
                       >
                         <option value="paid">Paid (Subscription Active)</option>
                         <option value="free">Free / Unpaid Tier</option>
@@ -1447,11 +1461,11 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+                  <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
                     <button
                       type="button"
                       onClick={() => setEditingUserId(null)}
-                      className="px-4 py-2 text-xs text-slate-400 hover:text-white"
+                      className="px-4 py-2 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
                     >
                       Cancel
                     </button>
@@ -1473,14 +1487,14 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
         {activeTab === 'ingestion' && (
           <div className="space-y-6">
             {/* Ingestion Channels Bar */}
-            <div className="flex flex-wrap items-center gap-3 bg-slate-950 p-2 rounded-xl border border-slate-800">
+            <div className="flex flex-wrap items-center gap-3 bg-white dark:bg-slate-950 p-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs transition-colors">
               <button
                 type="button"
                 onClick={() => setIngestionChannel('csv')}
                 className={`px-4 py-2 text-xs font-bold rounded-lg flex items-center gap-2 transition-colors cursor-pointer ${
                   ingestionChannel === 'csv'
                     ? 'bg-orange-600 text-white'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900'
                 }`}
               >
                 <FileSpreadsheet className="w-4 h-4" />
@@ -1493,7 +1507,7 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                 className={`px-4 py-2 text-xs font-bold rounded-lg flex items-center gap-2 transition-colors cursor-pointer ${
                   ingestionChannel === 'sheets'
                     ? 'bg-orange-600 text-white'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900'
                 }`}
               >
                 <Table className="w-4 h-4" />
@@ -1506,7 +1520,7 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                 className={`px-4 py-2 text-xs font-bold rounded-lg flex items-center gap-2 transition-colors cursor-pointer ${
                   ingestionChannel === 'mysql'
                     ? 'bg-orange-600 text-white'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900'
                 }`}
               >
                 <Server className="w-4 h-4" />
@@ -1519,7 +1533,7 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                 className={`px-4 py-2 text-xs font-bold rounded-lg flex items-center gap-2 transition-colors cursor-pointer ${
                   ingestionChannel === 'manual'
                     ? 'bg-orange-600 text-white'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900'
                 }`}
               >
                 <Plus className="w-4 h-4" />
@@ -1529,7 +1543,7 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
 
             {/* CHANNEL A: CSV / EXCEL UPLOAD */}
             {ingestionChannel === 'csv' && (
-              <div className="bg-slate-950 border border-slate-800 rounded-2xl p-6 space-y-6">
+              <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-6 shadow-xs transition-colors">
                 <div>
                   <h3 className="text-base font-bold text-white font-display flex items-center gap-2">
                     <FileSpreadsheet className="w-5 h-5 text-orange-500" />
@@ -1541,9 +1555,9 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                 </div>
 
                 {/* Dropzone */}
-                <div className="border-2 border-dashed border-slate-700 hover:border-orange-500 rounded-xl p-8 text-center transition-colors bg-slate-900/50">
+                <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-orange-500 rounded-xl p-8 text-center transition-colors bg-slate-50 dark:bg-slate-900/50">
                   <Upload className="w-10 h-10 text-orange-500 mx-auto mb-3" />
-                  <div className="text-sm font-semibold text-white">
+                  <div className="text-sm font-semibold text-slate-900 dark:text-white">
                     Drop your .csv or .xlsx file here, or click to browse
                   </div>
                   <p className="text-xs text-slate-400 mt-1">
@@ -1573,7 +1587,7 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
 
                 {/* Or Paste Raw CSV */}
                 <div className="space-y-2">
-                  <label className="block text-xs font-medium text-slate-300">
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
                     Or Paste CSV / Tab-Separated Data Directly:
                   </label>
                   <textarea
@@ -1587,7 +1601,7 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                     placeholder="company,domain,name,title,email,phone,industry
 Stripe,stripe.com,Patrick Collison,CEO,p.collison@stripe.com,+14155550190,Fintech
 Snowflake,snowflake.com,Frank Slootman,Chairman,frank@snowflake.com,+14085550182,Cloud Infrastructure"
-                    className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-200 font-mono focus:outline-none focus:border-orange-500"
+                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 font-mono focus:outline-none focus:border-orange-500"
                   />
                 </div>
 
@@ -1595,9 +1609,9 @@ Snowflake,snowflake.com,Frank Slootman,Chairman,frank@snowflake.com,+14085550182
                 {parsedLeadsPreview.length > 0 && (
                   <div className="space-y-4 pt-2">
                     {/* List Integration Settings */}
-                    <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl flex flex-wrap items-center justify-between gap-4">
+                    <div className="p-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex flex-wrap items-center justify-between gap-4">
                       <div className="flex items-center gap-3">
-                        <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-200">
+                        <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200">
                           <input
                             type="checkbox"
                             checked={autoCreateSavedList}
@@ -1616,7 +1630,7 @@ Snowflake,snowflake.com,Frank Slootman,Chairman,frank@snowflake.com,+14085550182
                             value={importedListName}
                             onChange={(e) => setImportedListName(e.target.value)}
                             placeholder="e.g. Q4 Target Ingestion Segment"
-                            className="w-full px-3 py-1.5 text-xs bg-slate-950 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
+                            className="w-full px-3 py-1.5 text-xs bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-orange-500"
                           />
                         </div>
                       )}
@@ -1653,9 +1667,9 @@ Snowflake,snowflake.com,Frank Slootman,Chairman,frank@snowflake.com,+14085550182
                       </button>
                     </div>
 
-                    <div className="border border-slate-800 rounded-xl overflow-x-auto max-h-64">
+                    <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-x-auto max-h-64">
                       <table className="w-full text-left text-xs">
-                        <thead className="bg-slate-900 text-slate-400 text-[10px] uppercase">
+                        <thead className="bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-[10px] uppercase">
                           <tr>
                             <th className="py-2 px-3">Company</th>
                             <th className="py-2 px-3">Domain</th>
@@ -1665,14 +1679,14 @@ Snowflake,snowflake.com,Frank Slootman,Chairman,frank@snowflake.com,+14085550182
                             <th className="py-2 px-3">Industry</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-800 text-slate-300">
+                        <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
                           {parsedLeadsPreview.slice(0, 10).map((l, idx) => (
                             <tr key={idx}>
-                              <td className="py-2 px-3 font-semibold text-white">{l.companyName}</td>
-                              <td className="py-2 px-3 font-mono text-slate-400">{l.domain}</td>
+                              <td className="py-2 px-3 font-semibold text-slate-900 dark:text-white">{l.companyName}</td>
+                              <td className="py-2 px-3 font-mono text-slate-500 dark:text-slate-400">{l.domain}</td>
                               <td className="py-2 px-3">{l.contactName}</td>
                               <td className="py-2 px-3 text-slate-400">{l.contactTitle}</td>
-                              <td className="py-2 px-3 font-mono text-emerald-400">{l.contactEmail}</td>
+                              <td className="py-2 px-3 font-mono text-emerald-600 dark:text-emerald-400">{l.contactEmail}</td>
                               <td className="py-2 px-3">{l.industry}</td>
                             </tr>
                           ))}
@@ -1686,7 +1700,7 @@ Snowflake,snowflake.com,Frank Slootman,Chairman,frank@snowflake.com,+14085550182
 
             {/* CHANNEL B: GOOGLE SHEETS SYNC */}
             {ingestionChannel === 'sheets' && (
-              <div className="bg-slate-950 border border-slate-800 rounded-2xl p-6 space-y-5">
+              <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-5 shadow-xs transition-colors">
                 <div>
                   <h3 className="text-base font-bold text-white font-display flex items-center gap-2">
                     <Table className="w-5 h-5 text-emerald-500" />
@@ -1698,7 +1712,7 @@ Snowflake,snowflake.com,Frank Slootman,Chairman,frank@snowflake.com,+14085550182
                 </div>
 
                 <div className="space-y-3">
-                  <label className="block text-xs font-medium text-slate-300">
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
                     Google Sheets Published CSV URL or Pasted Spreadsheet Rows:
                   </label>
                   <textarea
@@ -1706,7 +1720,7 @@ Snowflake,snowflake.com,Frank Slootman,Chairman,frank@snowflake.com,+14085550182
                     value={sheetsUrlOrPaste}
                     onChange={(e) => setSheetsUrlOrPaste(e.target.value)}
                     placeholder="https://docs.google.com/spreadsheets/d/e/2PACX-1v.../pub?output=csv&#10;&#10;OR paste tab-separated rows copied from your sheet:&#10;Company Name	Domain	Contact Name	Job Title	Email	Phone	Industry"
-                    className="w-full p-3.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-200 font-mono focus:outline-none focus:border-orange-500"
+                    className="w-full p-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 font-mono focus:outline-none focus:border-orange-500"
                   />
                 </div>
 
@@ -1725,7 +1739,7 @@ Snowflake,snowflake.com,Frank Slootman,Chairman,frank@snowflake.com,+14085550182
 
             {/* CHANNEL C: MYSQL / DATABASE INGESTION */}
             {ingestionChannel === 'mysql' && (
-              <div className="bg-slate-950 border border-slate-800 rounded-2xl p-6 space-y-6">
+              <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-6 shadow-xs transition-colors">
                 <div>
                   <h3 className="text-base font-bold text-white font-display flex items-center gap-2">
                     <Server className="w-5 h-5 text-blue-500" />
@@ -1738,32 +1752,32 @@ Snowflake,snowflake.com,Frank Slootman,Chairman,frank@snowflake.com,+14085550182
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
                   <div>
-                    <label className="block text-slate-300 font-medium mb-1">Host Server</label>
+                    <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">Host Server</label>
                     <input
                       type="text"
                       value={mysqlConfig.host}
                       onChange={(e) => setMysqlConfig({ ...mysqlConfig, host: e.target.value })}
-                      className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono"
+                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white font-mono"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 font-medium mb-1">Port</label>
+                    <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">Port</label>
                     <input
                       type="text"
                       value={mysqlConfig.port}
                       onChange={(e) => setMysqlConfig({ ...mysqlConfig, port: e.target.value })}
-                      className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono"
+                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white font-mono"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 font-medium mb-1">Database Name</label>
+                    <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">Database Name</label>
                     <input
                       type="text"
                       value={mysqlConfig.database}
                       onChange={(e) => setMysqlConfig({ ...mysqlConfig, database: e.target.value })}
-                      className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono"
+                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white font-mono"
                     />
                   </div>
                 </div>
@@ -1776,7 +1790,7 @@ Snowflake,snowflake.com,Frank Slootman,Chairman,frank@snowflake.com,+14085550182
                     rows={3}
                     value={mysqlConfig.query}
                     onChange={(e) => setMysqlConfig({ ...mysqlConfig, query: e.target.value })}
-                    className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-xs text-emerald-400 font-mono focus:outline-none"
+                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs text-emerald-600 dark:text-emerald-400 font-mono focus:outline-none"
                   />
                 </div>
 
@@ -1800,7 +1814,7 @@ Snowflake,snowflake.com,Frank Slootman,Chairman,frank@snowflake.com,+14085550182
 
             {/* CHANNEL D: MANUAL FORM */}
             {ingestionChannel === 'manual' && (
-              <form onSubmit={handleManualSubmit} className="bg-slate-950 border border-slate-800 rounded-2xl p-6 space-y-5">
+              <form onSubmit={handleManualSubmit} className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-5 shadow-xs transition-colors">
                 <div>
                   <h3 className="text-base font-bold text-white font-display flex items-center gap-2">
                     <Plus className="w-5 h-5 text-orange-500" />
@@ -1813,35 +1827,35 @@ Snowflake,snowflake.com,Frank Slootman,Chairman,frank@snowflake.com,+14085550182
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
                   <div>
-                    <label className="block text-slate-300 font-medium mb-1">Company Name *</label>
+                    <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">Company Name *</label>
                     <input
                       type="text"
                       required
                       value={manualForm.companyName}
                       onChange={(e) => setManualForm({ ...manualForm, companyName: e.target.value })}
                       placeholder="e.g. OpenAI Global"
-                      className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white"
+                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 font-medium mb-1">Website Domain *</label>
+                    <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">Website Domain *</label>
                     <input
                       type="text"
                       required
                       value={manualForm.domain}
                       onChange={(e) => setManualForm({ ...manualForm, domain: e.target.value })}
                       placeholder="openai.com"
-                      className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono"
+                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white font-mono"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 font-medium mb-1">Industry</label>
+                    <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">Industry</label>
                     <select
                       value={manualForm.industry}
                       onChange={(e) => setManualForm({ ...manualForm, industry: e.target.value })}
-                      className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white"
+                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
                     >
                       {FILTER_TAXONOMY.industries.map((ind) => (
                         <option key={ind} value={ind}>{ind}</option>
@@ -1850,56 +1864,56 @@ Snowflake,snowflake.com,Frank Slootman,Chairman,frank@snowflake.com,+14085550182
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 font-medium mb-1">Contact Name</label>
+                    <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">Contact Name</label>
                     <input
                       type="text"
                       value={manualForm.contactName}
                       onChange={(e) => setManualForm({ ...manualForm, contactName: e.target.value })}
                       placeholder="Sam Altman"
-                      className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white"
+                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 font-medium mb-1">Job Title</label>
+                    <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">Job Title</label>
                     <input
                       type="text"
                       value={manualForm.contactTitle}
                       onChange={(e) => setManualForm({ ...manualForm, contactTitle: e.target.value })}
                       placeholder="Chief Executive Officer"
-                      className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white"
+                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 font-medium mb-1">Work Email *</label>
+                    <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">Work Email *</label>
                     <input
                       type="email"
                       required
                       value={manualForm.contactEmail}
                       onChange={(e) => setManualForm({ ...manualForm, contactEmail: e.target.value })}
                       placeholder="s.altman@openai.com"
-                      className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono"
+                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white font-mono"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 font-medium mb-1">Direct Phone</label>
+                    <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">Direct Phone</label>
                     <input
                       type="text"
                       value={manualForm.contactPhone}
                       onChange={(e) => setManualForm({ ...manualForm, contactPhone: e.target.value })}
                       placeholder="+1 (415) 890-2190"
-                      className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono"
+                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white font-mono"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 font-medium mb-1">Country</label>
+                    <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">Country</label>
                     <select
                       value={manualForm.country}
                       onChange={(e) => setManualForm({ ...manualForm, country: e.target.value })}
-                      className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white"
+                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
                     >
                       {FILTER_TAXONOMY.countries.map((c) => (
                         <option key={c} value={c}>{c}</option>
@@ -1908,13 +1922,13 @@ Snowflake,snowflake.com,Frank Slootman,Chairman,frank@snowflake.com,+14085550182
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 font-medium mb-1">Tech Stack (comma separated)</label>
+                    <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">Tech Stack (comma separated)</label>
                     <input
                       type="text"
                       value={manualForm.techStack}
                       onChange={(e) => setManualForm({ ...manualForm, techStack: e.target.value })}
                       placeholder="AWS, PyTorch, Kubernetes"
-                      className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono"
+                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white font-mono"
                     />
                   </div>
                 </div>
