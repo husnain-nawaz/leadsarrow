@@ -137,6 +137,16 @@ export async function getTertiaryDataSource(): Promise<DataSource | null> {
   return TertiaryDataSource;
 }
 
+export async function getLeadsDataSource(): Promise<DataSource> {
+  const ds3 = await getTertiaryDataSource();
+  if (ds3 && ds3.isInitialized) return ds3;
+  const ds2 = await getSecondaryDataSource();
+  if (ds2 && ds2.isInitialized) return ds2;
+  const ds1 = await getPrimaryDataSource();
+  if (ds1 && ds1.isInitialized) return ds1;
+  throw new Error('No lead cluster node is available.');
+}
+
 export async function getDataSource(): Promise<DataSource> {
   if (!isInitialized) {
     if (!AppDataSource.isInitialized) {

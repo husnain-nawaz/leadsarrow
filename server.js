@@ -349,6 +349,7 @@ __export(dataSource_exports, {
   SecondaryDataSource: () => SecondaryDataSource,
   TertiaryDataSource: () => TertiaryDataSource,
   getDataSource: () => getDataSource,
+  getLeadsDataSource: () => getLeadsDataSource,
   getPrimaryDataSource: () => getPrimaryDataSource,
   getSecondaryDataSource: () => getSecondaryDataSource,
   getTertiaryDataSource: () => getTertiaryDataSource,
@@ -401,6 +402,15 @@ async function getTertiaryDataSource() {
     isDb3Initialized = true;
   }
   return TertiaryDataSource;
+}
+async function getLeadsDataSource() {
+  const ds3 = await getTertiaryDataSource();
+  if (ds3 && ds3.isInitialized) return ds3;
+  const ds2 = await getSecondaryDataSource();
+  if (ds2 && ds2.isInitialized) return ds2;
+  const ds1 = await getPrimaryDataSource();
+  if (ds1 && ds1.isInitialized) return ds1;
+  throw new Error("No lead cluster node is available.");
 }
 async function getDataSource() {
   if (!isInitialized) {
@@ -688,7 +698,7 @@ async function getGlobalMetricsAndFacets(ds) {
   return cachedGlobals;
 }
 async function queryLeadsDatabase(params = {}) {
-  const ds = await getDataSource();
+  const ds = await getLeadsDataSource();
   const leadRepo = ds.getRepository(Lead);
   const globals = await getGlobalMetricsAndFacets(ds);
   const {
@@ -1033,7 +1043,7 @@ async function batchInsertLeads(newLeads = []) {
   if (!Array.isArray(newLeads) || newLeads.length === 0) {
     throw new Error("No leads provided to ingest.");
   }
-  const ds = await getDataSource();
+  const ds = await getLeadsDataSource();
   const leadRepo = ds.getRepository(Lead);
   let insertedCount = 0;
   const BATCH_CHUNK_SIZE = 1e3;
@@ -1088,7 +1098,7 @@ async function batchInsertLeads(newLeads = []) {
 }
 async function fetchLeadsByIds(ids) {
   if (!Array.isArray(ids) || ids.length === 0) return [];
-  const ds = await getDataSource();
+  const ds = await getLeadsDataSource();
   const leadRepo = ds.getRepository(Lead);
   const entities = await leadRepo.createQueryBuilder("lead").where("lead.id IN (:...ids)", { ids }).getMany();
   return entities.map(mapEntityToLead);
@@ -2360,7 +2370,7 @@ async function startServer() {
   });
   app.get("/api/lists", async (req, res) => {
     try {
-      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getTertiaryDataSource() || await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
+      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
       const listRepo = ds.getRepository((await Promise.resolve().then(() => (init_SavedList(), SavedList_exports))).SavedList);
       const userId = req.user?.id || req.user?.email ? String(req.user.id || req.user.email) : null;
       let lists = [];
@@ -2396,7 +2406,7 @@ async function startServer() {
       if (!name) {
         return res.status(400).json({ error: "List name is required" });
       }
-      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getTertiaryDataSource() || await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
+      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
       const listRepo = ds.getRepository((await Promise.resolve().then(() => (init_SavedList(), SavedList_exports))).SavedList);
       const leadIds = Array.isArray(body.leadIds) ? body.leadIds : [];
       const listId = body.id && /^[a-zA-Z0-9_\-]+$/.test(body.id) ? body.id : `list_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -2431,7 +2441,7 @@ async function startServer() {
   });
   app.delete("/api/lists/:id", async (req, res) => {
     try {
-      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getTertiaryDataSource() || await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
+      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
       const listRepo = ds.getRepository((await Promise.resolve().then(() => (init_SavedList(), SavedList_exports))).SavedList);
       await listRepo.delete(req.params.id);
       res.json({ success: true, deleted: true, id: req.params.id });

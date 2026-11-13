@@ -704,7 +704,7 @@ async function startServer() {
   // --- SAVED LEAD LISTS API (Routed to Database 3 with Full Read/Write Privileges) ---
   app.get('/api/lists', async (req: any, res) => {
     try {
-      const ds = (await (await import('./server/dataSource.ts')).getTertiaryDataSource()) || (await (await import('./server/dataSource.ts')).getDataSource());
+      const ds = await (await import('./server/dataSource.ts')).getDataSource();
       const listRepo = ds.getRepository((await import('./server/entities/SavedList.ts')).SavedList);
       const userId = req.user?.id || req.user?.email ? String(req.user.id || req.user.email) : null;
       
@@ -748,7 +748,7 @@ async function startServer() {
         return res.status(400).json({ error: 'List name is required' });
       }
 
-      const ds = (await (await import('./server/dataSource.ts')).getTertiaryDataSource()) || (await (await import('./server/dataSource.ts')).getDataSource());
+      const ds = await (await import('./server/dataSource.ts')).getDataSource();
       const listRepo = ds.getRepository((await import('./server/entities/SavedList.ts')).SavedList);
       
       const leadIds = Array.isArray(body.leadIds) ? body.leadIds : [];
@@ -789,7 +789,7 @@ async function startServer() {
 
   app.delete('/api/lists/:id', async (req: any, res) => {
     try {
-      const ds = (await (await import('./server/dataSource.ts')).getTertiaryDataSource()) || (await (await import('./server/dataSource.ts')).getDataSource());
+      const ds = await (await import('./server/dataSource.ts')).getDataSource();
       const listRepo = ds.getRepository((await import('./server/entities/SavedList.ts')).SavedList);
       await listRepo.delete(req.params.id);
       res.json({ success: true, deleted: true, id: req.params.id });

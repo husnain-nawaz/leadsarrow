@@ -1,4 +1,4 @@
-import { getDataSource, getPrimaryDataSource, getSecondaryDataSource, getTertiaryDataSource } from './dataSource.ts';
+import { getLeadsDataSource, getPrimaryDataSource, getSecondaryDataSource, getTertiaryDataSource } from './dataSource.ts';
 import { Lead } from './entities/Lead.ts';
 
 export const FILTER_TAXONOMY = {
@@ -193,7 +193,7 @@ async function getGlobalMetricsAndFacets(ds: any) {
 }
 
 export async function queryLeadsDatabase(params: any = {}) {
-  const ds = await getDataSource();
+  const ds = await getLeadsDataSource();
   const leadRepo = ds.getRepository(Lead);
   const globals = await getGlobalMetricsAndFacets(ds);
 
@@ -595,7 +595,7 @@ export async function batchInsertLeads(newLeads: any[] = []) {
     throw new Error('No leads provided to ingest.');
   }
 
-  const ds = await getDataSource();
+  const ds = await getLeadsDataSource();
   const leadRepo = ds.getRepository(Lead);
 
   let insertedCount = 0;
@@ -666,7 +666,7 @@ export async function insertSingleLead(lead: any) {
 
 export async function fetchLeadsByIds(ids: string[]) {
   if (!Array.isArray(ids) || ids.length === 0) return [];
-  const ds = await getDataSource();
+  const ds = await getLeadsDataSource();
   const leadRepo = ds.getRepository(Lead);
   const entities = await leadRepo.createQueryBuilder('lead')
     .where('lead.id IN (:...ids)', { ids })
