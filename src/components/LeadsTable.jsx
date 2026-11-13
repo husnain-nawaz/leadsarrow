@@ -18,6 +18,7 @@ import {
   toggleSelectLead,
   selectAllCurrentPageLeads,
   revealLeadContact,
+  performRevealLead,
   setActiveLead,
   deleteCustomLead
 } from '../store/leadsSlice.js';
@@ -123,14 +124,14 @@ export default function LeadsTable() {
 
   const handleReveal = (e, leadId) => {
     e.stopPropagation();
-    const isUnlimited = user?.planId === 'unlimited' || user?.plan?.toLowerCase().includes('unlimited');
+    const isUnlimited = user?.planId === 'unlimited' || user?.plan?.toLowerCase().includes('unlimited') || user?.role === 'superadmin';
     if (!isUnlimited && (user?.creditsRemaining ?? 100) <= 0) {
       dispatch(openUpgradeModal('starter'));
       return;
     }
     dispatch(revealLeadContact(leadId));
     dispatch(decrementExportCredits(1));
-    dispatch(consumeCredits(1));
+    dispatch(performRevealLead(leadId));
   };
 
   const maskEmail = (email) => {

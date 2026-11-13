@@ -2,12 +2,42 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import {
   fetchLeadsFromServer,
   createCustomLeadOnServerApi,
-  deleteCustomLeadOnServerApi
+  deleteCustomLeadOnServerApi,
+  fetchRevealedLeadsApi,
+  revealLeadContactApi
 } from '../services/api.js';
 import {
   saveCustomLeadToFirestore,
   removeCustomLeadFromFirestore
 } from '../firebase.js';
+
+export const fetchRevealedLeads = createAsyncThunk(
+  'leads/fetchRevealedLeads',
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await fetchRevealedLeadsApi();
+      return res.leadIds || [];
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
+
+export const performRevealLead = createAsyncThunk(
+  'leads/performRevealLead',
+  async (leadId, { dispatch, rejectWithValue }) => {
+    try {
+      const res = await revealLeadContactApi(leadId);
+      if (res.user) {
+        const { refreshCurrentUserProfile } = await import('./authSlice.js');
+        dispatch(refreshCurrentUserProfile());
+      }
+      return { leadId, user: res.user };
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
 
 export const fetchLeads = createAsyncThunk(
   'leads/fetchLeads',
@@ -170,6 +200,17 @@ const leadsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(fetchRevealedLeads.fulfilled, (state, action) => {
+        const ids = action.payload || [];
+        const combined = new Set([...state.revealedLeadIds, ...ids]);
+        state.revealedLeadIds = Array.from(combined);
+      })
+      .addCase(performRevealLead.fulfilled, (state, action) => {
+        const { leadId } = action.payload || {};
+        if (leadId && !state.revealedLeadIds.includes(leadId)) {
+          state.revealedLeadIds.push(leadId);
+        }
+      })
       .addCase(fetchLeads.pending, (state) => {
         state.loading = true;
         state.error = null;

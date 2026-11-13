@@ -168,6 +168,17 @@ export async function decrementCreditsApi(amount) {
   });
 }
 
+export async function fetchRevealedLeadsApi() {
+  return apiRequest('/api/leads/revealed');
+}
+
+export async function revealLeadContactApi(leadId) {
+  return apiRequest('/api/leads/reveal', {
+    method: 'POST',
+    body: JSON.stringify({ leadId })
+  });
+}
+
 export async function createCustomLeadOnServerApi(payload) {
   return apiRequest('/api/leads/custom', {
     method: 'POST',

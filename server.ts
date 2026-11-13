@@ -94,6 +94,64 @@ async function startServer() {
     }
   });
 
+  // --- REVEALED LEADS PERSISTENCE (Per User Account in DB3) ---
+  app.get('/api/leads/revealed', requireJwtMiddleware, async (req: any, res) => {
+    try {
+      const ds = await (await import('./server/dataSource.ts')).getDataSource();
+      const rows = await ds.query(
+        'SELECT lead_id FROM user_revealed_leads WHERE user_id = ?',
+        [req.user.id]
+      );
+      const leadIds = (rows || []).map((r: any) => String(r.lead_id));
+      res.json({ success: true, leadIds });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || 'Failed to fetch revealed leads' });
+    }
+  });
+
+  app.post('/api/leads/reveal', requireJwtMiddleware, async (req: any, res) => {
+    try {
+      const leadId = String(req.body?.leadId || '').trim();
+      if (!leadId) {
+        return res.status(400).json({ error: 'leadId is required' });
+      }
+
+      const ds = await (await import('./server/dataSource.ts')).getDataSource();
+
+      // Check if already revealed by this user
+      const existing = await ds.query(
+        'SELECT lead_id FROM user_revealed_leads WHERE user_id = ? AND lead_id = ?',
+        [req.user.id, leadId]
+      );
+
+      let user = req.user;
+      const isAlreadyRevealed = existing && existing.length > 0;
+
+      if (!isAlreadyRevealed) {
+        // Decrement credit only if first time revealing
+        const isUnlimited = user?.planId === 'unlimited' || user?.role === 'superadmin' || user?.isSuperAdmin;
+        if (!isUnlimited && (user.creditsRemaining ?? 100) <= 0) {
+          return res.status(403).json({ error: 'Insufficient credits remaining. Please upgrade plan.' });
+        }
+
+        user = await decrementUserCreditsInDb(req.user.id, 1);
+        await ds.query(
+          'INSERT IGNORE INTO user_revealed_leads (user_id, lead_id) VALUES (?, ?)',
+          [req.user.id, leadId]
+        );
+      }
+
+      res.json({
+        success: true,
+        leadId,
+        alreadyRevealed: isAlreadyRevealed,
+        user
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || 'Failed to reveal lead' });
+    }
+  });
+
   // --- SUPERADMIN API (Users, Plans, Payments, Credits & Multi-Channel Ingestion) ---
   app.get('/api/admin/users', requireSuperAdminMiddleware, async (_req: any, res) => {
     try {

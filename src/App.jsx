@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Provider, useSelector, useDispatch } from 'react-redux';
 import store from './store/store.js';
-import { fetchLeads, setFirestoreCustomLeads } from './store/leadsSlice.js';
+import { fetchLeads, setFirestoreCustomLeads, fetchRevealedLeads } from './store/leadsSlice.js';
 import { fetchSavedLists, setFirestoreSavedLists } from './store/savedListsSlice.js';
 import { syncFirebaseSession, refreshCurrentUserProfile } from './store/authSlice.js';
 import {
@@ -87,6 +87,7 @@ function WorkspaceContent({ onToggleLanding }) {
     dispatch(fetchSavedLists());
     if (user?.id) {
       dispatch(refreshCurrentUserProfile());
+      dispatch(fetchRevealedLeads());
     }
 
     // Keep active user's credit balance and plan status synchronized in real time from database
