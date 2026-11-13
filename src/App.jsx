@@ -26,37 +26,20 @@ import PlanUpgradeModal from './components/PlanUpgradeModal.jsx';
 import SuperadminPanel from './components/SuperadminPanel.jsx';
 import ProfileModal from './components/ProfileModal.jsx';
 import ProfileSettingsPage from './components/ProfileSettingsPage.jsx';
+import { ThemeProvider } from './context/ThemeContext.jsx';
 
-function WorkspaceContent({ onToggleLanding }) {
+function WorkspaceContent({ activeView, setActiveView, onToggleLanding }) {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const filters = useSelector((state) => state.filters);
   const isSuperAdmin = Boolean(user && (user.isSuperAdmin || user.role === 'superadmin' || user.email === 'alex@leadsarrow.io' || user.email === 'alex@nexuslead.io'));
 
-  // Persist current active navbar view across browser refreshes
-  const [activeView, setActiveView] = useState(() => {
-    try {
-      const savedView = localStorage.getItem('leadsarrow_active_nav_view');
-      if (savedView && ['finder', 'schema', 'superadmin', 'profile'].includes(savedView)) {
-        return savedView;
-      }
-    } catch (e) {}
-    return 'finder';
-  });
-
-  const handleSetActiveView = (viewKey) => {
-    setActiveView(viewKey);
-    try {
-      localStorage.setItem('leadsarrow_active_nav_view', viewKey);
-    } catch (e) {}
-  };
-
   // If non-superadmin tries to access superadmin view, fallback to finder
   useEffect(() => {
     if (activeView === 'superadmin' && !isSuperAdmin) {
-      handleSetActiveView('finder');
+      setActiveView('finder');
     }
-  }, [activeView, isSuperAdmin]);
+  }, [activeView, isSuperAdmin, setActiveView]);
 
   // Fetch B2B leads whenever any filter, sort, or pagination state changes in Redux
   useEffect(() => {
@@ -150,30 +133,30 @@ function WorkspaceContent({ onToggleLanding }) {
   }, [dispatch]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
       <Navbar
         activeView={activeView}
-        setActiveView={handleSetActiveView}
+        setActiveView={setActiveView}
         onToggleLanding={onToggleLanding}
       />
 
       {activeView === 'schema' ? (
         <main className="flex-1">
-          <SqlArchitectureView onBack={() => handleSetActiveView('finder')} />
+          <SqlArchitectureView onBack={() => setActiveView('finder')} />
         </main>
       ) : activeView === 'profile' ? (
         <main className="flex-1">
-          <ProfileSettingsPage onBack={() => handleSetActiveView('finder')} />
+          <ProfileSettingsPage onBack={() => setActiveView('finder')} />
         </main>
       ) : activeView === 'superadmin' ? (
         isSuperAdmin ? (
           <main className="flex-1">
-            <SuperadminPanel onBack={() => handleSetActiveView('finder')} />
+            <SuperadminPanel onBack={() => setActiveView('finder')} />
           </main>
         ) : (
           <div className="flex-1 flex min-w-0">
             <FilterSidebar />
-            <main className="flex-1 flex flex-col min-w-0 bg-white">
+            <main className="flex-1 flex flex-col min-w-0 bg-white dark:bg-slate-950">
               <AnalyticsBar />
               <LeadsTable />
             </main>
@@ -182,7 +165,7 @@ function WorkspaceContent({ onToggleLanding }) {
       ) : (
         <div className="flex-1 flex min-w-0">
           <FilterSidebar />
-          <main className="flex-1 flex flex-col min-w-0 bg-white">
+          <main className="flex-1 flex flex-col min-w-0 bg-white dark:bg-slate-950">
             <AnalyticsBar />
             <LeadsTable />
           </main>
@@ -196,7 +179,7 @@ function WorkspaceContent({ onToggleLanding }) {
       {isSuperAdmin && <AddLeadModal />}
       <ExportModal />
       <PlanUpgradeModal />
-      <ProfileModal onOpenFullProfile={() => handleSetActiveView('profile')} />
+      <ProfileModal onOpenFullProfile={() => setActiveView('profile')} />
     </div>
   );
 }
@@ -204,6 +187,29 @@ function WorkspaceContent({ onToggleLanding }) {
 function MainApp() {
   const { user } = useSelector((state) => state.auth);
   const [showLandingForLoggedIn, setShowLandingForLoggedIn] = useState(false);
+
+  // Persist current active navbar view across browser refreshes
+  const [activeView, setActiveView] = useState(() => {
+    try {
+      const savedView = localStorage.getItem('leadsarrow_active_nav_view');
+      if (savedView && ['finder', 'schema', 'superadmin', 'profile'].includes(savedView)) {
+        return savedView;
+      }
+    } catch (e) {}
+    return 'finder';
+  });
+
+  const handleSetActiveView = (viewKey) => {
+    setActiveView(viewKey);
+    try {
+      localStorage.setItem('leadsarrow_active_nav_view', viewKey);
+    } catch (e) {}
+  };
+
+  const handleOpenProfileDirectly = () => {
+    handleSetActiveView('profile');
+    setShowLandingForLoggedIn(false);
+  };
 
   // Automatically redirect directly to the dashboard whenever someone logs in
   useEffect(() => {
@@ -228,23 +234,32 @@ function MainApp() {
   if (showLandingForLoggedIn) {
     return (
       <div className="relative min-h-screen">
-        <LandingPage onReturnDashboard={() => setShowLandingForLoggedIn(false)} />
+        <LandingPage
+          onReturnDashboard={() => setShowLandingForLoggedIn(false)}
+          onOpenProfile={handleOpenProfileDirectly}
+        />
         <AuthModal />
         <PlanUpgradeModal />
-        <ProfileModal onOpenFullProfile={() => setShowLandingForLoggedIn(false)} />
+        <ProfileModal onOpenFullProfile={handleOpenProfileDirectly} />
       </div>
     );
   }
 
   return (
-    <WorkspaceContent onToggleLanding={() => setShowLandingForLoggedIn(true)} />
+    <WorkspaceContent
+      activeView={activeView}
+      setActiveView={handleSetActiveView}
+      onToggleLanding={() => setShowLandingForLoggedIn(true)}
+    />
   );
 }
 
 export default function App() {
   return (
     <Provider store={store}>
-      <MainApp />
+      <ThemeProvider>
+        <MainApp />
+      </ThemeProvider>
     </Provider>
   );
 }

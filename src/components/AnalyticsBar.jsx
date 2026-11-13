@@ -52,41 +52,41 @@ export default function AnalyticsBar() {
   const hasLoaded = pagination.totalDatabaseRecords > 0 || (pagination.estimatedGlobalMatches === 0 && !loading);
 
   return (
-    <div className="shrink-0 bg-white border-b border-slate-200 px-6 py-3.5 space-y-3 z-10 shadow-xs">
+    <div className="shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 px-6 py-3.5 space-y-3 z-10 shadow-xs transition-colors">
       {/* Row 1: Database Scale KPIs & Primary Workspace Actions */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-6">
           <div>
-            <div className="text-xs text-slate-500">Matched B2B Leads</div>
-            <div className="text-xl font-bold text-slate-900 font-mono tabular-nums">
+            <div className="text-xs text-slate-500 dark:text-slate-400">Matched B2B Leads</div>
+            <div className="text-xl font-bold text-slate-900 dark:text-white font-mono tabular-nums">
               {loading ? (
-                <div className="h-6 w-24 bg-slate-200/80 rounded animate-pulse mt-0.5" />
+                <div className="h-6 w-24 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse mt-0.5" />
               ) : (
                 (pagination.estimatedGlobalMatches || 0).toLocaleString()
               )}
             </div>
           </div>
 
-          <div className="h-8 w-px bg-slate-200 hidden sm:block" />
+          <div className="h-8 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block" />
 
           <div>
-            <div className="text-xs text-slate-500">Total Indexed Businesses</div>
-            <div className="text-sm font-semibold text-slate-800 font-mono tabular-nums mt-0.5">
+            <div className="text-xs text-slate-500 dark:text-slate-400">Total Indexed Businesses</div>
+            <div className="text-sm font-semibold text-slate-800 dark:text-slate-200 font-mono tabular-nums mt-0.5">
               {loading ? (
-                <div className="h-4 w-20 bg-slate-200/80 rounded animate-pulse mt-1" />
+                <div className="h-4 w-20 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse mt-1" />
               ) : (
                 (pagination.totalDatabaseRecords || 0).toLocaleString()
               )}
             </div>
           </div>
 
-          <div className="h-8 w-px bg-slate-200 hidden md:block" />
+          <div className="h-8 w-px bg-slate-200 dark:bg-slate-800 hidden md:block" />
 
           <div className="hidden md:block">
-            <div className="text-xs text-slate-500">Verified Deliverability</div>
-            <div className="text-sm font-semibold text-emerald-700 font-mono tabular-nums mt-0.5">
+            <div className="text-xs text-slate-500 dark:text-slate-400">Verified Deliverability</div>
+            <div className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 font-mono tabular-nums mt-0.5">
               {loading ? (
-                <div className="h-4 w-24 bg-slate-200/80 rounded animate-pulse mt-1" />
+                <div className="h-4 w-24 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse mt-1" />
               ) : pagination.totalDatabaseRecords > 0 ? (
                 `${metrics.verifiedRatio}% Verified`
               ) : (
@@ -95,13 +95,13 @@ export default function AnalyticsBar() {
             </div>
           </div>
 
-          <div className="h-8 w-px bg-slate-200 hidden xl:block" />
+          <div className="h-8 w-px bg-slate-200 dark:bg-slate-800 hidden xl:block" />
 
           <div className="hidden xl:block">
-            <div className="text-xs text-slate-500">Avg. Buying Intent</div>
-            <div className="text-sm font-semibold text-slate-800 font-mono tabular-nums mt-0.5">
+            <div className="text-xs text-slate-500 dark:text-slate-400">Avg. Buying Intent</div>
+            <div className="text-sm font-semibold text-slate-800 dark:text-slate-200 font-mono tabular-nums mt-0.5">
               {loading ? (
-                <div className="h-4 w-16 bg-slate-200/80 rounded animate-pulse mt-1" />
+                <div className="h-4 w-16 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse mt-1" />
               ) : pagination.totalDatabaseRecords > 0 ? (
                 `${metrics.avgIntentScore} / 100`
               ) : (
@@ -112,10 +112,10 @@ export default function AnalyticsBar() {
 
           {user && (
             <>
-              <div className="h-8 w-px bg-slate-200 hidden xl:block" />
+              <div className="h-8 w-px bg-slate-200 dark:bg-slate-800 hidden xl:block" />
               <div className="hidden xl:block">
-                <div className="text-xs text-slate-500">Export Credits</div>
-                <div className="text-sm font-semibold text-orange-600 font-mono tabular-nums mt-0.5">
+                <div className="text-xs text-slate-500 dark:text-slate-400">Export Credits</div>
+                <div className="text-sm font-semibold text-orange-600 dark:text-orange-400 font-mono tabular-nums mt-0.5">
                   {(user.creditsRemaining ?? 25000).toLocaleString()}
                 </div>
               </div>
@@ -128,7 +128,7 @@ export default function AnalyticsBar() {
           <button
             type="button"
             onClick={() => dispatch(setMobileFilterOpen(true))}
-            className="lg:hidden inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            className="lg:hidden inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
             Filters ({metrics.activeFiltersCount})
@@ -137,9 +137,9 @@ export default function AnalyticsBar() {
           <button
             type="button"
             onClick={() => dispatch(setSavedListsModalOpen(true))}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
           >
-            <Bookmark className="w-3.5 h-3.5 text-slate-500" />
+            <Bookmark className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
             Save / Load List
           </button>
 
@@ -147,9 +147,9 @@ export default function AnalyticsBar() {
             <button
               type="button"
               onClick={() => dispatch(setAddLeadModalOpen(true))}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
-              <Plus className="w-3.5 h-3.5 text-slate-500" />
+              <Plus className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
               Add B2B Lead
             </button>
           )}
@@ -157,7 +157,7 @@ export default function AnalyticsBar() {
           <button
             type="button"
             onClick={() => dispatch(setExportModalOpen(true))}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-slate-900 dark:bg-orange-600 hover:bg-slate-800 dark:hover:bg-orange-700 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
             Export CSV / JSON
@@ -168,7 +168,7 @@ export default function AnalyticsBar() {
 
       {/* Row 2: Interactive Segment Filter Controls & Bulk Selection Notice */}
       <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-        <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg overflow-x-auto max-w-full">
+        <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-lg overflow-x-auto max-w-full">
           {filters.savedListLeadIds && (
             <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-md bg-orange-600 text-white shadow-xs">
               <Bookmark className="w-3.5 h-3.5" />
@@ -198,8 +198,8 @@ export default function AnalyticsBar() {
                 }}
                 className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                   isActive
-                    ? 'bg-white text-slate-900 shadow-xs font-semibold'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs font-semibold'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 {seg.name}

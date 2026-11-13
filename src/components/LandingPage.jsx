@@ -33,32 +33,16 @@ import {
 } from 'lucide-react';
 import { openAuthModal, logoutUser, openProfileModal, openUpgradeModal } from '../store/authSlice.js';
 import { PRICING_PLANS } from '../data/plans.js';
+import { useTheme } from '../context/ThemeContext.jsx';
 
-export default function LandingPage({ onReturnDashboard }) {
+export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const [openFaq, setOpenFaq] = useState(0);
   const [previewLeads, setPreviewLeads] = useState([]);
   const [previewLoading, setPreviewLoading] = useState(true);
 
-  // Dark / Light Mode State (Persisted)
-  const [theme, setTheme] = useState(() => {
-    try {
-      return localStorage.getItem('leadsarrow_landing_theme') || 'dark';
-    } catch {
-      return 'dark';
-    }
-  });
-
-  const isDark = theme === 'dark';
-
-  const toggleTheme = () => {
-    const next = isDark ? 'light' : 'dark';
-    setTheme(next);
-    try {
-      localStorage.setItem('leadsarrow_landing_theme', next);
-    } catch {}
-  };
+  const { isDark, toggleTheme } = useTheme();
 
   useEffect(() => {
     let isMounted = true;

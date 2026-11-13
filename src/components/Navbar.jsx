@@ -3,12 +3,14 @@ import { useSelector, useDispatch } from 'react-redux';
 import { openAuthModal, logoutUser, openUpgradeModal, openProfileModal } from '../store/authSlice.js';
 import { setOnlyCustom, resetAllFilters } from '../store/filtersSlice.js';
 import { setSavedListsModalOpen } from '../store/savedListsSlice.js';
-import { Zap, Sparkles, Shield, User as UserIcon, Globe } from 'lucide-react';
+import { Zap, Sparkles, Shield, User as UserIcon, Globe, Sun, Moon } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext.jsx';
 
 export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const { onlyCustom, savedListLeadIds } = useSelector((state) => state.filters);
+  const { theme, toggleTheme, isDark } = useTheme();
 
   const handleNavClick = (viewKey) => {
     if (viewKey === 'finder') {
@@ -35,7 +37,7 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
   const isSuperAdmin = Boolean(user && (user.isSuperAdmin || user.role === 'superadmin' || user.email === 'alex@leadsarrow.io' || user.email === 'alex@nexuslead.io'));
 
   return (
-    <header className="relative z-20 flex items-center justify-between gap-4 px-6 py-3 bg-white border-b border-slate-200">
+    <header className="relative z-20 flex items-center justify-between gap-4 px-6 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 transition-colors">
       {/* Zone 1: Single text element wordmark */}
       <div className="flex items-center gap-6">
         <a
@@ -44,21 +46,21 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
             e.preventDefault();
             handleNavClick('finder');
           }}
-          className="text-lg font-bold tracking-tight text-slate-900 font-display whitespace-nowrap shrink-0 flex items-center gap-1.5"
+          className="text-lg font-bold tracking-tight text-slate-900 dark:text-white font-display whitespace-nowrap shrink-0 flex items-center gap-1.5"
         >
           <span className="w-2.5 h-2.5 rounded-full bg-orange-600"></span>
           <span><span className="text-orange-600">Leads</span>Arrow</span>
         </a>
 
         {/* Zone 2: Navigation links */}
-        <nav className="hidden lg:flex items-center gap-5 text-sm font-medium text-slate-600">
+        <nav className="hidden lg:flex items-center gap-5 text-sm font-medium text-slate-600 dark:text-slate-300">
           <button
             type="button"
             onClick={() => handleNavClick('finder')}
             className={`transition-colors whitespace-nowrap shrink-0 cursor-pointer pb-0.5 ${
               activeView === 'finder' && !onlyCustom
-                ? 'text-slate-900 border-b-2 border-orange-600 font-semibold'
-                : 'hover:text-slate-900'
+                ? 'text-slate-900 dark:text-white border-b-2 border-orange-600 font-semibold'
+                : 'hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             Lead Finder
@@ -66,7 +68,7 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
           <button
             type="button"
             onClick={() => handleNavClick('lists')}
-            className="hover:text-slate-900 transition-colors whitespace-nowrap shrink-0 cursor-pointer pb-0.5"
+            className="hover:text-slate-900 dark:hover:text-white transition-colors whitespace-nowrap shrink-0 cursor-pointer pb-0.5"
           >
             Saved Lists
           </button>
@@ -75,8 +77,8 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
             onClick={() => handleNavClick('custom')}
             className={`transition-colors whitespace-nowrap shrink-0 cursor-pointer pb-0.5 ${
               activeView === 'finder' && onlyCustom
-                ? 'text-slate-900 border-b-2 border-orange-600 font-semibold'
-                : 'hover:text-slate-900'
+                ? 'text-slate-900 dark:text-white border-b-2 border-orange-600 font-semibold'
+                : 'hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             Custom Leads
@@ -99,7 +101,7 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
             <button
               type="button"
               onClick={onToggleLanding}
-              className="px-3 py-1.5 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-xs transition-all whitespace-nowrap shrink-0 cursor-pointer flex items-center gap-1.5"
+              className="px-3.5 py-1.5 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 active:scale-95 rounded-lg shadow-sm shadow-orange-600/30 transition-all whitespace-nowrap shrink-0 cursor-pointer flex items-center gap-1.5"
             >
               <Globe className="w-3.5 h-3.5" />
               <span>View Landing Page</span>
@@ -108,8 +110,32 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
         </nav>
       </div>
 
-      {/* Zone 3: Credits Meter, Upgrade CTA & User Actions */}
-      <div className="flex items-center gap-3 shrink-0">
+      {/* Zone 3: Credits Meter, Theme Toggle, Upgrade CTA & User Actions */}
+      <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+        {/* Dark / Light Mode Toggle */}
+        <button
+          type="button"
+          onClick={toggleTheme}
+          title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          aria-label="Toggle theme"
+          className="p-1.5 sm:p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-amber-300 transition-colors cursor-pointer shrink-0 flex items-center justify-center shadow-xs"
+        >
+          {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4 text-slate-700" />}
+        </button>
+
+        {/* View Landing Page Mobile Button */}
+        {onToggleLanding && (
+          <button
+            type="button"
+            onClick={onToggleLanding}
+            title="View Landing Page"
+            className="lg:hidden px-2.5 py-1.5 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-sm whitespace-nowrap shrink-0 cursor-pointer flex items-center gap-1"
+          >
+            <Globe className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Landing</span>
+          </button>
+        )}
+
         {user ? (
           <>
             {/* Daily Credits Display */}
@@ -118,8 +144,8 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
                 title="Daily credit allowance refreshes every 24 hours at midnight"
                 className={`px-2.5 py-1 rounded-lg text-xs font-bold border flex items-center gap-1.5 ${
                   isUnlimited
-                    ? 'bg-purple-50 text-purple-700 border-purple-200'
-                    : 'bg-orange-50 text-orange-800 border-orange-200'
+                    ? 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800'
+                    : 'bg-orange-50 dark:bg-orange-950/40 text-orange-800 dark:text-orange-300 border-orange-200 dark:border-orange-800/60'
                 }`}
               >
                 <Zap className="w-3.5 h-3.5 text-orange-600 shrink-0" />
@@ -135,12 +161,12 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
               </span>
 
               {!isUnlimited && (
-                <span className="text-[10px] text-slate-400 font-medium hidden xl:inline">
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium hidden xl:inline">
                   (Refreshes daily)
                 </span>
               )}
 
-              <span className="hidden md:inline-block text-[11px] font-semibold text-slate-500 px-2 py-0.5 rounded-md bg-slate-100">
+              <span className="hidden md:inline-block text-[11px] font-semibold text-slate-500 dark:text-slate-300 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800">
                 {userPlanName}
               </span>
             </div>
@@ -149,7 +175,7 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
             <button
               type="button"
               onClick={() => dispatch(openUpgradeModal())}
-              className="px-3 py-1.5 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-xs transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer"
+              className="px-3 py-1.5 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 active:scale-95 rounded-lg shadow-xs transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer"
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>Upgrade Plan</span>
@@ -160,16 +186,16 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
               type="button"
               onClick={() => dispatch(openProfileModal())}
               title="Manage Profile, Picture & Password"
-              className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-colors cursor-pointer"
+              className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors cursor-pointer"
             >
-              {user.photoUrl || user.photo_url ? (
+              {user.photoUrl || user.photoURL || user.photo_url ? (
                 <img
-                  src={user.photoUrl || user.photo_url}
+                  src={user.photoUrl || user.photoURL || user.photo_url}
                   alt={user.name || 'User'}
-                  className="w-5 h-5 rounded-full object-cover border border-slate-200"
+                  className="w-5 h-5 rounded-full object-cover border border-slate-200 dark:border-slate-600"
                 />
               ) : (
-                <div className="w-5 h-5 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-[10px]">
+                <div className="w-5 h-5 rounded-full bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-400 flex items-center justify-center font-bold text-[10px]">
                   {(user.name || user.email || 'U').charAt(0).toUpperCase()}
                 </div>
               )}
@@ -182,7 +208,7 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
               type="button"
               onClick={() => dispatch(logoutUser())}
               title="Click to sign out"
-              className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-200 hover:text-red-700 transition-colors whitespace-nowrap cursor-pointer"
+              className="px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-red-700 dark:hover:text-red-400 transition-colors whitespace-nowrap cursor-pointer"
             >
               Sign Out
             </button>
