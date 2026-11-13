@@ -372,9 +372,6 @@ async function getPrimaryDataSource() {
   return PrimaryDataSource;
 }
 async function getSecondaryDataSource() {
-  if (AppDataSource.options.database === "u340392193_leadsarrow2" && AppDataSource.isInitialized) {
-    return AppDataSource;
-  }
   if (!isDb2Initialized) {
     if (!SecondaryDataSource.isInitialized) {
       try {
@@ -390,6 +387,9 @@ async function getSecondaryDataSource() {
   return SecondaryDataSource;
 }
 async function getTertiaryDataSource() {
+  if (AppDataSource.options.database === "u340392193_leadsarrow3" && AppDataSource.isInitialized) {
+    return AppDataSource;
+  }
   if (process.env.MYSQL_DATABASE_DB3 || process.env.NODE_ENV === "production" || process.env.MYSQL_HOST?.includes("hstgr") || process.env.MYSQL_HOST === "193.203.184.241") {
     if (!isDb3Initialized) {
       if (!TertiaryDataSource.isInitialized) {
@@ -442,11 +442,11 @@ var init_dataSource = __esm({
     dotenv.config();
     AppDataSource = new DataSource({
       type: "mysql",
-      host: process.env.MYSQL_HOST || "193.203.184.241",
-      port: Number(process.env.MYSQL_PORT) || 3306,
-      username: process.env.MYSQL_USER_MAIN || "u340392193_leadsarrow2",
-      password: process.env.MYSQL_PASSWORD_MAIN || "Player74773/",
-      database: process.env.MYSQL_DATABASE_MAIN || "u340392193_leadsarrow2",
+      host: process.env.MYSQL_HOST_DB3 || (process.env.MYSQL_HOST && process.env.MYSQL_HOST !== "127.0.0.1" && process.env.MYSQL_HOST !== "localhost" ? process.env.MYSQL_HOST : "193.203.184.241"),
+      port: Number(process.env.MYSQL_PORT_DB3 || process.env.MYSQL_PORT || 3306),
+      username: process.env.MYSQL_USER_MAIN || process.env.MYSQL_USER_DB3 || "u340392193_leadsarrow3",
+      password: process.env.MYSQL_PASSWORD_MAIN || process.env.MYSQL_PASSWORD_DB3 || "Player74773/",
+      database: process.env.MYSQL_DATABASE_MAIN || process.env.MYSQL_DATABASE_DB3 || "u340392193_leadsarrow3",
       synchronize: false,
       // Schema already exists and indexed
       logging: false,
@@ -460,7 +460,7 @@ var init_dataSource = __esm({
     isInitialized = false;
     PrimaryDataSource = new DataSource({
       type: "mysql",
-      host: process.env.MYSQL_HOST_DB1 || process.env.MYSQL_HOST || "193.203.184.241",
+      host: process.env.MYSQL_HOST_DB1 || (process.env.MYSQL_HOST && process.env.MYSQL_HOST !== "127.0.0.1" && process.env.MYSQL_HOST !== "localhost" ? process.env.MYSQL_HOST : "193.203.184.241"),
       port: Number(process.env.MYSQL_PORT_DB1 || process.env.MYSQL_PORT || 3306),
       username: process.env.MYSQL_USER_DB1 || "u340392193_leadsarrow",
       password: process.env.MYSQL_PASSWORD_DB1 || "Player74773/",
@@ -477,7 +477,7 @@ var init_dataSource = __esm({
     isDb1Initialized = false;
     SecondaryDataSource = new DataSource({
       type: "mysql",
-      host: process.env.MYSQL_HOST_DB2 || process.env.MYSQL_HOST || "193.203.184.241",
+      host: process.env.MYSQL_HOST_DB2 || (process.env.MYSQL_HOST && process.env.MYSQL_HOST !== "127.0.0.1" && process.env.MYSQL_HOST !== "localhost" ? process.env.MYSQL_HOST : "193.203.184.241"),
       port: Number(process.env.MYSQL_PORT_DB2 || process.env.MYSQL_PORT || 3306),
       username: process.env.MYSQL_USER_DB2 || "u340392193_leadsarrow2",
       password: process.env.MYSQL_PASSWORD_DB2 || "Player74773/",
@@ -494,14 +494,14 @@ var init_dataSource = __esm({
     isDb2Initialized = false;
     TertiaryDataSource = new DataSource({
       type: "mysql",
-      host: process.env.MYSQL_HOST_DB3 || process.env.MYSQL_HOST || "193.203.184.241",
+      host: process.env.MYSQL_HOST_DB3 || (process.env.MYSQL_HOST && process.env.MYSQL_HOST !== "127.0.0.1" && process.env.MYSQL_HOST !== "localhost" ? process.env.MYSQL_HOST : "193.203.184.241"),
       port: Number(process.env.MYSQL_PORT_DB3 || process.env.MYSQL_PORT || 3306),
       username: process.env.MYSQL_USER_DB3 || "u340392193_leadsarrow3",
       password: process.env.MYSQL_PASSWORD_DB3 || "Player74773/",
       database: process.env.MYSQL_DATABASE_DB3 || "u340392193_leadsarrow3",
       synchronize: false,
       logging: false,
-      entities: [Lead, SavedList],
+      entities: [Lead, User, UserPurchase, UserLogin, SavedList],
       extra: {
         connectionLimit: 10,
         waitForConnections: true,
