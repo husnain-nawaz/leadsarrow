@@ -194,9 +194,9 @@ export default function ProfileSettingsPage({ onBack }) {
   const isUnlimited = user.planId === 'unlimited' || user.plan?.toLowerCase().includes('unlimited');
 
   return (
-    <div className="min-h-screen bg-slate-50/70 pb-20">
+    <div className="min-h-screen bg-slate-50/70 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-20 transition-colors">
       {/* Top Header / Breadcrumb */}
-      <div className="bg-white border-b border-slate-200">
+      <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 transition-colors">
         <div className="max-w-6xl mx-auto px-6 py-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -204,19 +204,19 @@ export default function ProfileSettingsPage({ onBack }) {
                 <button
                   type="button"
                   onClick={onBack}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-orange-600 transition-colors cursor-pointer mb-2"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors cursor-pointer mb-2"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
                   <span>Back to Lead Finder</span>
                 </button>
               )}
-              <h1 className="text-2xl font-extrabold text-slate-900 font-display tracking-tight flex items-center gap-2.5">
+              <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white font-display tracking-tight flex items-center gap-2.5">
                 <span>Account Profile & Workspace Settings</span>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-800 border border-orange-200">
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 dark:bg-orange-950 text-orange-800 dark:text-orange-300 border border-orange-200 dark:border-orange-800">
                   DB4 Isolated
                 </span>
               </h1>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                 Manage your credentials, custom avatar, security settings, and credits quota.
               </p>
             </div>
@@ -240,7 +240,7 @@ export default function ProfileSettingsPage({ onBack }) {
           {/* Left Column: Profile Card & Plan Overview */}
           <div className="space-y-6 lg:col-span-1">
             {/* User Overview Card */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 text-center space-y-4">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs p-6 text-center space-y-4 transition-colors">
               <div className="relative inline-block mx-auto">
                 {photoPreview ? (
                   <img
@@ -249,7 +249,7 @@ export default function ProfileSettingsPage({ onBack }) {
                     className="w-24 h-24 rounded-full object-cover border-4 border-orange-500 shadow-md mx-auto"
                   />
                 ) : (
-                  <div className="w-24 h-24 rounded-full bg-orange-100 text-orange-700 font-bold flex items-center justify-center text-3xl border-4 border-orange-200 shadow-md mx-auto">
+                  <div className="w-24 h-24 rounded-full bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300 font-bold flex items-center justify-center text-3xl border-4 border-orange-200 dark:border-orange-800 shadow-md mx-auto">
                     {(user.name || user.email || 'U').charAt(0).toUpperCase()}
                   </div>
                 )}
@@ -268,7 +268,7 @@ export default function ProfileSettingsPage({ onBack }) {
                   }}
                   title={isPhotoChangeBlocked ? 'Photo change currently locked' : 'Upload custom photo'}
                   className={`absolute bottom-0 right-0 p-2 rounded-full text-white shadow-md transition-colors cursor-pointer ${
-                    isPhotoChangeBlocked ? 'bg-slate-400 hover:bg-slate-500' : 'bg-orange-600 hover:bg-orange-700'
+                    isPhotoChangeBlocked ? 'bg-slate-400 dark:bg-slate-600 hover:bg-slate-500' : 'bg-orange-600 hover:bg-orange-700'
                   }`}
                 >
                   <Camera className="w-4 h-4" />
@@ -276,38 +276,38 @@ export default function ProfileSettingsPage({ onBack }) {
               </div>
 
               <div>
-                <h3 className="text-base font-bold text-slate-900">{user.name || 'User'}</h3>
-                <p className="text-xs text-slate-500 font-mono mt-0.5">{user.email}</p>
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 mt-2 rounded-md bg-slate-100 text-[11px] font-semibold text-slate-700">
-                  <Building2 className="w-3 h-3 text-slate-400" />
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">{user.name || 'User'}</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">{user.email}</p>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 mt-2 rounded-md bg-slate-100 dark:bg-slate-800 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                  <Building2 className="w-3 h-3 text-slate-400 dark:text-slate-500" />
                   <span>{user.company || 'Enterprise Workspace'}</span>
                 </div>
               </div>
 
               {/* Policy Restriction Box */}
-              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-left space-y-2">
-                <div className="text-[11px] font-bold text-slate-700 flex items-center justify-between">
+              <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-left space-y-2">
+                <div className="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
                   <span>Photo Policy Restrictions:</span>
                   <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${
-                    isYearlyLimitReached ? 'bg-red-100 text-red-700' : 'bg-slate-200 text-slate-700'
+                    isYearlyLimitReached ? 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
                   }`}>
                     {effectiveYearlyCount}/2 Used in {currentYear}
                   </span>
                 </div>
-                <div className="text-[11px] text-slate-500 leading-snug">
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
                   • <strong>30-Day Cooldown:</strong> 1 change every 30 days. <br />
                   • <strong>Yearly Cap:</strong> Max 2 changes per calendar year.
                 </div>
 
                 {cooldownDaysRemaining > 0 && (
-                  <div className="p-2 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-800 flex items-center gap-1.5 font-medium">
-                    <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <div className="p-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg text-[11px] text-amber-800 dark:text-amber-300 flex items-center gap-1.5 font-medium">
+                    <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
                     <span>Cooldown active: {cooldownDaysRemaining} day(s) left (Eligible: {nextEligibleDate})</span>
                   </div>
                 )}
                 {isYearlyLimitReached && (
-                  <div className="p-2 bg-red-50 border border-red-200 rounded-lg text-[11px] text-red-800 flex items-center gap-1.5 font-medium">
-                    <AlertCircle className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                  <div className="p-2 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg text-[11px] text-red-800 dark:text-red-300 flex items-center gap-1.5 font-medium">
+                    <AlertCircle className="w-3.5 h-3.5 text-red-600 dark:text-red-400 shrink-0" />
                     <span>2 of 2 changes reached for {currentYear}.</span>
                   </div>
                 )}
@@ -315,25 +315,25 @@ export default function ProfileSettingsPage({ onBack }) {
             </div>
 
             {/* Plan & Quota Card */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-4">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs p-6 space-y-4 transition-colors">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                  <Zap className="w-4 h-4 text-orange-600" />
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <Zap className="w-4 h-4 text-orange-600 dark:text-orange-400" />
                   <span>Active Subscription</span>
                 </span>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-orange-100 text-orange-800">
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-orange-100 dark:bg-orange-950 text-orange-800 dark:text-orange-300">
                   {user.plan || 'Free Starter'}
                 </span>
               </div>
 
-              <div className="p-4 bg-gradient-to-br from-orange-50 to-amber-50/40 border border-orange-200/70 rounded-xl space-y-3">
+              <div className="p-4 bg-gradient-to-br from-orange-50 to-amber-50/40 dark:from-orange-950/30 dark:to-amber-950/20 border border-orange-200/70 dark:border-orange-800/60 rounded-xl space-y-3">
                 <div className="flex items-baseline justify-between">
-                  <span className="text-xs font-medium text-slate-600">Daily Allowance</span>
-                  <span className="text-lg font-extrabold text-orange-700">
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Daily Allowance</span>
+                  <span className="text-lg font-extrabold text-orange-700 dark:text-orange-400">
                     {isUnlimited ? 'Unlimited' : `${user.creditsRemaining ?? 100} / ${user.dailyCreditsLimit || 100}`}
                   </span>
                 </div>
-                <div className="text-[11px] text-slate-500">
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">
                   Credits refresh automatically every 24 hours at midnight UTC.
                 </div>
               </div>
@@ -341,20 +341,20 @@ export default function ProfileSettingsPage({ onBack }) {
               <button
                 type="button"
                 onClick={() => dispatch(openUpgradeModal())}
-                className="w-full py-2.5 text-xs font-bold text-orange-700 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-xl transition-colors cursor-pointer text-center block"
+                className="w-full py-2.5 text-xs font-bold text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-950/40 hover:bg-orange-100 dark:hover:bg-orange-900/60 border border-orange-200 dark:border-orange-800/70 rounded-xl transition-colors cursor-pointer text-center block"
               >
                 Change or Upgrade Plan →
               </button>
             </div>
 
             {/* Database 4 Isolation Audit Card */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 space-y-2.5 text-xs">
-              <div className="flex items-center gap-2 font-bold text-slate-800">
-                <Database className="w-4 h-4 text-emerald-600" />
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs p-5 space-y-2.5 text-xs transition-colors">
+              <div className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
+                <Database className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span>Database 4 Isolation Guarantee</span>
               </div>
-              <p className="text-slate-500 leading-relaxed text-[11px]">
-                Your profile, bcrypt password hash, credits quota, and reveal logs reside strictly on dedicated <strong>Database 4 (<code className="text-slate-700">u340392193_leadsarrow4</code>)</strong>. No customer data is shared or mixed.
+              <p className="text-slate-500 dark:text-slate-400 leading-relaxed text-[11px]">
+                Your profile, bcrypt password hash, credits quota, and reveal logs reside strictly on dedicated <strong>Database 4 (<code className="text-slate-700 dark:text-slate-300 font-mono">u340392193_leadsarrow4</code>)</strong>. No customer data is shared or mixed.
               </p>
             </div>
           </div>
@@ -362,31 +362,31 @@ export default function ProfileSettingsPage({ onBack }) {
           {/* Right Columns: Edit Profile & Password Form Cards */}
           <div className="space-y-8 lg:col-span-2">
             {/* Card 1: Edit Profile Details */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                <div className="flex items-center gap-2 font-bold text-slate-900 text-sm">
-                  <User className="w-4 h-4 text-orange-600" />
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden transition-colors">
+              <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between">
+                <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white text-sm">
+                  <User className="w-4 h-4 text-orange-600 dark:text-orange-400" />
                   <span>Profile Information</span>
                 </div>
-                <span className="text-[11px] text-slate-400">Database 4 Synced</span>
+                <span className="text-[11px] text-slate-400 dark:text-slate-500">Database 4 Synced</span>
               </div>
 
               <form onSubmit={handleSaveGeneral} className="p-6 space-y-5">
                 {generalSuccess && (
-                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                     <span>{generalSuccess}</span>
                   </div>
                 )}
                 {generalError && (
-                  <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800 flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                  <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl text-xs text-red-800 dark:text-red-300 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
                     <span>{generalError}</span>
                   </div>
                 )}
 
                 {/* Profile Picture Actions */}
-                <div className="flex items-center gap-4 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl">
                   {photoPreview ? (
                     <img
                       src={photoPreview}
@@ -394,14 +394,14 @@ export default function ProfileSettingsPage({ onBack }) {
                       className="w-14 h-14 rounded-full object-cover border-2 border-orange-500 shadow-xs shrink-0"
                     />
                   ) : (
-                    <div className="w-14 h-14 rounded-full bg-orange-100 text-orange-700 font-bold flex items-center justify-center text-lg border-2 border-orange-200 shrink-0">
+                    <div className="w-14 h-14 rounded-full bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300 font-bold flex items-center justify-center text-lg border-2 border-orange-200 dark:border-orange-800 shrink-0">
                       {(name || user.email || 'U').charAt(0).toUpperCase()}
                     </div>
                   )}
 
                   <div className="flex-1 space-y-1">
-                    <div className="text-xs font-bold text-slate-800">Account Avatar</div>
-                    <p className="text-[11px] text-slate-500">
+                    <div className="text-xs font-bold text-slate-800 dark:text-slate-200">Account Avatar</div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
                       Supports JPG, PNG, WebP up to 2.5MB. Stored directly in your Database 4 profile.
                     </p>
                     <div className="flex items-center gap-2 pt-1">
@@ -419,18 +419,18 @@ export default function ProfileSettingsPage({ onBack }) {
                           fileInputRef.current?.click();
                         }}
                         className={`text-xs font-bold cursor-pointer ${
-                          isPhotoChangeBlocked ? 'text-slate-400' : 'text-orange-600 hover:text-orange-700'
+                          isPhotoChangeBlocked ? 'text-slate-400 dark:text-slate-600' : 'text-orange-600 dark:text-orange-400 hover:text-orange-700'
                         }`}
                       >
                         {isPhotoChangeBlocked ? 'Change photo (Locked)' : 'Upload new photo'}
                       </button>
                       {photoPreview && (
                         <>
-                          <span className="text-slate-300">·</span>
+                          <span className="text-slate-300 dark:text-slate-600">·</span>
                           <button
                             type="button"
                             onClick={handleRemovePhoto}
-                            className="text-xs font-medium text-slate-500 hover:text-red-600 cursor-pointer"
+                            className="text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-red-600 cursor-pointer"
                           >
                             Remove
                           </button>
@@ -448,10 +448,10 @@ export default function ProfileSettingsPage({ onBack }) {
                 </div>
 
                 {/* 3 Preset Avatar Selection */}
-                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
-                  <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
+                <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
                     <span>Or choose from 3 curated avatars:</span>
-                    <span className="text-[10px] text-slate-400 font-normal">Max 300KB applied</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">Max 300KB applied</span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                     {PRESET_AVATARS.map((av) => {
@@ -475,14 +475,14 @@ export default function ProfileSettingsPage({ onBack }) {
                           }}
                           className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                             isSelected
-                              ? 'border-orange-500 bg-orange-50/70 ring-2 ring-orange-500/20 shadow-xs'
-                              : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+                              ? 'border-orange-500 bg-orange-50/70 dark:bg-orange-950/40 ring-2 ring-orange-500/20 shadow-xs'
+                              : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/50'
                           }`}
                         >
                           <img src={av.dataUrl} alt={av.label} className="w-8 h-8 rounded-full shrink-0 shadow-xs" />
                           <div className="min-w-0">
-                            <div className="text-xs font-bold text-slate-800 truncate">{av.label}</div>
-                            <div className="text-[10px] text-slate-400 truncate">{av.badge}</div>
+                            <div className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{av.label}</div>
+                            <div className="text-[10px] text-slate-400 dark:text-slate-500 truncate">{av.badge}</div>
                           </div>
                         </button>
                       );
@@ -493,35 +493,35 @@ export default function ProfileSettingsPage({ onBack }) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Full Name */}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                       Full Name
                     </label>
                     <div className="relative">
-                      <User className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+                      <User className="absolute left-3 top-2.5 w-4 h-4 text-slate-400 dark:text-slate-500" />
                       <input
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="Your full name"
                         required
-                        className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-slate-800"
+                        className="w-full pl-9 pr-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-slate-900 dark:text-white"
                       />
                     </div>
                   </div>
 
                   {/* Company */}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                       Company / Organization
                     </label>
                     <div className="relative">
-                      <Building2 className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+                      <Building2 className="absolute left-3 top-2.5 w-4 h-4 text-slate-400 dark:text-slate-500" />
                       <input
                         type="text"
                         value={company}
                         onChange={(e) => setCompany(e.target.value)}
                         placeholder="Company name"
-                        className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-slate-800"
+                        className="w-full pl-9 pr-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-slate-900 dark:text-white"
                       />
                     </div>
                   </div>
@@ -529,20 +529,20 @@ export default function ProfileSettingsPage({ onBack }) {
 
                 {/* Email (Read only) */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">
+                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                     Email Address
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+                    <Mail className="absolute left-3 top-2.5 w-4 h-4 text-slate-400 dark:text-slate-500" />
                     <input
                       type="email"
                       value={user.email}
                       disabled
-                      className="w-full pl-9 pr-3 py-2 text-xs bg-slate-100 border border-slate-200 rounded-lg text-slate-600 cursor-not-allowed"
+                      className="w-full pl-9 pr-3 py-2 text-xs bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-400 cursor-not-allowed"
                     />
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1">
-                    Account ID: <span className="font-mono text-slate-700 font-semibold">{user.id}</span>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+                    Account ID: <span className="font-mono text-slate-700 dark:text-slate-300 font-semibold">{user.id}</span>
                   </p>
                 </div>
 
@@ -566,42 +566,42 @@ export default function ProfileSettingsPage({ onBack }) {
             </div>
 
             {/* Card 2: Password & Security */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                <div className="flex items-center gap-2 font-bold text-slate-900 text-sm">
-                  <KeyRound className="w-4 h-4 text-orange-600" />
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden transition-colors">
+              <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between">
+                <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white text-sm">
+                  <KeyRound className="w-4 h-4 text-orange-600 dark:text-orange-400" />
                   <span>Password & Security</span>
                 </div>
-                <span className="text-[11px] text-slate-400">bcrypt Hash Encryption</span>
+                <span className="text-[11px] text-slate-400 dark:text-slate-500">bcrypt Hash Encryption</span>
               </div>
 
               <form onSubmit={handleSaveSecurity} className="p-6 space-y-4">
                 {securitySuccess && (
-                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                     <span>{securitySuccess}</span>
                   </div>
                 )}
                 {securityError && (
-                  <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800 flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                  <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl text-xs text-red-800 dark:text-red-300 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
                     <span>{securityError}</span>
                   </div>
                 )}
 
                 {/* Current Password */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Current Password <span className="text-slate-400 font-normal">(Leave empty if signed up via Google)</span>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Current Password <span className="text-slate-400 dark:text-slate-500 font-normal">(Leave empty if signed up via Google)</span>
                   </label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+                    <Lock className="absolute left-3 top-2.5 w-4 h-4 text-slate-400 dark:text-slate-500" />
                     <input
                       type="password"
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
                       placeholder="Enter current password"
-                      className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-slate-800"
+                      className="w-full pl-9 pr-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-slate-900 dark:text-white"
                     />
                   </div>
                 </div>
@@ -609,43 +609,43 @@ export default function ProfileSettingsPage({ onBack }) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* New Password */}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                       New Password
                     </label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+                      <Lock className="absolute left-3 top-2.5 w-4 h-4 text-slate-400 dark:text-slate-500" />
                       <input
                         type="password"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         placeholder="At least 6 characters"
                         required
-                        className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-slate-800"
+                        className="w-full pl-9 pr-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-slate-900 dark:text-white"
                       />
                     </div>
                   </div>
 
                   {/* Confirm Password */}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                       Confirm New Password
                     </label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+                      <Lock className="absolute left-3 top-2.5 w-4 h-4 text-slate-400 dark:text-slate-500" />
                       <input
                         type="password"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="Re-type new password"
                         required
-                        className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-slate-800"
+                        className="w-full pl-9 pr-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-slate-900 dark:text-white"
                       />
                     </div>
                   </div>
                 </div>
 
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 flex items-start gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-600 dark:text-slate-400 flex items-start gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                   <span>
                     Your password will be encrypted with 10 salt rounds of bcrypt before being written to Database 4.
                   </span>

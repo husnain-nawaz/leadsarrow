@@ -4,6 +4,25 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LeadsArrow B2B Intelligence — Global Business & Lead Database</title>
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('leadsarrow_theme') || localStorage.getItem('leadsarrow_landing_theme');
+          var theme = (saved === 'light' || saved === 'dark') ? saved : 'dark';
+          if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+            document.documentElement.setAttribute('data-theme', 'dark');
+            document.documentElement.style.backgroundColor = '#020617';
+            document.documentElement.style.color = '#f8fafc';
+          } else {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.setAttribute('data-theme', 'light');
+            document.documentElement.style.backgroundColor = '#f8fafc';
+            document.documentElement.style.color = '#0f172a';
+          }
+        } catch (e) {}
+      })();
+    </script>
     <meta name="description" content="Enterprise B2B lead discovery and company intelligence database with multi-dimensional filtering, Redux state management, JWT security, and Google authentication." />
     <meta property="og:title" content="LeadsArrow B2B Intelligence — Global Business & Lead Database" />
     <meta property="og:description" content="Enterprise B2B lead discovery and company intelligence database with multi-dimensional filtering, Redux state management, JWT security, and Google authentication." />
@@ -13,7 +32,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   </head>
-  <body class="bg-slate-50 text-slate-900 antialiased selection:bg-orange-600 selection:text-white">
+  <body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased selection:bg-orange-600 selection:text-white transition-colors duration-200">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

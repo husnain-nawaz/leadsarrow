@@ -51,26 +51,26 @@ export default function LeadDetailDrawer() {
         onClick={() => dispatch(setActiveLead(null))}
       />
 
-      <div className="relative z-10 w-full max-w-lg bg-white h-full border-l border-slate-200 flex flex-col overflow-hidden">
+      <div className="relative z-10 w-full max-w-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 h-full border-l border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden transition-colors">
         {/* Drawer Header */}
-        <div className="px-6 py-4 border-b border-slate-200 flex items-start justify-between gap-4">
+        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-4">
           <div>
             {isNewLead(activeLead) && (
-              <div className="mb-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-800 text-[11px] font-bold shadow-2xs">
-                <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+              <div className="mb-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-[11px] font-bold shadow-2xs">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 <span>NEW</span>
               </div>
             )}
-            <div className="text-xs text-slate-500">
+            <div className="text-xs text-slate-500 dark:text-slate-400">
               {activeLead.industry} · {activeLead.fundingStage}
             </div>
-            <h2 className="text-lg font-bold text-slate-900 font-display mt-0.5 flex items-center gap-2">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white font-display mt-0.5 flex items-center gap-2">
               <span>{activeLead.companyName}</span>
               <a
                 href={`https://${activeLead.domain}`}
                 target="_blank"
                 rel="noreferrer"
-                className="text-xs font-normal text-orange-600 hover:underline inline-flex items-center gap-1"
+                className="text-xs font-normal text-orange-600 dark:text-orange-400 hover:underline inline-flex items-center gap-1"
               >
                 <span>{activeLead.domain}</span>
                 <ExternalLink className="w-3 h-3" />
@@ -81,7 +81,7 @@ export default function LeadDetailDrawer() {
           <button
             type="button"
             onClick={() => dispatch(setActiveLead(null))}
-            className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg cursor-pointer"
+            className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -91,32 +91,32 @@ export default function LeadDetailDrawer() {
         <div className="flex-1 overflow-y-auto p-6 space-y-6 text-xs">
           {/* Section 1: Decision Maker Profile */}
           <div className="space-y-3">
-            <h3 className="text-xs font-semibold text-slate-900 font-display">
+            <h3 className="text-xs font-semibold text-slate-900 dark:text-white font-display">
               Primary Decision Maker
             </h3>
-            <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-3">
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg space-y-3">
               <div>
-                <div className="text-sm font-semibold text-slate-900">
+                <div className="text-sm font-semibold text-slate-900 dark:text-white">
                   {activeLead.contactName}
                 </div>
-                <div className="text-xs text-slate-600 mt-0.5">
+                <div className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
                   {activeLead.contactTitle} · {activeLead.seniority} · {activeLead.department}
                 </div>
               </div>
 
               {isRevealed ? (
-                <div className="pt-2 border-t border-slate-200 space-y-2">
+                <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Work Email</span>
-                    <div className="flex items-center gap-2 font-mono text-slate-900">
+                    <span className="text-slate-500 dark:text-slate-400">Work Email</span>
+                    <div className="flex items-center gap-2 font-mono text-slate-900 dark:text-slate-100">
                       <span>{activeLead.contactEmail}</span>
                       <button
                         type="button"
                         onClick={() => handleCopy(activeLead.contactEmail, 'email')}
-                        className="text-slate-400 hover:text-slate-700 cursor-pointer"
+                        className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
                       >
                         {copiedField === 'email' ? (
-                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                         ) : (
                           <Copy className="w-3.5 h-3.5" />
                         )}
@@ -125,16 +125,16 @@ export default function LeadDetailDrawer() {
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Direct Phone</span>
-                    <div className="flex items-center gap-2 font-mono tabular-nums text-slate-900">
+                    <span className="text-slate-500 dark:text-slate-400">Direct Phone</span>
+                    <div className="flex items-center gap-2 font-mono tabular-nums text-slate-900 dark:text-slate-100">
                       <span>{activeLead.contactPhone}</span>
                       <button
                         type="button"
                         onClick={() => handleCopy(activeLead.contactPhone, 'phone')}
-                        className="text-slate-400 hover:text-slate-700 cursor-pointer"
+                        className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
                       >
                         {copiedField === 'phone' ? (
-                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                         ) : (
                           <Copy className="w-3.5 h-3.5" />
                         )}
@@ -143,15 +143,15 @@ export default function LeadDetailDrawer() {
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-500">SMTP Verification</span>
-                    <span className="font-medium text-emerald-700">
+                    <span className="text-slate-500 dark:text-slate-400">SMTP Verification</span>
+                    <span className="font-medium text-emerald-700 dark:text-emerald-400">
                       {activeLead.verificationStatus} (Checked {activeLead.lastVerifiedDaysAgo || 2}d ago)
                     </span>
                   </div>
                 </div>
               ) : (
-                <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
-                  <span className="text-slate-500">
+                <div className="pt-2 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                  <span className="text-slate-500 dark:text-slate-400">
                     Direct work email & phone verified
                   </span>
                   <button
@@ -177,31 +177,31 @@ export default function LeadDetailDrawer() {
 
           {/* Section 2: Firmographic Metrics */}
           <div className="space-y-3">
-            <h3 className="text-xs font-semibold text-slate-900 font-display">
+            <h3 className="text-xs font-semibold text-slate-900 dark:text-white font-display">
               Company Firmographics
             </h3>
-            <div className="grid grid-cols-2 gap-3 border border-slate-200 rounded-lg p-4">
+            <div className="grid grid-cols-2 gap-3 border border-slate-200 dark:border-slate-700 rounded-lg p-4 bg-slate-50/50 dark:bg-slate-800/40">
               <div>
-                <div className="text-slate-500">Global Headcount</div>
-                <div className="text-sm font-semibold text-slate-900 font-mono tabular-nums mt-0.5">
+                <div className="text-slate-500 dark:text-slate-400">Global Headcount</div>
+                <div className="text-sm font-semibold text-slate-900 dark:text-white font-mono tabular-nums mt-0.5">
                   {(activeLead.employeeCount || 150).toLocaleString()} ({activeLead.employeeRange})
                 </div>
               </div>
               <div>
-                <div className="text-slate-500">Annual Revenue</div>
-                <div className="text-sm font-semibold text-slate-900 font-mono tabular-nums mt-0.5">
+                <div className="text-slate-500 dark:text-slate-400">Annual Revenue</div>
+                <div className="text-sm font-semibold text-slate-900 dark:text-white font-mono tabular-nums mt-0.5">
                   {activeLead.revenueRange}
                 </div>
               </div>
               <div>
-                <div className="text-slate-500">Headquarters</div>
-                <div className="text-sm font-medium text-slate-900 mt-0.5">
+                <div className="text-slate-500 dark:text-slate-400">Headquarters</div>
+                <div className="text-sm font-medium text-slate-900 dark:text-white mt-0.5">
                   {activeLead.city}, {activeLead.country}
                 </div>
               </div>
               <div>
-                <div className="text-slate-500">Founded / Codes</div>
-                <div className="text-sm font-mono tabular-nums text-slate-900 mt-0.5">
+                <div className="text-slate-500 dark:text-slate-400">Founded / Codes</div>
+                <div className="text-sm font-mono tabular-nums text-slate-900 dark:text-white mt-0.5">
                   {activeLead.foundedYear || 2016} · SIC {activeLead.sicCode || '7372'}
                 </div>
               </div>
@@ -210,24 +210,24 @@ export default function LeadDetailDrawer() {
 
           {/* Section 3: Buying Intent & Tech Signals */}
           <div className="space-y-3">
-            <h3 className="text-xs font-semibold text-slate-900 font-display">
+            <h3 className="text-xs font-semibold text-slate-900 dark:text-white font-display">
               Buying Intent & Technology Footprint
             </h3>
-            <div className="border border-slate-200 rounded-lg p-4 space-y-3">
+            <div className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 space-y-3 bg-slate-50/50 dark:bg-slate-800/40">
               <div className="flex items-center justify-between">
-                <span className="text-slate-600">Composite Buying Intent Score</span>
-                <span className="font-mono tabular-nums font-bold text-slate-900">
+                <span className="text-slate-600 dark:text-slate-300">Composite Buying Intent Score</span>
+                <span className="font-mono tabular-nums font-bold text-slate-900 dark:text-white">
                   {activeLead.buyingIntentScore} / 100
                 </span>
               </div>
-              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-orange-600 rounded-full"
                   style={{ width: `${activeLead.buyingIntentScore}%` }}
                 />
               </div>
-              <div className="text-slate-600 pt-1">
-                <span className="font-medium text-slate-900">Latest Signal: </span>
+              <div className="text-slate-600 dark:text-slate-300 pt-1">
+                <span className="font-medium text-slate-900 dark:text-white">Latest Signal: </span>
                 {activeLead.recentSignal || 'Active evaluation of enterprise B2B infrastructure'}
               </div>
             </div>
@@ -235,11 +235,11 @@ export default function LeadDetailDrawer() {
         </div>
 
         {/* Drawer Footer */}
-        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
+        <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
           <button
             type="button"
             onClick={handleAddToList}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-800 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
           >
             <Bookmark className="w-3.5 h-3.5" />
             {savedNotice ? 'Saved to Default List!' : 'Save to Target List'}
@@ -248,7 +248,7 @@ export default function LeadDetailDrawer() {
           <button
             type="button"
             onClick={() => dispatch(setActiveLead(null))}
-            className="px-4 py-2 text-xs font-semibold text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+            className="px-4 py-2 text-xs font-semibold text-white bg-slate-900 dark:bg-orange-600 hover:bg-slate-800 dark:hover:bg-orange-700 rounded-lg transition-colors cursor-pointer"
           >
             Done
           </button>
