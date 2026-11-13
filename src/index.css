@@ -33,6 +33,31 @@
   }
 }
 
+/* Fast top-to-bottom theme sweep animation using native View Transitions */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 9999;
+  animation: themeSweepDown 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes themeSweepDown {
+  0% {
+    clip-path: inset(0 0 100% 0);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
 /* Custom subtle scrollbars for filter sidebar and dense data table */
 ::-webkit-scrollbar {
   width: 6px;

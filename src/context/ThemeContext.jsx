@@ -40,7 +40,31 @@ export function ThemeProvider({ children }) {
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+
+    // If browser supports native View Transitions, sweep smoothly from top to bottom!
+    if (typeof document !== 'undefined' && 'startViewTransition' in document) {
+      document.startViewTransition(() => {
+        setTheme(nextTheme);
+        const root = document.documentElement;
+        if (nextTheme === 'dark') {
+          root.classList.add('dark');
+          root.setAttribute('data-theme', 'dark');
+          document.body.classList.add('dark');
+          document.body.style.backgroundColor = '#0f172a';
+          document.body.style.color = '#f8fafc';
+        } else {
+          root.classList.remove('dark');
+          root.setAttribute('data-theme', 'light');
+          document.body.classList.remove('dark');
+          document.body.style.backgroundColor = '#f8fafc';
+          document.body.style.color = '#0f172a';
+        }
+      });
+    } else {
+      // Fallback: synchronous atomic change in the exact same frame
+      setTheme(nextTheme);
+    }
   };
 
   return (
