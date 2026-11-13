@@ -28,7 +28,7 @@ export function ThemeProvider({ children }) {
       root.classList.add('dark');
       root.setAttribute('data-theme', 'dark');
       document.body.classList.add('dark');
-      document.body.style.backgroundColor = '#020617';
+      document.body.style.backgroundColor = '#0f172a';
       document.body.style.color = '#f8fafc';
     } else {
       root.classList.remove('dark');

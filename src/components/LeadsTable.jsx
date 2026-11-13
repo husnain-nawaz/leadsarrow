@@ -149,7 +149,7 @@ export default function LeadsTable() {
   const showSkeleton = loading;
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden relative transition-colors">
+    <div className="flex-1 flex flex-col min-h-0 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 overflow-hidden relative transition-colors">
       {/* High-visibility top loading progress bar when retrieving/filtering data */}
       {loading && (
         <div className="absolute top-0 left-0 right-0 h-1 bg-orange-100 dark:bg-orange-950/60 z-30 overflow-hidden shadow-xs">
@@ -158,7 +158,7 @@ export default function LeadsTable() {
       )}
 
       {/* High-Density Enterprise Data Grid */}
-      <div className="overflow-auto flex-1 min-h-0 bg-white dark:bg-slate-950">
+      <div className="overflow-auto flex-1 min-h-0 bg-white dark:bg-slate-900">
         <table className="w-full text-left border-collapse table-fixed min-w-[1240px]">
           <colgroup>
             <col style={{ width: '48px' }} />
@@ -170,7 +170,7 @@ export default function LeadsTable() {
             <col style={{ width: '150px' }} />
             <col style={{ width: '110px' }} />
           </colgroup>
-          <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 shadow-xs border-b border-slate-200 dark:border-slate-800">
+          <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900/90 shadow-xs border-b border-slate-200 dark:border-slate-800 backdrop-blur-xs">
             <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-900">
               <th className="py-2.5 pl-6 pr-3 bg-slate-50 dark:bg-slate-900">
                 <input
@@ -226,7 +226,7 @@ export default function LeadsTable() {
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-slate-200 dark:divide-slate-800/80 text-xs">
+          <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-xs">
             {showSkeleton ? (
               Array.from({ length: filters.pageSize || 25 }).map((_, idx) => (
                 <tr key={idx} className="h-[54px] animate-pulse">
@@ -322,9 +322,7 @@ export default function LeadsTable() {
                     className={`group transition-colors cursor-pointer ${
                       isSelected
                         ? 'bg-orange-50/50 dark:bg-orange-950/30 hover:bg-orange-50 dark:hover:bg-orange-950/50'
-                        : isNewLead(lead)
-                        ? 'bg-emerald-50/20 dark:bg-emerald-950/20 hover:bg-emerald-50/40 dark:hover:bg-emerald-950/30 border-l-2 border-emerald-500'
-                        : 'hover:bg-slate-50/80 dark:hover:bg-slate-900/60'
+                        : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/60'
                     }`}
                   >
                     {/* Checkbox */}
@@ -501,7 +499,7 @@ export default function LeadsTable() {
       </div>
 
       {/* Pagination Footer Bar */}
-      <div className="shrink-0 px-6 py-3 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4 text-xs text-slate-600 dark:text-slate-400 transition-colors">
+      <div className="shrink-0 px-6 py-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4 text-xs text-slate-600 dark:text-slate-400 transition-colors">
         <div className="flex items-center gap-3">
           <span>
             Showing page{' '}
