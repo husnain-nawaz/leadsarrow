@@ -1551,6 +1551,13 @@ async function updateSelfProfile(userId, data) {
     const currentPhoto = user.photoUrl || "";
     const newPhoto = data.photoUrl.trim();
     if (newPhoto && newPhoto !== currentPhoto) {
+      if (newPhoto.startsWith("data:image/")) {
+        const base64Part = newPhoto.split(",")[1] || "";
+        const approxBytes = Math.round(base64Part.length * 3 / 4);
+        if (approxBytes > 300 * 1024) {
+          throw new Error("Image size must not be greater than 300 KB. Please select a smaller photo or choose one of the preset avatars.");
+        }
+      }
       const now = /* @__PURE__ */ new Date();
       const currentYear = now.getFullYear();
       const userYear = Number(user.photoUpdatesYear) || 0;

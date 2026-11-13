@@ -23,6 +23,7 @@ import {
   Layers
 } from 'lucide-react';
 import { updateCurrentUserProfile, openUpgradeModal } from '../store/authSlice.js';
+import { PRESET_AVATARS } from '../data/avatars.js';
 
 export default function ProfileSettingsPage({ onBack }) {
   const dispatch = useDispatch();
@@ -112,8 +113,8 @@ export default function ProfileSettingsPage({ onBack }) {
       return;
     }
 
-    if (file.size > 2.5 * 1024 * 1024) {
-      setGeneralError('Image size must be less than 2.5MB.');
+    if (file.size > 300 * 1024) {
+      setGeneralError('Image size must not be greater than 300 KB. Please upload a smaller image or select one of the 3 preset avatars below.');
       return;
     }
 
@@ -446,6 +447,49 @@ export default function ProfileSettingsPage({ onBack }) {
                   />
                 </div>
 
+                {/* 3 Preset Avatar Selection */}
+                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
+                    <span>Or choose from 3 curated avatars:</span>
+                    <span className="text-[10px] text-slate-400 font-normal">Max 300KB applied</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    {PRESET_AVATARS.map((av) => {
+                      const isSelected = photoPreview === av.dataUrl;
+                      return (
+                        <button
+                          key={av.id}
+                          type="button"
+                          onClick={() => {
+                            if (isPhotoChangeBlocked) {
+                              if (isYearlyLimitReached) {
+                                setGeneralError(`Profile picture can only be changed up to 2 times per calendar year. You have used your limit for ${currentYear}.`);
+                              } else {
+                                setGeneralError(`Profile picture can only be changed once every 30 days. Next change eligible in ${cooldownDaysRemaining} day(s).`);
+                              }
+                              return;
+                            }
+                            setPhotoPreview(av.dataUrl);
+                            setPhotoUrl(av.dataUrl);
+                            setGeneralError('');
+                          }}
+                          className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                            isSelected
+                              ? 'border-orange-500 bg-orange-50/70 ring-2 ring-orange-500/20 shadow-xs'
+                              : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+                          }`}
+                        >
+                          <img src={av.dataUrl} alt={av.label} className="w-8 h-8 rounded-full shrink-0 shadow-xs" />
+                          <div className="min-w-0">
+                            <div className="text-xs font-bold text-slate-800 truncate">{av.label}</div>
+                            <div className="text-[10px] text-slate-400 truncate">{av.badge}</div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Full Name */}
                   <div>
@@ -631,3 +675,4 @@ export default function ProfileSettingsPage({ onBack }) {
     </div>
   );
 }
+
