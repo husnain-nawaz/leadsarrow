@@ -115,7 +115,7 @@ function mapEntityToLead(entity: Lead) {
     buyingIntentScore: Number(entity.buyingIntentScore) || 80,
     foundedYear: Number(entity.foundedYear) || 2018,
     hasDirectPhone: Boolean(entity.hasDirectPhone),
-    isCustom: Boolean(entity.isCustom),
+    isCustom: Boolean(entity.isCustom && entity.source === 'manual_lead_entry'),
     isRecent: Boolean(entity.isRecent),
     source: entity.source,
     createdAt: entity.createdAt ? new Date(entity.createdAt).toISOString() : new Date().toISOString()
@@ -167,6 +167,10 @@ function mapCustomRowToLead(row: any) {
 }
 
 // In-memory cache for aggregate metrics & total database counts
+export function invalidateGlobalMetricsCache() {
+  cachedGlobals.timestamp = 0;
+}
+
 let cachedGlobals = {
   timestamp: 0,
   totalDatabaseRecords: 10363428,
@@ -565,7 +569,7 @@ export async function queryLeadsDatabase(params: any = {}, userId?: string | nul
         buyingIntentScore: Number(e.buying_intent_score) || 88,
         foundedYear: Number(e.founded_year) || 2020,
         hasDirectPhone: Boolean(e.has_direct_phone),
-        isCustom: Boolean(e.is_custom),
+        isCustom: Boolean(e.is_custom && e.source === 'manual_lead_entry'),
         isRecent: Boolean(e.is_recent),
         source: e.source,
         createdAt: e.created_at

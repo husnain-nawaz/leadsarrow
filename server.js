@@ -23,6 +23,10 @@ var __decorateClass = (decorators, target, key, kind) => {
 };
 
 // server/entities/Lead.ts
+var Lead_exports = {};
+__export(Lead_exports, {
+  Lead: () => Lead
+});
 import { Entity, PrimaryColumn, Column, Index, CreateDateColumn } from "typeorm";
 var Lead;
 var init_Lead = __esm({
@@ -545,75 +549,16 @@ var init_dataSource = __esm({
   }
 });
 
-// server.ts
-init_dataSource();
-import "reflect-metadata";
-import express from "express";
-import { createServer as createViteServer } from "vite";
-import path from "path";
-
 // server/leadsData.ts
-init_dataSource();
-init_Lead();
-var FILTER_TAXONOMY = {
-  industries: [
-    "Business Services",
-    "Real Estate & Construction",
-    "Retail",
-    "Manufacturing",
-    "Media & Entertainment",
-    "Software & Internet",
-    "Healthcare",
-    "Financial Services",
-    "Non-Profit",
-    "Computers & Electronics",
-    "Travel, Recreation, and Leisure",
-    "Education",
-    "Telecommunications",
-    "Consumer Services",
-    "Transportation & Storage",
-    "Wholesale & Distribution",
-    "Enterprise Software & SaaS",
-    "Energy & Utilities",
-    "Government",
-    "Agriculture & Mining"
-  ],
-  employeeRanges: [
-    "0 - 25",
-    "25 - 100",
-    "100 - 250",
-    "250 - 1000",
-    "1K - 10K",
-    "10K - 50K",
-    "50K - 100K",
-    "> 100K"
-  ],
-  revenueRanges: [
-    "$0 - $1M",
-    "$1 - $10M",
-    "$10 - $50M",
-    "$50 - $100M",
-    "$100 - $250M",
-    "$250 - $500M",
-    "$500M - $1B",
-    "> $1B"
-  ],
-  countries: ["USA", "Canada"],
-  seniorities: ["C-Level / Founder", "Director", "Senior Manager", "VP"],
-  departments: [
-    "Executive Leadership",
-    "Marketing & Growth",
-    "Sales & Revenue",
-    "Operations & Supply Chain",
-    "Engineering & Technical",
-    "Finance & Procurement",
-    "Information Security",
-    "Product Management"
-  ],
-  techStackOptions: [],
-  fundingStages: ["Series B", "Public / IPO", "Series C+"],
-  verificationStatuses: ["Verified"]
-};
+var leadsData_exports = {};
+__export(leadsData_exports, {
+  FILTER_TAXONOMY: () => FILTER_TAXONOMY,
+  batchInsertLeads: () => batchInsertLeads,
+  fetchLeadsByIds: () => fetchLeadsByIds,
+  insertSingleLead: () => insertSingleLead,
+  invalidateGlobalMetricsCache: () => invalidateGlobalMetricsCache,
+  queryLeadsDatabase: () => queryLeadsDatabase
+});
 function parseArrayParam(param) {
   if (!param) return [];
   if (Array.isArray(param)) return param.filter(Boolean);
@@ -655,7 +600,7 @@ function mapEntityToLead(entity) {
     buyingIntentScore: Number(entity.buyingIntentScore) || 80,
     foundedYear: Number(entity.foundedYear) || 2018,
     hasDirectPhone: Boolean(entity.hasDirectPhone),
-    isCustom: Boolean(entity.isCustom),
+    isCustom: Boolean(entity.isCustom && entity.source === "manual_lead_entry"),
     isRecent: Boolean(entity.isRecent),
     source: entity.source,
     createdAt: entity.createdAt ? new Date(entity.createdAt).toISOString() : (/* @__PURE__ */ new Date()).toISOString()
@@ -703,17 +648,9 @@ function mapCustomRowToLead(row) {
     createdAt: row.created_at ? new Date(row.created_at).toISOString() : (/* @__PURE__ */ new Date()).toISOString()
   };
 }
-var cachedGlobals = {
-  timestamp: 0,
-  totalDatabaseRecords: 10363428,
-  avgIntentScore: 88,
-  verifiedRatio: 100,
-  facets: {
-    industries: {},
-    countries: {}
-  }
-};
-var CACHE_TTL_MS = 5 * 60 * 1e3;
+function invalidateGlobalMetricsCache() {
+  cachedGlobals.timestamp = 0;
+}
 async function getGlobalMetricsAndFacets(ds) {
   const now = Date.now();
   if (now - cachedGlobals.timestamp < CACHE_TTL_MS && cachedGlobals.timestamp > 0) {
@@ -1064,7 +1001,7 @@ async function queryLeadsDatabase(params = {}, userId) {
         buyingIntentScore: Number(e.buying_intent_score) || 88,
         foundedYear: Number(e.founded_year) || 2020,
         hasDirectPhone: Boolean(e.has_direct_phone),
-        isCustom: Boolean(e.is_custom),
+        isCustom: Boolean(e.is_custom && e.source === "manual_lead_entry"),
         isRecent: Boolean(e.is_recent),
         source: e.source,
         createdAt: e.created_at
@@ -1250,6 +1187,10 @@ async function batchInsertLeads(newLeads = []) {
     totalRecords
   };
 }
+async function insertSingleLead(lead) {
+  const res = await batchInsertLeads([lead]);
+  return { ...lead, id: lead.id || `lead_${Date.now()}` };
+}
 async function fetchLeadsByIds(ids, userId) {
   if (!Array.isArray(ids) || ids.length === 0) return [];
   const results = [];
@@ -1280,6 +1221,91 @@ async function fetchLeadsByIds(ids, userId) {
   }
   return results;
 }
+var FILTER_TAXONOMY, cachedGlobals, CACHE_TTL_MS;
+var init_leadsData = __esm({
+  "server/leadsData.ts"() {
+    init_dataSource();
+    init_Lead();
+    FILTER_TAXONOMY = {
+      industries: [
+        "Business Services",
+        "Real Estate & Construction",
+        "Retail",
+        "Manufacturing",
+        "Media & Entertainment",
+        "Software & Internet",
+        "Healthcare",
+        "Financial Services",
+        "Non-Profit",
+        "Computers & Electronics",
+        "Travel, Recreation, and Leisure",
+        "Education",
+        "Telecommunications",
+        "Consumer Services",
+        "Transportation & Storage",
+        "Wholesale & Distribution",
+        "Enterprise Software & SaaS",
+        "Energy & Utilities",
+        "Government",
+        "Agriculture & Mining"
+      ],
+      employeeRanges: [
+        "0 - 25",
+        "25 - 100",
+        "100 - 250",
+        "250 - 1000",
+        "1K - 10K",
+        "10K - 50K",
+        "50K - 100K",
+        "> 100K"
+      ],
+      revenueRanges: [
+        "$0 - $1M",
+        "$1 - $10M",
+        "$10 - $50M",
+        "$50 - $100M",
+        "$100 - $250M",
+        "$250 - $500M",
+        "$500M - $1B",
+        "> $1B"
+      ],
+      countries: ["USA", "Canada"],
+      seniorities: ["C-Level / Founder", "Director", "Senior Manager", "VP"],
+      departments: [
+        "Executive Leadership",
+        "Marketing & Growth",
+        "Sales & Revenue",
+        "Operations & Supply Chain",
+        "Engineering & Technical",
+        "Finance & Procurement",
+        "Information Security",
+        "Product Management"
+      ],
+      techStackOptions: [],
+      fundingStages: ["Series B", "Public / IPO", "Series C+"],
+      verificationStatuses: ["Verified"]
+    };
+    cachedGlobals = {
+      timestamp: 0,
+      totalDatabaseRecords: 10363428,
+      avgIntentScore: 88,
+      verifiedRatio: 100,
+      facets: {
+        industries: {},
+        countries: {}
+      }
+    };
+    CACHE_TTL_MS = 5 * 60 * 1e3;
+  }
+});
+
+// server.ts
+init_dataSource();
+init_leadsData();
+import "reflect-metadata";
+import express from "express";
+import { createServer as createViteServer } from "vite";
+import path from "path";
 
 // server/auth.ts
 init_dataSource();
@@ -2274,6 +2300,61 @@ async function startServer() {
       res.status(201).json({ ...result, list: savedList });
     } catch (err) {
       res.status(400).json({ error: err.message });
+    }
+  });
+  app.delete("/api/admin/leads/:id", requireSuperAdminMiddleware, async (req, res) => {
+    try {
+      const targetId = req.params.id;
+      if (!targetId) {
+        return res.status(400).json({ error: "Lead ID required" });
+      }
+      const { getDatabase2DataSource } = await import("./server/db.ts");
+      const ds2 = await getDatabase2DataSource();
+      const leadRepo = ds2.getRepository((await Promise.resolve().then(() => (init_Lead(), Lead_exports))).Lead);
+      const existing = await leadRepo.findOne({ where: { id: targetId } });
+      if (!existing) {
+        const ds1 = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
+        await ds1.query("DELETE FROM custom_leads WHERE id = ?", [targetId]).catch(() => {
+        });
+        return res.json({
+          success: true,
+          deleted: true,
+          id: targetId,
+          message: "Lead was not found in core database or was already removed."
+        });
+      }
+      await leadRepo.delete(targetId);
+      try {
+        const ds3 = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
+        await ds3.query(
+          `UPDATE saved_lists 
+           SET lead_ids = JSON_REMOVE(lead_ids, JSON_UNQUOTE(JSON_SEARCH(lead_ids, 'one', ?))),
+               lead_count = GREATEST(0, lead_count - 1)
+           WHERE JSON_SEARCH(lead_ids, 'one', ?) IS NOT NULL`,
+          [targetId, targetId]
+        ).catch(() => {
+        });
+      } catch (listErr) {
+        console.warn("Saved lists cleanup warning:", listErr);
+      }
+      try {
+        const { invalidateGlobalMetricsCache: invalidateGlobalMetricsCache2 } = await Promise.resolve().then(() => (init_leadsData(), leadsData_exports));
+        if (typeof invalidateGlobalMetricsCache2 === "function") {
+          invalidateGlobalMetricsCache2();
+        }
+      } catch {
+      }
+      console.log(`[CORE DATABASE DELETION] Superadmin (${req.user?.email || "superadmin"}) permanently deleted core lead: ${targetId} (${existing.companyName}). Reflected across all accounts.`);
+      res.json({
+        success: true,
+        deleted: true,
+        id: targetId,
+        companyName: existing.companyName,
+        message: "Lead permanently deleted from the core database. This change is reflected platform-wide for all accounts."
+      });
+    } catch (err) {
+      console.error("Failed to delete core database lead:", err);
+      res.status(500).json({ error: err.message || "Failed to delete core database lead" });
     }
   });
   const activeIngestionJobs = /* @__PURE__ */ new Map();

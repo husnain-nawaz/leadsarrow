@@ -233,6 +233,71 @@ async function startServer() {
     }
   });
 
+  // DELETE CORE DATABASE LEAD (Superadmin Only - permanently deletes from main database)
+  app.delete('/api/admin/leads/:id', requireSuperAdminMiddleware, async (req: any, res) => {
+    try {
+      const targetId = req.params.id;
+      if (!targetId) {
+        return res.status(400).json({ error: 'Lead ID required' });
+      }
+
+      const { getDatabase2DataSource } = await import('./server/db.ts');
+      const ds2 = await getDatabase2DataSource();
+      const leadRepo = ds2.getRepository((await import('./server/entities/Lead.ts')).Lead);
+
+      const existing = await leadRepo.findOne({ where: { id: targetId } });
+      if (!existing) {
+        // Also clean from custom_leads in DB1 just in case
+        const ds1 = await (await import('./server/dataSource.ts')).getDataSource();
+        await ds1.query('DELETE FROM custom_leads WHERE id = ?', [targetId]).catch(() => {});
+        return res.json({
+          success: true,
+          deleted: true,
+          id: targetId,
+          message: 'Lead was not found in core database or was already removed.'
+        });
+      }
+
+      // PERMANENT DELETION: Delete from main database leads table
+      await leadRepo.delete(targetId);
+
+      // Clean up reference in any user's saved lists in Database 3
+      try {
+        const ds3 = await (await import('./server/dataSource.ts')).getDataSource();
+        await ds3.query(
+          `UPDATE saved_lists 
+           SET lead_ids = JSON_REMOVE(lead_ids, JSON_UNQUOTE(JSON_SEARCH(lead_ids, 'one', ?))),
+               lead_count = GREATEST(0, lead_count - 1)
+           WHERE JSON_SEARCH(lead_ids, 'one', ?) IS NOT NULL`,
+          [targetId, targetId]
+        ).catch(() => {});
+      } catch (listErr) {
+        console.warn('Saved lists cleanup warning:', listErr);
+      }
+
+      // Invalidate platform metrics cache so platform-wide counts reflect deletion immediately
+      try {
+        const { invalidateGlobalMetricsCache } = await import('./server/leadsData.ts');
+        if (typeof invalidateGlobalMetricsCache === 'function') {
+          invalidateGlobalMetricsCache();
+        }
+      } catch {}
+
+      console.log(`[CORE DATABASE DELETION] Superadmin (${req.user?.email || 'superadmin'}) permanently deleted core lead: ${targetId} (${existing.companyName}). Reflected across all accounts.`);
+
+      res.json({
+        success: true,
+        deleted: true,
+        id: targetId,
+        companyName: existing.companyName,
+        message: 'Lead permanently deleted from the core database. This change is reflected platform-wide for all accounts.'
+      });
+    } catch (err: any) {
+      console.error('Failed to delete core database lead:', err);
+      res.status(500).json({ error: err.message || 'Failed to delete core database lead' });
+    }
+  });
+
   // Track asynchronous high-capacity sheet ingestion progress & cancellation
   const activeIngestionJobs = new Map<string, {
     jobId: string;

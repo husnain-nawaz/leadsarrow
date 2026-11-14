@@ -3,6 +3,7 @@ import {
   fetchLeadsFromServer,
   createCustomLeadOnServerApi,
   deleteCustomLeadOnServerApi,
+  deleteCoreLeadByAdminApi,
   fetchRevealedLeadsApi,
   revealLeadContactApi
 } from '../services/api.js';
@@ -89,6 +90,20 @@ export const deleteCustomLead = createAsyncThunk(
       return leadId;
     } catch (error) {
       return rejectWithValue(error.message || 'Failed to delete custom lead');
+    }
+  }
+);
+
+export const deleteCoreLeadByAdmin = createAsyncThunk(
+  'leads/deleteCoreLeadByAdmin',
+  async (leadId, { dispatch, getState, rejectWithValue }) => {
+    try {
+      await deleteCoreLeadByAdminApi(leadId);
+      const { filters } = getState();
+      dispatch(fetchLeads(filters));
+      return leadId;
+    } catch (error) {
+      return rejectWithValue(error.message || 'Failed to delete core database lead');
     }
   }
 );
@@ -250,6 +265,13 @@ const leadsSlice = createSlice({
         state.items = state.items.filter((i) => i.id !== deletedId);
         state.firestoreCustomLeads = state.firestoreCustomLeads.filter((i) => i.id !== deletedId);
         state.customLeadsVersion += 1;
+        if (state.activeLead?.id === deletedId) {
+          state.activeLead = null;
+        }
+      })
+      .addCase(deleteCoreLeadByAdmin.fulfilled, (state, action) => {
+        const deletedId = action.payload;
+        state.items = state.items.filter((i) => i.id !== deletedId);
         if (state.activeLead?.id === deletedId) {
           state.activeLead = null;
         }

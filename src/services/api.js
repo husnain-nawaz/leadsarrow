@@ -219,6 +219,12 @@ export async function deleteCustomLeadOnServerApi(id) {
   });
 }
 
+export async function deleteCoreLeadByAdminApi(id) {
+  return apiRequest(`/api/admin/leads/${encodeURIComponent(id)}`, {
+    method: 'DELETE'
+  });
+}
+
 export async function fetchSavedListsFromServerApi() {
   return apiRequest('/api/lists');
 }

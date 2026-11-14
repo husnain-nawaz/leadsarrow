@@ -20,7 +20,8 @@ import {
   revealLeadContact,
   performRevealLead,
   setActiveLead,
-  deleteCustomLead
+  deleteCustomLead,
+  deleteCoreLeadByAdmin
 } from '../store/leadsSlice.js';
 import {
   setSortConfig,
@@ -60,15 +61,24 @@ export default function LeadsTable() {
   const [copiedKey, setCopiedKey] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState(null);
 
   const handleConfirmDeleteLead = async () => {
     if (!deleteTarget) return;
     setIsDeleting(true);
     try {
-      await dispatch(deleteCustomLead(deleteTarget.id));
+      if (deleteTarget.isCore) {
+        await dispatch(deleteCoreLeadByAdmin(deleteTarget.id)).unwrap();
+        setFeedbackMessage(`Permanently deleted "${deleteTarget.name}" from the core database. This change is reflected across all accounts.`);
+        setTimeout(() => setFeedbackMessage(null), 5000);
+      } else {
+        await dispatch(deleteCustomLead(deleteTarget.id)).unwrap();
+        setFeedbackMessage(`Removed "${deleteTarget.name}" from custom leads.`);
+        setTimeout(() => setFeedbackMessage(null), 3500);
+      }
       setDeleteTarget(null);
     } catch (err) {
-      alert(err.message || 'Failed to delete custom lead from database');
+      alert(err.message || 'Failed to delete lead from core database');
     } finally {
       setIsDeleting(false);
     }
@@ -170,6 +180,14 @@ export default function LeadsTable() {
       {loading && (
         <div className="absolute top-0 left-0 right-0 h-1 bg-orange-100 dark:bg-orange-950/60 z-30 overflow-hidden shadow-xs">
           <div className="h-full bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600 animate-indeterminate w-1/2" />
+        </div>
+      )}
+
+      {/* Superadmin Database Feedback Notice */}
+      {feedbackMessage && (
+        <div className="px-6 py-2.5 bg-emerald-50 dark:bg-emerald-950/40 border-b border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 flex items-center justify-between z-20 animate-in fade-in duration-150">
+          <span className="font-medium">{feedbackMessage}</span>
+          <button onClick={() => setFeedbackMessage(null)} className="text-emerald-700 dark:text-emerald-400 font-bold ml-2 hover:opacity-80">×</button>
         </div>
       )}
 
@@ -491,15 +509,19 @@ export default function LeadsTable() {
                               : 'Baseline'}
                           </div>
                         </div>
-                        {lead.isCustom && (
+                        {isSuperAdmin && (
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setDeleteTarget({ id: lead.id, name: lead.companyName });
+                              setDeleteTarget({
+                                id: lead.id,
+                                name: lead.companyName,
+                                isCore: true
+                              });
                             }}
-                            title="Delete custom lead"
-                            className="p-1 text-slate-400 hover:text-red-600 dark:hover:text-red-400 cursor-pointer"
+                            title="Delete core database lead (Superadmin Only)"
+                            className="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded transition-colors cursor-pointer ml-1"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -629,18 +651,26 @@ export default function LeadsTable() {
         </div>
       </div>
 
-      {/* Confirmation Modal for Deleting Custom Leads from Table */}
+      {/* Confirmation Modal for Superadmin Core Lead Deletion */}
       <ConfirmDeleteModal
         isOpen={Boolean(deleteTarget)}
         onClose={() => !isDeleting && setDeleteTarget(null)}
         onConfirm={handleConfirmDeleteLead}
         loading={isDeleting}
-        title="Delete Custom Lead?"
-        message="Are you sure you want to permanently delete this custom lead? This record will be erased from Database 4."
+        title={deleteTarget?.isCore ? "Delete Core Database Lead?" : "Delete Custom Lead?"}
+        message={
+          deleteTarget?.isCore
+            ? "Are you sure you want to permanently delete this lead from the core database? Because you are Superadmin, this will erase the record from the main database (Database 2) and automatically remove it across all accounts on the entire platform."
+            : "Are you sure you want to permanently delete this custom lead from your private workspace?"
+        }
         itemName={deleteTarget?.name}
-        confirmText="Yes, Delete Lead"
+        confirmText={deleteTarget?.isCore ? "Yes, Permanently Delete from Database" : "Yes, Delete Lead"}
         cancelText="Cancel"
-        dangerNote="This lead will be permanently erased from the database and cannot be recovered."
+        dangerNote={
+          deleteTarget?.isCore
+            ? "This lead will be permanently deleted from Database 2. All accounts on LeadsArrow will no longer see this lead."
+            : "This lead will be permanently erased from Database 4."
+        }
       />
     </div>
   );
