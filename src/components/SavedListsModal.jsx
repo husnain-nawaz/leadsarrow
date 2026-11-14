@@ -8,6 +8,7 @@ import {
   fetchSavedLists
 } from '../store/savedListsSlice.js';
 import { setSavedListFilter } from '../store/filtersSlice.js';
+import ConfirmDeleteModal from './ConfirmDeleteModal.jsx';
 
 export default function SavedListsModal({ setActiveView, onSelectFullPageList }) {
   const dispatch = useDispatch();
@@ -19,6 +20,21 @@ export default function SavedListsModal({ setActiveView, onSelectFullPageList })
 
   const [listName, setListName] = useState('');
   const [listDesc, setListDesc] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      await dispatch(removeSavedList(deleteTarget.id));
+      setDeleteTarget(null);
+    } catch (err) {
+      alert(err.message || 'Failed to delete list from database');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   // Always refresh saved lists from MySQL whenever modal opens
   useEffect(() => {
@@ -209,7 +225,7 @@ export default function SavedListsModal({ setActiveView, onSelectFullPageList })
                       </button>
                       <button
                         type="button"
-                        onClick={() => dispatch(removeSavedList(list.id))}
+                        onClick={() => setDeleteTarget({ id: list.id, name: list.name })}
                         className="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg transition-colors cursor-pointer"
                         title="Delete saved list"
                       >
@@ -243,6 +259,20 @@ export default function SavedListsModal({ setActiveView, onSelectFullPageList })
           </button>
         </div>
       </div>
+
+      {/* Confirmation Modal for Deleting Saved List */}
+      <ConfirmDeleteModal
+        isOpen={Boolean(deleteTarget)}
+        onClose={() => !isDeleting && setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        loading={isDeleting}
+        title="Delete Saved List?"
+        message="Are you sure you want to permanently delete this saved list? This will remove the list from the database."
+        itemName={deleteTarget?.name}
+        confirmText="Yes, Delete List"
+        cancelText="Cancel"
+        dangerNote="This list will be erased from the database and cannot be recovered."
+      />
     </div>
   );
 }

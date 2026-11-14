@@ -29,6 +29,7 @@ import {
   resetAllFilters
 } from '../store/filtersSlice.js';
 import { decrementExportCredits, consumeCredits, openUpgradeModal } from '../store/authSlice.js';
+import ConfirmDeleteModal from './ConfirmDeleteModal.jsx';
 
 // 4 weeks limit in milliseconds: 4 * 7 * 24 * 60 * 60 * 1000
 const FOUR_WEEKS_MS = 28 * 24 * 60 * 60 * 1000;
@@ -57,6 +58,21 @@ export default function LeadsTable() {
   const filters = useSelector((state) => state.filters);
   const { sortBy, sortOrder } = filters;
   const [copiedKey, setCopiedKey] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleConfirmDeleteLead = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      await dispatch(deleteCustomLead(deleteTarget.id));
+      setDeleteTarget(null);
+    } catch (err) {
+      alert(err.message || 'Failed to delete custom lead from database');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const isSuperAdmin = Boolean(
     user && (
@@ -480,7 +496,7 @@ export default function LeadsTable() {
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              dispatch(deleteCustomLead(lead.id));
+                              setDeleteTarget({ id: lead.id, name: lead.companyName });
                             }}
                             title="Delete custom lead"
                             className="p-1 text-slate-400 hover:text-red-600 dark:hover:text-red-400 cursor-pointer"
@@ -612,6 +628,20 @@ export default function LeadsTable() {
           </button>
         </div>
       </div>
+
+      {/* Confirmation Modal for Deleting Custom Leads from Table */}
+      <ConfirmDeleteModal
+        isOpen={Boolean(deleteTarget)}
+        onClose={() => !isDeleting && setDeleteTarget(null)}
+        onConfirm={handleConfirmDeleteLead}
+        loading={isDeleting}
+        title="Delete Custom Lead?"
+        message="Are you sure you want to permanently delete this custom lead? This record will be erased from Database 4."
+        itemName={deleteTarget?.name}
+        confirmText="Yes, Delete Lead"
+        cancelText="Cancel"
+        dangerNote="This lead will be permanently erased from the database and cannot be recovered."
+      />
     </div>
   );
 }

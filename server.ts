@@ -797,9 +797,11 @@ async function startServer() {
       
       // STRICT SECURITY: Only delete from custom_leads WHERE user_id = req.user.id!
       // Core leads table (10,363,423 records) is strictly protected and cannot be deleted or modified!
+      const userParam = String(userId);
+      const emailParam = req.user?.email ? String(req.user.email) : userParam;
       const result: any = await ds.query(
-        'DELETE FROM custom_leads WHERE id = ? AND user_id = ?',
-        [targetId, userId]
+        'DELETE FROM custom_leads WHERE id = ? AND (user_id = ? OR user_id = ?)',
+        [targetId, userParam, emailParam]
       );
 
       const deleted = (result?.affectedRows || 0) > 0;
@@ -897,13 +899,23 @@ async function startServer() {
 
   app.delete('/api/lists/:id', async (req: any, res) => {
     try {
+      const targetId = req.params.id;
       const ds = await (await import('./server/dataSource.ts')).getDataSource();
       const listRepo = ds.getRepository((await import('./server/entities/SavedList.ts')).SavedList);
-      await listRepo.delete(req.params.id);
-      res.json({ success: true, deleted: true, id: req.params.id });
+      await listRepo.delete(targetId);
+      await ds.query('DELETE FROM saved_lists WHERE id = ?', [targetId]).catch(() => {});
+
+      try {
+        const ds2 = (await import('./server/dataSource.ts')).SecondaryDataSource;
+        if (ds2 && ds2.isInitialized) {
+          await ds2.query('DELETE FROM saved_lists WHERE id = ?', [targetId]).catch(() => {});
+        }
+      } catch {}
+
+      res.json({ success: true, deleted: true, id: targetId });
     } catch (err: any) {
-      console.error('Failed to delete list:', err);
-      res.status(500).json({ error: err.message || 'Failed to delete list' });
+      console.error('Failed to delete list from database:', err);
+      res.status(500).json({ error: err.message || 'Failed to delete list from database' });
     }
   });
 

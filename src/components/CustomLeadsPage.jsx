@@ -23,6 +23,7 @@ import {
 import { setAddLeadModalOpen } from '../store/leadsSlice.js';
 import { openAuthModal } from '../store/authSlice.js';
 import { fetchCustomLeadsFromServerApi, deleteCustomLeadOnServerApi } from '../services/api.js';
+import ConfirmDeleteModal from './ConfirmDeleteModal.jsx';
 
 export default function CustomLeadsPage() {
   const dispatch = useDispatch();
@@ -42,7 +43,8 @@ export default function CustomLeadsPage() {
     } catch (e) {}
     return 25;
   });
-  const [deletingId, setDeletingId] = useState(null);
+  const [deletingTarget, setDeletingTarget] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState(null);
 
   // Reset page when search changes
@@ -90,20 +92,23 @@ export default function CustomLeadsPage() {
     loadCustomLeads();
   }, [userId, searchQuery, customLeadsVersion]);
 
-  const handleDelete = async (leadId, companyName) => {
-    if (!window.confirm(`Are you sure you want to delete custom lead "${companyName}" from your private workspace?`)) {
-      return;
-    }
-    setDeletingId(leadId);
+  const handleDeleteClick = (leadId, companyName) => {
+    setDeletingTarget({ id: leadId, name: companyName });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingTarget) return;
+    setIsDeleting(true);
     try {
-      await deleteCustomLeadOnServerApi(leadId);
-      setLeads((prev) => prev.filter((l) => l.id !== leadId));
-      setFeedbackMessage(`Deleted "${companyName}" from your custom leads.`);
+      await deleteCustomLeadOnServerApi(deletingTarget.id);
+      setLeads((prev) => prev.filter((l) => l.id !== deletingTarget.id));
+      setFeedbackMessage(`Permanently deleted "${deletingTarget.name}" from your custom leads database.`);
       setTimeout(() => setFeedbackMessage(null), 4000);
+      setDeletingTarget(null);
     } catch (err) {
-      alert(err.message || 'Failed to delete custom lead');
+      alert(err.message || 'Failed to delete custom lead from database');
     } finally {
-      setDeletingId(null);
+      setIsDeleting(false);
     }
   };
 
@@ -434,10 +439,9 @@ export default function CustomLeadsPage() {
                       <td className="py-3.5 px-4 text-right">
                         <button
                           type="button"
-                          onClick={() => handleDelete(lead.id, lead.companyName)}
-                          disabled={deletingId === lead.id}
+                          onClick={() => handleDeleteClick(lead.id, lead.companyName)}
                           title="Delete from custom leads"
-                          className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-md transition-colors cursor-pointer disabled:opacity-50"
+                          className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-md transition-colors cursor-pointer"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -552,6 +556,19 @@ export default function CustomLeadsPage() {
           </div>
         )}
       </div>
+      {/* Custom Confirmation Modal for Deleting Private Leads */}
+      <ConfirmDeleteModal
+        isOpen={Boolean(deletingTarget)}
+        onClose={() => !isDeleting && setDeletingTarget(null)}
+        onConfirm={handleConfirmDelete}
+        loading={isDeleting}
+        title="Delete Custom Lead?"
+        message="Are you sure you want to permanently delete this custom lead from your private workspace? This record will be erased from Database 4."
+        itemName={deletingTarget?.name}
+        confirmText="Yes, Delete Lead"
+        cancelText="Cancel"
+        dangerNote="This lead will be permanently deleted from the database and cannot be recovered."
+      />
     </div>
   );
 }

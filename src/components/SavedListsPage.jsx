@@ -32,6 +32,7 @@ import {
 import { setSavedListFilter } from '../store/filtersSlice.js';
 import { setActiveLead } from '../store/leadsSlice.js';
 import { fetchLeadsByIdsApi } from '../services/api.js';
+import ConfirmDeleteModal from './ConfirmDeleteModal.jsx';
 
 export default function SavedListsPage({ setActiveView, initialSelectedListId }) {
   const dispatch = useDispatch();
@@ -73,6 +74,8 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
   const [isCreatingList, setIsCreatingList] = useState(false);
   const [newListName, setNewListName] = useState('');
   const [newListDesc, setNewListDesc] = useState('');
+  const [deleteListTarget, setDeleteListTarget] = useState(null);
+  const [isDeletingList, setIsDeletingList] = useState(false);
   const [feedback, setFeedback] = useState(null);
 
   // Set default selection when lists load or restore saved list selection
@@ -194,15 +197,35 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
     }
   };
 
-  const handleDeleteList = async (listId, name) => {
-    if (!window.confirm(`Delete saved list "${name}"? This cannot be undone.`)) return;
-    await dispatch(removeSavedList(listId));
-    if (selectedListId === listId) {
-      const remaining = mergedLists.filter((l) => l.id !== listId);
-      setSelectedListId(remaining[0]?.id || null);
+  const handleDeleteListClick = (listId, name) => {
+    setDeleteListTarget({ id: listId, name });
+  };
+
+  const handleConfirmDeleteList = async () => {
+    if (!deleteListTarget) return;
+    setIsDeletingList(true);
+    try {
+      await dispatch(removeSavedList(deleteListTarget.id));
+      if (selectedListId === deleteListTarget.id) {
+        const remaining = mergedLists.filter((l) => l.id !== deleteListTarget.id);
+        const nextId = remaining[0]?.id || null;
+        setSelectedListId(nextId);
+        try {
+          if (nextId) {
+            localStorage.setItem('leadsarrow_selected_saved_list_id', nextId);
+          } else {
+            localStorage.removeItem('leadsarrow_selected_saved_list_id');
+          }
+        } catch (e) {}
+      }
+      setFeedback(`Permanently deleted list "${deleteListTarget.name}" from database.`);
+      setTimeout(() => setFeedback(null), 3500);
+      setDeleteListTarget(null);
+    } catch (err) {
+      alert(err.message || 'Failed to delete saved list');
+    } finally {
+      setIsDeletingList(false);
     }
-    setFeedback(`Deleted list "${name}".`);
-    setTimeout(() => setFeedback(null), 3500);
   };
 
   const handleCreateList = async (e) => {
@@ -466,7 +489,7 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDeleteList(list.id, list.name);
+                          handleDeleteListClick(list.id, list.name);
                         }}
                         title="Delete list"
                         className="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-md transition-colors cursor-pointer"
@@ -532,7 +555,7 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
 
                     <button
                       type="button"
-                      onClick={() => handleDeleteList(selectedList.id, selectedList.name)}
+                      onClick={() => handleDeleteListClick(selectedList.id, selectedList.name)}
                       className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-slate-700 rounded-lg transition-colors cursor-pointer"
                       title="Delete this saved list"
                     >
@@ -814,6 +837,19 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
           )}
         </main>
       </div>
+      {/* Confirmation Modal for Deleting Saved List */}
+      <ConfirmDeleteModal
+        isOpen={Boolean(deleteListTarget)}
+        onClose={() => !isDeletingList && setDeleteListTarget(null)}
+        onConfirm={handleConfirmDeleteList}
+        loading={isDeletingList}
+        title="Delete Saved List?"
+        message="Are you sure you want to permanently delete this saved list? This will remove the list segment from the database."
+        itemName={deleteListTarget?.name}
+        confirmText="Yes, Delete List"
+        cancelText="Cancel"
+        dangerNote="This list will be erased from the database and cannot be recovered."
+      />
     </div>
   );
 }

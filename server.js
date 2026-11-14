@@ -2661,9 +2661,11 @@ async function startServer() {
         return res.status(401).json({ error: "Authentication required" });
       }
       const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
+      const userParam = String(userId);
+      const emailParam = req.user?.email ? String(req.user.email) : userParam;
       const result = await ds.query(
-        "DELETE FROM custom_leads WHERE id = ? AND user_id = ?",
-        [targetId, userId]
+        "DELETE FROM custom_leads WHERE id = ? AND (user_id = ? OR user_id = ?)",
+        [targetId, userParam, emailParam]
       );
       const deleted = (result?.affectedRows || 0) > 0;
       res.json({ deleted, id: targetId });
@@ -2744,13 +2746,24 @@ async function startServer() {
   });
   app.delete("/api/lists/:id", async (req, res) => {
     try {
+      const targetId = req.params.id;
       const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
       const listRepo = ds.getRepository((await Promise.resolve().then(() => (init_SavedList(), SavedList_exports))).SavedList);
-      await listRepo.delete(req.params.id);
-      res.json({ success: true, deleted: true, id: req.params.id });
+      await listRepo.delete(targetId);
+      await ds.query("DELETE FROM saved_lists WHERE id = ?", [targetId]).catch(() => {
+      });
+      try {
+        const ds2 = (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).SecondaryDataSource;
+        if (ds2 && ds2.isInitialized) {
+          await ds2.query("DELETE FROM saved_lists WHERE id = ?", [targetId]).catch(() => {
+          });
+        }
+      } catch {
+      }
+      res.json({ success: true, deleted: true, id: targetId });
     } catch (err) {
-      console.error("Failed to delete list:", err);
-      res.status(500).json({ error: err.message || "Failed to delete list" });
+      console.error("Failed to delete list from database:", err);
+      res.status(500).json({ error: err.message || "Failed to delete list from database" });
     }
   });
   if (process.env.NODE_ENV !== "production") {
