@@ -20,7 +20,7 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
         dispatch(resetAllFilters());
       }
     } else if (viewKey === 'lists') {
-      dispatch(setSavedListsModalOpen(true));
+      setActiveView('lists');
     } else if (viewKey === 'custom') {
       setActiveView('custom');
     } else if (viewKey === 'schema') {
@@ -71,7 +71,11 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
           <button
             type="button"
             onClick={() => handleNavClick('lists')}
-            className="hover:text-slate-900 dark:hover:text-white transition-colors whitespace-nowrap shrink-0 cursor-pointer pb-0.5"
+            className={`transition-colors whitespace-nowrap shrink-0 cursor-pointer pb-0.5 ${
+              activeView === 'lists'
+                ? 'text-slate-900 dark:text-white border-b-2 border-orange-600 font-bold'
+                : 'hover:text-slate-900 dark:hover:text-white'
+            }`}
           >
             Saved Lists
           </button>

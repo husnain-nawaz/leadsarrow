@@ -1249,10 +1249,33 @@ async function batchInsertLeads(newLeads = []) {
 }
 async function fetchLeadsByIds(ids) {
   if (!Array.isArray(ids) || ids.length === 0) return [];
-  const ds = await getLeadsDataSource();
-  const leadRepo = ds.getRepository(Lead);
-  const entities = await leadRepo.createQueryBuilder("lead").where("lead.id IN (:...ids)", { ids }).getMany();
-  return entities.map(mapEntityToLead);
+  const results = [];
+  try {
+    const ds = await getLeadsReadDataSource();
+    const leadRepo = ds.getRepository(Lead);
+    const coreEntities = await leadRepo.createQueryBuilder("lead").where("lead.id IN (:...ids)", { ids }).getMany();
+    if (coreEntities && coreEntities.length > 0) {
+      results.push(...coreEntities.map(mapEntityToLead));
+    }
+  } catch (err) {
+    console.warn("Error reading from core cluster in fetchLeadsByIds:", err.message);
+  }
+  const foundIds = new Set(results.map((r) => r.id));
+  const missingIds = ids.filter((id) => !foundIds.has(id));
+  if (missingIds.length > 0) {
+    try {
+      const ds4 = await getDataSource();
+      const customRows = await ds4.query(
+        `SELECT * FROM custom_leads WHERE id IN (${missingIds.map(() => "?").join(",")})`,
+        missingIds
+      );
+      if (customRows && customRows.length > 0) {
+        results.push(...customRows.map(mapCustomRowToLead));
+      }
+    } catch (_) {
+    }
+  }
+  return results;
 }
 
 // server/auth.ts

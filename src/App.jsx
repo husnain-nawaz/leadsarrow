@@ -27,6 +27,7 @@ import SuperadminPanel from './components/SuperadminPanel.jsx';
 import ProfileModal from './components/ProfileModal.jsx';
 import ProfileSettingsPage from './components/ProfileSettingsPage.jsx';
 import CustomLeadsPage from './components/CustomLeadsPage.jsx';
+import SavedListsPage from './components/SavedListsPage.jsx';
 import SignOutModal from './components/SignOutModal.jsx';
 import { ThemeProvider } from './context/ThemeContext.jsx';
 
@@ -34,6 +35,7 @@ function WorkspaceContent({ activeView, setActiveView, onToggleLanding }) {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const filters = useSelector((state) => state.filters);
+  const [focusedSavedListId, setFocusedSavedListId] = useState(null);
   const isSuperAdmin = Boolean(user && (user.isSuperAdmin || user.role === 'superadmin' || user.email === 'alex@leadsarrow.io' || user.email === 'alex@nexuslead.io'));
 
   // If non-superadmin tries to access superadmin view, fallback to finder
@@ -150,6 +152,13 @@ function WorkspaceContent({ activeView, setActiveView, onToggleLanding }) {
         <main className="flex-1">
           <ProfileSettingsPage onBack={() => setActiveView('finder')} />
         </main>
+      ) : activeView === 'lists' ? (
+        <main className="flex-1 flex flex-col min-w-0">
+          <SavedListsPage
+            setActiveView={setActiveView}
+            initialSelectedListId={focusedSavedListId}
+          />
+        </main>
       ) : activeView === 'custom' ? (
         <main className="flex-1 flex flex-col min-w-0">
           <CustomLeadsPage />
@@ -181,7 +190,10 @@ function WorkspaceContent({ activeView, setActiveView, onToggleLanding }) {
       {/* Slide-over Dossier & Interactive Modals */}
       <LeadDetailDrawer />
       <AuthModal />
-      <SavedListsModal />
+      <SavedListsModal
+        setActiveView={setActiveView}
+        onSelectFullPageList={(id) => setFocusedSavedListId(id)}
+      />
       <AddLeadModal />
       <ExportModal />
       <PlanUpgradeModal />

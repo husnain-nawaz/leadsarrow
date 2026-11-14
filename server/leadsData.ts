@@ -812,11 +812,38 @@ export async function insertSingleLead(lead: any) {
 
 export async function fetchLeadsByIds(ids: string[]) {
   if (!Array.isArray(ids) || ids.length === 0) return [];
-  const ds = await getLeadsDataSource();
-  const leadRepo = ds.getRepository(Lead);
-  const entities = await leadRepo.createQueryBuilder('lead')
-    .where('lead.id IN (:...ids)', { ids })
-    .getMany();
-  return entities.map(mapEntityToLead);
+  const results: any[] = [];
+
+  // 1. Check Core Database Cluster (DB3, DB2, DB1)
+  try {
+    const ds = await getLeadsReadDataSource();
+    const leadRepo = ds.getRepository(Lead);
+    const coreEntities = await leadRepo.createQueryBuilder('lead')
+      .where('lead.id IN (:...ids)', { ids })
+      .getMany();
+    if (coreEntities && coreEntities.length > 0) {
+      results.push(...coreEntities.map(mapEntityToLead));
+    }
+  } catch (err: any) {
+    console.warn('Error reading from core cluster in fetchLeadsByIds:', err.message);
+  }
+
+  // 2. Check Database 4 custom_leads for any custom or missing lead IDs
+  const foundIds = new Set(results.map((r) => r.id));
+  const missingIds = ids.filter((id) => !foundIds.has(id));
+  if (missingIds.length > 0) {
+    try {
+      const ds4 = await getDataSource();
+      const customRows: any = await ds4.query(
+        `SELECT * FROM custom_leads WHERE id IN (${missingIds.map(() => '?').join(',')})`,
+        missingIds
+      );
+      if (customRows && customRows.length > 0) {
+        results.push(...customRows.map(mapCustomRowToLead));
+      }
+    } catch (_) {}
+  }
+
+  return results;
 }
 
