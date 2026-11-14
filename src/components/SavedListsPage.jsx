@@ -50,26 +50,57 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
     });
   }, [lists, firestoreLists]);
 
-  const [selectedListId, setSelectedListId] = useState(
-    initialSelectedListId || (mergedLists[0]?.id || null)
-  );
+  const [selectedListId, setSelectedListId] = useState(() => {
+    if (initialSelectedListId) return initialSelectedListId;
+    try {
+      const saved = localStorage.getItem('leadsarrow_selected_saved_list_id');
+      if (saved) return saved;
+    } catch (e) {}
+    return null;
+  });
   const [listLeads, setListLeads] = useState([]);
   const [leadsLoading, setLeadsLoading] = useState(false);
   const [listSearchQuery, setListSearchQuery] = useState('');
   const [leadSearchQuery, setLeadSearchQuery] = useState('');
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(() => {
+    try {
+      const saved = Number(localStorage.getItem('leadsarrow_saved_lists_page_size'));
+      if ([25, 50, 100].includes(saved)) return saved;
+    } catch (e) {}
+    return 25;
+  });
   const [isCreatingList, setIsCreatingList] = useState(false);
   const [newListName, setNewListName] = useState('');
   const [newListDesc, setNewListDesc] = useState('');
   const [feedback, setFeedback] = useState(null);
 
-  // Set default selection when lists load
+  // Set default selection when lists load or restore saved list selection
   useEffect(() => {
-    if (!selectedListId && mergedLists.length > 0) {
-      setSelectedListId(mergedLists[0].id);
+    if (mergedLists.length > 0) {
+      const exists = selectedListId && mergedLists.some((l) => l.id === selectedListId);
+      if (!exists) {
+        try {
+          const saved = localStorage.getItem('leadsarrow_selected_saved_list_id');
+          const savedMatch = saved && mergedLists.find((l) => l.id === saved);
+          if (savedMatch) {
+            setSelectedListId(savedMatch.id);
+            return;
+          }
+        } catch (e) {}
+        setSelectedListId(mergedLists[0].id);
+      }
     }
   }, [mergedLists, selectedListId]);
+
+  // Persist selected list ID across browser refreshes
+  useEffect(() => {
+    if (selectedListId) {
+      try {
+        localStorage.setItem('leadsarrow_selected_saved_list_id', selectedListId);
+      } catch (e) {}
+    }
+  }, [selectedListId]);
 
   const selectedList = useMemo(() => {
     return mergedLists.find((l) => l.id === selectedListId) || null;
@@ -675,8 +706,12 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
                         <select
                           value={pageSize}
                           onChange={(e) => {
-                            setPageSize(Number(e.target.value));
+                            const val = Number(e.target.value);
+                            setPageSize(val);
                             setPage(1);
+                            try {
+                              localStorage.setItem('leadsarrow_saved_lists_page_size', String(val));
+                            } catch (err) {}
                           }}
                           className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 text-xs font-mono tabular-nums text-slate-900 dark:text-white focus:outline-none focus:border-orange-600 cursor-pointer"
                         >

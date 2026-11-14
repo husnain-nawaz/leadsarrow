@@ -20,7 +20,7 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
         dispatch(resetAllFilters());
       }
     } else if (viewKey === 'lists') {
-      dispatch(setSavedListsModalOpen(true));
+      setActiveView('lists');
     } else if (viewKey === 'custom') {
       setActiveView('custom');
     } else if (viewKey === 'schema') {

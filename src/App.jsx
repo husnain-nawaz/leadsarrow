@@ -203,27 +203,78 @@ function WorkspaceContent({ activeView, setActiveView, onToggleLanding }) {
   );
 }
 
+const VALID_VIEWS = ['finder', 'lists', 'custom', 'superadmin', 'profile', 'schema'];
+
+function getInitialActiveView() {
+  // 1. Try URL hash first (e.g. #custom, #lists, #superadmin, #finder)
+  try {
+    if (typeof window !== 'undefined' && window.location.hash) {
+      const hash = window.location.hash.replace(/^#\/?/, '').trim().toLowerCase();
+      if (VALID_VIEWS.includes(hash)) {
+        return hash;
+      }
+    }
+  } catch (e) {}
+
+  // 2. Try localStorage persistence
+  try {
+    if (typeof window !== 'undefined') {
+      const savedView = localStorage.getItem('leadsarrow_active_nav_view');
+      if (savedView && VALID_VIEWS.includes(savedView)) {
+        return savedView;
+      }
+    }
+  } catch (e) {}
+
+  return 'finder';
+}
+
 function MainApp() {
   const { user } = useSelector((state) => state.auth);
   const [showLandingForLoggedIn, setShowLandingForLoggedIn] = useState(false);
 
-  // Persist current active navbar view across browser refreshes
-  const [activeView, setActiveView] = useState(() => {
-    try {
-      const savedView = localStorage.getItem('leadsarrow_active_nav_view');
-      if (savedView && ['finder', 'schema', 'superadmin', 'profile'].includes(savedView)) {
-        return savedView;
-      }
-    } catch (e) {}
-    return 'finder';
-  });
+  // Persist current active navbar view across browser refreshes via both localStorage and URL hash
+  const [activeView, setActiveView] = useState(getInitialActiveView);
 
   const handleSetActiveView = (viewKey) => {
+    if (!VALID_VIEWS.includes(viewKey)) return;
     setActiveView(viewKey);
     try {
       localStorage.setItem('leadsarrow_active_nav_view', viewKey);
+      if (window.location.hash !== `#${viewKey}`) {
+        window.history.replaceState(null, '', `#${viewKey}`);
+      }
     } catch (e) {}
   };
+
+  // Synchronize hash with activeView and listen to hashchange / popstate
+  useEffect(() => {
+    const onHashChange = () => {
+      try {
+        const hash = window.location.hash.replace(/^#\/?/, '').trim().toLowerCase();
+        if (VALID_VIEWS.includes(hash)) {
+          setActiveView(hash);
+          localStorage.setItem('leadsarrow_active_nav_view', hash);
+        }
+      } catch (e) {}
+    };
+
+    window.addEventListener('hashchange', onHashChange);
+    window.addEventListener('popstate', onHashChange);
+
+    // Initial sync of hash if empty
+    try {
+      localStorage.setItem('leadsarrow_active_nav_view', activeView);
+      if (!window.location.hash || window.location.hash === '#') {
+        window.history.replaceState(null, '', `#${activeView}`);
+      }
+    } catch (e) {}
+
+    return () => {
+      window.removeEventListener('hashchange', onHashChange);
+      window.removeEventListener('popstate', onHashChange);
+    };
+  }, [activeView]);
 
   const handleOpenProfileDirectly = () => {
     handleSetActiveView('profile');

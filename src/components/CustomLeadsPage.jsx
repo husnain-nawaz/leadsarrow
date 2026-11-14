@@ -35,7 +35,13 @@ export default function CustomLeadsPage() {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(() => {
+    try {
+      const saved = Number(localStorage.getItem('leadsarrow_custom_leads_page_size'));
+      if ([25, 50, 100].includes(saved)) return saved;
+    } catch (e) {}
+    return 25;
+  });
   const [deletingId, setDeletingId] = useState(null);
   const [feedbackMessage, setFeedbackMessage] = useState(null);
 
@@ -455,8 +461,12 @@ export default function CustomLeadsPage() {
                   <select
                     value={pageSize}
                     onChange={(e) => {
-                      setPageSize(Number(e.target.value));
+                      const val = Number(e.target.value);
+                      setPageSize(val);
                       setPage(1);
+                      try {
+                        localStorage.setItem('leadsarrow_custom_leads_page_size', String(val));
+                      } catch (err) {}
                     }}
                     className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 text-xs font-mono tabular-nums text-slate-900 dark:text-white focus:outline-none focus:border-orange-600 cursor-pointer"
                   >
