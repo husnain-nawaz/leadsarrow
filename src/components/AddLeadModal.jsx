@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { X, Plus, Sparkles } from 'lucide-react';
+import { X, Plus, Sparkles, Layers, Folder } from 'lucide-react';
 import { setAddLeadModalOpen, addCustomLead, fetchLeads } from '../store/leadsSlice.js';
 
 export default function AddLeadModal() {
   const dispatch = useDispatch();
-  const { isAddLeadModalOpen } = useSelector((state) => state.leads);
+  const { isAddLeadModalOpen, targetClusterName } = useSelector((state) => state.leads);
   const filters = useSelector((state) => state.filters);
   const { user } = useSelector((state) => state.auth);
 
   const [form, setForm] = useState({
+    clusterName: targetClusterName || 'General',
     companyName: '',
     domain: '',
     industry: 'Enterprise Software & SaaS',
@@ -27,6 +28,15 @@ export default function AddLeadModal() {
     fundingStage: 'Series B',
     buyingIntentScore: 88
   });
+
+  useEffect(() => {
+    if (isAddLeadModalOpen) {
+      setForm((prev) => ({
+        ...prev,
+        clusterName: targetClusterName || prev.clusterName || 'General'
+      }));
+    }
+  }, [isAddLeadModalOpen, targetClusterName]);
 
   if (!isAddLeadModalOpen) return null;
 
@@ -75,6 +85,44 @@ export default function AddLeadModal() {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4 text-xs overscroll-contain">
+          {/* Target Cluster / Group Selector */}
+          <div className="p-3 bg-orange-50/60 dark:bg-orange-950/30 border border-orange-200/80 dark:border-orange-800/60 rounded-xl space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="font-bold text-orange-950 dark:text-orange-300 flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
+                <span>Lead Cluster / Group *</span>
+              </label>
+              <span className="text-[10px] text-orange-700/80 dark:text-orange-400 font-medium">
+                Organizes leads into clusters
+              </span>
+            </div>
+            <input
+              type="text"
+              required
+              value={form.clusterName}
+              onChange={(e) => handleChange('clusterName', e.target.value)}
+              placeholder="e.g. Enterprise SaaS, FinTech, Q4 Targets..."
+              className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-orange-300/80 dark:border-orange-700/80 rounded-lg text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+            <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 pt-0.5">
+              <span>Quick tags:</span>
+              {['General', 'Enterprise SaaS', 'High Intent SDR', 'Outreach Wave 1'].map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => handleChange('clusterName', tag)}
+                  className={`px-1.5 py-0.5 rounded border transition-colors cursor-pointer ${
+                    form.clusterName === tag
+                      ? 'bg-orange-600 text-white border-orange-600 font-bold'
+                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-orange-400'
+                  }`}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div>
               <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Company Name *</label>

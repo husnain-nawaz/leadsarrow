@@ -2619,12 +2619,17 @@ async function startServer() {
         return res.status(401).json({ error: "Authentication required to view your custom leads." });
       }
       const q = String(req.query.q || "").trim();
+      const clusterFilter = String(req.query.cluster || "").trim();
       const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
       let whereClause = "WHERE user_id = ?";
       const sqlParams = [userId];
+      if (clusterFilter && clusterFilter !== "all") {
+        whereClause += " AND cluster_name = ?";
+        sqlParams.push(clusterFilter);
+      }
       if (q) {
-        whereClause += " AND (company_name LIKE ? OR contact_name LIKE ? OR domain LIKE ? OR contact_email LIKE ?)";
-        sqlParams.push(`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`);
+        whereClause += " AND (company_name LIKE ? OR contact_name LIKE ? OR domain LIKE ? OR contact_email LIKE ? OR cluster_name LIKE ?)";
+        sqlParams.push(`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`);
       }
       const countRows = await ds.query(
         `SELECT COUNT(*) as total FROM custom_leads ${whereClause}`,
@@ -2635,8 +2640,53 @@ async function startServer() {
         `SELECT * FROM custom_leads ${whereClause} ORDER BY created_at DESC`,
         sqlParams
       );
+      const clusterRows = await ds.query(
+        `SELECT id, name, description, created_at FROM custom_clusters WHERE user_id = ? ORDER BY created_at ASC`,
+        [userId]
+      );
+      const countByCluster = await ds.query(
+        `SELECT cluster_name, COUNT(*) as cnt FROM custom_leads WHERE user_id = ? GROUP BY cluster_name`,
+        [userId]
+      );
+      const countMap = {};
+      (countByCluster || []).forEach((r) => {
+        countMap[r.cluster_name || "General"] = Number(r.cnt) || 0;
+      });
+      const seenClusterNames = /* @__PURE__ */ new Set();
+      const clusters = (clusterRows || []).map((row) => {
+        seenClusterNames.add(row.name);
+        return {
+          id: row.id,
+          name: row.name,
+          description: row.description || "",
+          leadCount: countMap[row.name] || 0,
+          createdAt: row.created_at ? new Date(row.created_at).toISOString() : (/* @__PURE__ */ new Date()).toISOString()
+        };
+      });
+      Object.keys(countMap).forEach((name) => {
+        if (!seenClusterNames.has(name)) {
+          seenClusterNames.add(name);
+          clusters.push({
+            id: `cls_${Buffer.from(userId + "_" + name).toString("base64").replace(/[^a-zA-Z0-9]/g, "").slice(0, 32)}`,
+            name,
+            description: `${name} cluster`,
+            leadCount: countMap[name],
+            createdAt: (/* @__PURE__ */ new Date()).toISOString()
+          });
+        }
+      });
+      if (clusters.length === 0) {
+        clusters.push({
+          id: `cls_default_${Date.now()}`,
+          name: "General",
+          description: "Primary custom target cluster",
+          leadCount: 0,
+          createdAt: (/* @__PURE__ */ new Date()).toISOString()
+        });
+      }
       const leads = (rawRows || []).map((row) => ({
         id: row.id,
+        clusterName: row.cluster_name || "General",
         companyName: row.company_name,
         domain: row.domain,
         industry: row.industry,
@@ -2665,6 +2715,8 @@ async function startServer() {
       res.json({
         leads,
         total,
+        clusters,
+        activeCluster: clusterFilter || "all",
         owner: {
           id: req.user.id,
           name: req.user.name,
@@ -2674,6 +2726,53 @@ async function startServer() {
     } catch (err) {
       console.error("Failed to fetch private custom leads:", err);
       res.status(500).json({ error: err.message || "Failed to fetch custom leads" });
+    }
+  });
+  app.post("/api/leads/custom/clusters", requireJwtMiddleware, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: "Authentication required" });
+      const name = String(req.body?.name || "").trim();
+      const description = String(req.body?.description || "").trim();
+      if (!name) return res.status(400).json({ error: "Cluster name is required" });
+      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
+      const clusterId = `cls_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      await ds.query(
+        `INSERT INTO custom_clusters (id, user_id, name, description, created_at)
+         VALUES (?, ?, ?, ?, NOW())
+         ON DUPLICATE KEY UPDATE description = VALUES(description)`,
+        [clusterId, userId, name, description || `${name} lead cluster`]
+      );
+      res.status(201).json({
+        success: true,
+        cluster: {
+          id: clusterId,
+          name,
+          description,
+          leadCount: 0
+        }
+      });
+    } catch (err) {
+      res.status(400).json({ error: err.message || "Could not create cluster" });
+    }
+  });
+  app.delete("/api/leads/custom/clusters/:name", requireJwtMiddleware, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: "Authentication required" });
+      const clusterName = decodeURIComponent(req.params.name);
+      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
+      await ds.query(
+        "DELETE FROM custom_leads WHERE user_id = ? AND cluster_name = ?",
+        [userId, clusterName]
+      );
+      await ds.query(
+        "DELETE FROM custom_clusters WHERE user_id = ? AND name = ?",
+        [userId, clusterName]
+      );
+      res.json({ success: true, deletedCluster: clusterName });
+    } catch (err) {
+      res.status(500).json({ error: err.message || "Could not delete cluster" });
     }
   });
   app.post("/api/leads/custom", requireJwtMiddleware, async (req, res) => {
@@ -2690,20 +2789,22 @@ async function startServer() {
         const s = String(v).replace(/\0/g, "").trim();
         return (s || fallback).slice(0, maxLen);
       };
+      const clusterName = safeTrim(body.clusterName || body.cluster || "General", 128, "General");
       const techStackJson = JSON.stringify(
         Array.isArray(body.techStack) ? body.techStack : String(body.techStack || "AWS, Salesforce").split(/[,;|]/).map((s) => s.trim()).filter(Boolean)
       );
       await ds.query(
         `INSERT INTO custom_leads (
-          id, user_id, company_name, domain, industry, employee_range, employee_count,
+          id, user_id, cluster_name, company_name, domain, industry, employee_range, employee_count,
           revenue_range, annual_revenue_usd, country, city, contact_name, contact_title,
           seniority, department, contact_email, contact_phone, linkedin_url,
           verification_status, funding_stage, tech_stack, buying_intent_score,
           founded_year, has_direct_phone, source, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
         [
           customId,
           userId,
+          clusterName,
           safeTrim(body.companyName, 255, "My Custom Business"),
           safeTrim(body.domain, 255, "business.io"),
           safeTrim(body.industry, 255, "Enterprise Software & SaaS"),
@@ -2729,17 +2830,24 @@ async function startServer() {
           "manual_custom_lead"
         ]
       );
+      const clusterId = `cls_${Buffer.from(userId + "_" + clusterName).toString("base64").replace(/[^a-zA-Z0-9]/g, "").slice(0, 32)}`;
+      await ds.query(
+        `INSERT IGNORE INTO custom_clusters (id, user_id, name, description, created_at) VALUES (?, ?, ?, ?, NOW())`,
+        [clusterId, userId, clusterName, `${clusterName} lead cluster`]
+      ).catch(() => {
+      });
       res.status(201).json({
         success: true,
         lead: {
           id: customId,
+          clusterName,
           companyName: body.companyName,
           domain: body.domain,
           contactName: body.contactName,
           contactEmail: body.contactEmail,
           isCustom: true
         },
-        message: "Custom lead added to your private workspace."
+        message: `Custom lead added to cluster "${clusterName}".`
       });
     } catch (error) {
       res.status(400).json({ error: error.message || "Could not add custom lead" });

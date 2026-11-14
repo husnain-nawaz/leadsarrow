@@ -186,10 +186,24 @@ export async function revealLeadContactApi(leadId) {
   });
 }
 
-export async function fetchCustomLeadsFromServerApi(searchQuery = '') {
+export async function fetchCustomLeadsFromServerApi(searchQuery = '', cluster = 'all') {
   const query = new URLSearchParams();
   if (searchQuery) query.set('q', searchQuery);
+  if (cluster && cluster !== 'all') query.set('cluster', cluster);
   return apiRequest(`/api/leads/custom?${query.toString()}`);
+}
+
+export async function createCustomClusterOnServerApi(payload) {
+  return apiRequest('/api/leads/custom/clusters', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function deleteCustomClusterOnServerApi(clusterName) {
+  return apiRequest(`/api/leads/custom/clusters/${encodeURIComponent(clusterName)}`, {
+    method: 'DELETE'
+  });
 }
 
 export async function createCustomLeadOnServerApi(payload) {

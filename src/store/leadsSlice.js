@@ -144,6 +144,7 @@ const initialState = {
   revealedLeadIds: ['lead_100001', 'lead_100002'],
   activeLead: null,
   isAddLeadModalOpen: false,
+  targetClusterName: '',
   isExportModalOpen: false,
   customLeadsVersion: 0,
   loading: false,
@@ -192,7 +193,13 @@ const leadsSlice = createSlice({
       state.activeLead = action.payload || null;
     },
     setAddLeadModalOpen(state, action) {
-      state.isAddLeadModalOpen = Boolean(action.payload);
+      if (typeof action.payload === 'object' && action.payload !== null) {
+        state.isAddLeadModalOpen = Boolean(action.payload.open);
+        state.targetClusterName = action.payload.cluster || '';
+      } else {
+        state.isAddLeadModalOpen = Boolean(action.payload);
+        if (!action.payload) state.targetClusterName = '';
+      }
     },
     setExportModalOpen(state, action) {
       state.isExportModalOpen = Boolean(action.payload);
