@@ -142,7 +142,12 @@ export default function AnalyticsBar() {
             className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
           >
             <Bookmark className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-            Save / Load List
+            <span>Save / Load List</span>
+            {selectedLeadIds.length > 0 && (
+              <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-orange-100 dark:bg-orange-950 text-orange-600 dark:text-orange-400 font-bold font-mono">
+                {selectedLeadIds.length}
+              </span>
+            )}
           </button>
 
           <button

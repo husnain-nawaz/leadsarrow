@@ -222,6 +222,19 @@ export async function deleteSavedListOnServerApi(id) {
   });
 }
 
+export async function addLeadsToSavedListOnServerApi(id, leadIds) {
+  return apiRequest(`/api/lists/${encodeURIComponent(id)}/leads`, {
+    method: 'POST',
+    body: JSON.stringify({ leadIds })
+  });
+}
+
+export async function removeLeadFromSavedListOnServerApi(listId, leadId) {
+  return apiRequest(`/api/lists/${encodeURIComponent(listId)}/leads/${encodeURIComponent(leadId)}`, {
+    method: 'DELETE'
+  });
+}
+
 // Superadmin API functions
 export async function fetchAdminUsersApi() {
   return apiRequest('/api/admin/users');

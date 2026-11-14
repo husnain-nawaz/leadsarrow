@@ -2,7 +2,9 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import {
   fetchSavedListsFromServerApi,
   createSavedListOnServerApi,
-  deleteSavedListOnServerApi
+  deleteSavedListOnServerApi,
+  addLeadsToSavedListOnServerApi,
+  removeLeadFromSavedListOnServerApi
 } from '../services/api.js';
 import {
   saveLeadListToFirestore,
@@ -55,6 +57,70 @@ export const createSavedList = createAsyncThunk(
       }
     } catch (error) {
       return rejectWithValue(error.message || 'Failed to save list');
+    }
+  }
+);
+
+export const appendLeadsToSavedList = createAsyncThunk(
+  'savedLists/appendLeadsToSavedList',
+  async ({ listId, leadIds }, { getState, rejectWithValue }) => {
+    try {
+      if (!listId || !Array.isArray(leadIds) || !leadIds.length) {
+        return rejectWithValue('No lead IDs provided');
+      }
+
+      const response = await addLeadsToSavedListOnServerApi(listId, leadIds);
+
+      // Also sync to Firestore if signed in
+      try {
+        const state = getState();
+        const existing = [...state.savedLists.firestoreLists, ...state.savedLists.lists].find((l) => l.id === listId);
+        if (existing) {
+          const merged = Array.from(new Set([...(existing.leadIds || []), ...leadIds]));
+          await saveLeadListToFirestore({
+            ...existing,
+            id: listId,
+            leadIds: merged,
+            leadCount: merged.length
+          });
+        }
+      } catch (e) {
+        console.warn('Firestore append sync skipped:', e);
+      }
+
+      return response.list;
+    } catch (error) {
+      return rejectWithValue(error.message || 'Failed to add leads to list');
+    }
+  }
+);
+
+export const removeLeadFromSavedList = createAsyncThunk(
+  'savedLists/removeLeadFromSavedList',
+  async ({ listId, leadId }, { getState, rejectWithValue }) => {
+    try {
+      const response = await removeLeadFromSavedListOnServerApi(listId, leadId);
+
+      // Also sync to Firestore if signed in
+      try {
+        const state = getState();
+        const existing = [...state.savedLists.firestoreLists, ...state.savedLists.lists].find((l) => l.id === listId);
+        if (existing) {
+          const updatedIds = (existing.leadIds || []).filter((id) => String(id) !== String(leadId));
+          await saveLeadListToFirestore({
+            ...existing,
+            id: listId,
+            leadIds: updatedIds,
+            leadCount: updatedIds.length
+          });
+        }
+      } catch (e) {
+        console.warn('Firestore remove lead sync skipped:', e);
+      }
+
+      return response.list;
+    } catch (error) {
+      return rejectWithValue(error.message || 'Failed to remove lead from list');
     }
   }
 );
@@ -118,6 +184,32 @@ const savedListsSlice = createSlice({
         const id = action.payload;
         state.lists = state.lists.filter((l) => l.id !== id);
         state.firestoreLists = state.firestoreLists.filter((l) => l.id !== id);
+      })
+      .addCase(appendLeadsToSavedList.fulfilled, (state, action) => {
+        const updated = action.payload;
+        if (!updated) return;
+        const idx = state.lists.findIndex((l) => l.id === updated.id);
+        if (idx >= 0) {
+          state.lists[idx] = { ...state.lists[idx], ...updated };
+        } else {
+          state.lists.unshift(updated);
+        }
+        const fsIdx = state.firestoreLists.findIndex((l) => l.id === updated.id);
+        if (fsIdx >= 0) {
+          state.firestoreLists[fsIdx] = { ...state.firestoreLists[fsIdx], ...updated };
+        }
+      })
+      .addCase(removeLeadFromSavedList.fulfilled, (state, action) => {
+        const updated = action.payload;
+        if (!updated) return;
+        const idx = state.lists.findIndex((l) => l.id === updated.id);
+        if (idx >= 0) {
+          state.lists[idx] = { ...state.lists[idx], ...updated };
+        }
+        const fsIdx = state.firestoreLists.findIndex((l) => l.id === updated.id);
+        if (fsIdx >= 0) {
+          state.firestoreLists[fsIdx] = { ...state.firestoreLists[fsIdx], ...updated };
+        }
       });
   }
 });

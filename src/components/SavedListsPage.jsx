@@ -22,17 +22,21 @@ import {
   Database,
   Eye,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  UserPlus
 } from 'lucide-react';
 import {
   fetchSavedLists,
   removeSavedList,
-  createSavedList
+  createSavedList,
+  appendLeadsToSavedList,
+  removeLeadFromSavedList
 } from '../store/savedListsSlice.js';
 import { setSavedListFilter } from '../store/filtersSlice.js';
 import { setActiveLead } from '../store/leadsSlice.js';
 import { fetchLeadsByIdsApi } from '../services/api.js';
 import ConfirmDeleteModal from './ConfirmDeleteModal.jsx';
+import AddLeadsToSavedListModal from './AddLeadsToSavedListModal.jsx';
 
 export default function SavedListsPage({ setActiveView, initialSelectedListId }) {
   const dispatch = useDispatch();
@@ -40,6 +44,7 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
     (state) => state.savedLists
   );
   const { user } = useSelector((state) => state.auth);
+  const { selectedLeadIds = [] } = useSelector((state) => state.leads);
 
   // Combine server lists and user Firestore lists without duplicates
   const seenIds = new Set();
@@ -74,8 +79,12 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
   const [isCreatingList, setIsCreatingList] = useState(false);
   const [newListName, setNewListName] = useState('');
   const [newListDesc, setNewListDesc] = useState('');
+  const [isAddLeadsModalOpen, setIsAddLeadsModalOpen] = useState(false);
+  const [isAppendingSelected, setIsAppendingSelected] = useState(false);
   const [deleteListTarget, setDeleteListTarget] = useState(null);
   const [isDeletingList, setIsDeletingList] = useState(false);
+  const [deleteSingleLeadTarget, setDeleteSingleLeadTarget] = useState(null);
+  const [isRemovingSingleLead, setIsRemovingSingleLead] = useState(false);
   const [feedback, setFeedback] = useState(null);
 
   // Set default selection when lists load or restore saved list selection
@@ -225,6 +234,27 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
       alert(err.message || 'Failed to delete saved list');
     } finally {
       setIsDeletingList(false);
+    }
+  };
+
+  const handleConfirmRemoveLead = async () => {
+    if (!deleteSingleLeadTarget) return;
+    setIsRemovingSingleLead(true);
+    try {
+      await dispatch(
+        removeLeadFromSavedList({
+          listId: deleteSingleLeadTarget.listId,
+          leadId: deleteSingleLeadTarget.leadId
+        })
+      ).unwrap();
+      setListLeads((prev) => prev.filter((l) => l.id !== deleteSingleLeadTarget.leadId));
+      setFeedback(`Removed "${deleteSingleLeadTarget.leadName}" from "${deleteSingleLeadTarget.listName}".`);
+      setTimeout(() => setFeedback(null), 3500);
+      setDeleteSingleLeadTarget(null);
+    } catch (err) {
+      alert(err?.message || 'Failed to remove lead from list');
+    } finally {
+      setIsRemovingSingleLead(false);
     }
   };
 
@@ -533,10 +563,34 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
 
                   {/* Actions for this list */}
                   <div className="flex flex-wrap items-center gap-2">
+                    {/* Add Leads Button */}
+                    <button
+                      type="button"
+                      onClick={() => setIsAddLeadsModalOpen(true)}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 active:scale-95 rounded-lg transition-all cursor-pointer shadow-2xs"
+                    >
+                      <UserPlus className="w-3.5 h-3.5" />
+                      <span>Add Leads to List</span>
+                    </button>
+
+                    {/* Quick Add Selected Leads if any selected in Lead Finder */}
+                    {selectedLeadIds.length > 0 && (
+                      <button
+                        type="button"
+                        disabled={isAppendingSelected}
+                        onClick={handleQuickAppendSelected}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/40 hover:bg-orange-100 dark:hover:bg-orange-900/60 border border-orange-300 dark:border-orange-800 rounded-lg transition-colors cursor-pointer shadow-2xs"
+                        title={`Append ${selectedLeadIds.length} leads selected in Lead Finder`}
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add {selectedLeadIds.length} Selected Leads</span>
+                      </button>
+                    )}
+
                     <button
                       type="button"
                       onClick={() => handleApplyToFinder(selectedList)}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/40 hover:bg-orange-100 dark:hover:bg-orange-900/60 border border-orange-200/60 dark:border-orange-800/60 rounded-lg transition-colors cursor-pointer shadow-2xs"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer shadow-2xs"
                     >
                       <Filter className="w-3.5 h-3.5" />
                       <span>Filter in Lead Finder</span>
@@ -593,18 +647,28 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
                   <div className="p-12 text-center">
                     <Building2 className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
                     <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                      No Leads in this List Yet
+                      This List is Currently Empty (0 Leads)
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
-                      Go to Lead Finder, select leads from the table or search results, and click "Save / Load List" to add them here.
+                      Search and append leads from the 10.3M database or your custom leads, or browse in Lead Finder.
                     </p>
-                    <button
-                      type="button"
-                      onClick={() => setActiveView && setActiveView('finder')}
-                      className="mt-4 px-4 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-xs cursor-pointer"
-                    >
-                      Go to Lead Finder
-                    </button>
+                    <div className="flex flex-wrap items-center justify-center gap-3 mt-4">
+                      <button
+                        type="button"
+                        onClick={() => setIsAddLeadsModalOpen(true)}
+                        className="px-4 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add Leads Now</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveView && setActiveView('finder')}
+                        className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg shadow-xs cursor-pointer"
+                      >
+                        Browse Lead Finder
+                      </button>
+                    </div>
                   </div>
                 ) : filteredLeads.length === 0 ? (
                   <div className="p-8 text-center text-xs text-slate-400">
@@ -622,6 +686,7 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
                           <th className="py-3 px-4">Annual Revenue</th>
                           <th className="py-3 px-4">HQ Location</th>
                           <th className="py-3 px-4 text-center">Intent</th>
+                          <th className="py-3 px-4 text-right">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -704,6 +769,25 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
                               <span className="inline-block px-2 py-0.5 rounded-full font-mono text-[11px] font-bold bg-orange-50 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800/60">
                                 {lead.buyingIntentScore || 88}
                               </span>
+                            </td>
+
+                            {/* Column 8: Actions */}
+                            <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setDeleteSingleLeadTarget({
+                                    leadId: lead.id,
+                                    leadName: lead.companyName,
+                                    listId: selectedList.id,
+                                    listName: selectedList.name
+                                  })
+                                }
+                                title="Remove lead from this list"
+                                className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-md transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
                             </td>
                           </tr>
                         ))}
@@ -849,6 +933,33 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
         confirmText="Yes, Delete List"
         cancelText="Cancel"
         dangerNote="This list will be erased from the database and cannot be recovered."
+      />
+
+      {/* Modal to Search and Add Leads directly to this list */}
+      <AddLeadsToSavedListModal
+        isOpen={isAddLeadsModalOpen}
+        targetList={selectedList}
+        onClose={() => setIsAddLeadsModalOpen(false)}
+        onSuccess={async () => {
+          if (selectedList) {
+            await dispatch(fetchSavedLists());
+            await loadLeadsForSelectedList(selectedList);
+          }
+        }}
+      />
+
+      {/* Confirmation Modal for Removing Single Lead from Saved List */}
+      <ConfirmDeleteModal
+        isOpen={Boolean(deleteSingleLeadTarget)}
+        onClose={() => !isRemovingSingleLead && setDeleteSingleLeadTarget(null)}
+        onConfirm={handleConfirmRemoveLead}
+        loading={isRemovingSingleLead}
+        title="Remove Lead from List?"
+        message={`Are you sure you want to remove this lead from "${deleteSingleLeadTarget?.listName}"? This will update the list in the database.`}
+        itemName={deleteSingleLeadTarget?.leadName}
+        confirmText="Yes, Remove Lead"
+        cancelText="Cancel"
+        dangerNote="The lead will be removed from this list segment in the database."
       />
     </div>
   );

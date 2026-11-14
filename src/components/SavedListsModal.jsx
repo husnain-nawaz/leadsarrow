@@ -1,14 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { X, Plus, Trash2, Filter, ExternalLink } from 'lucide-react';
+import {
+  X,
+  Plus,
+  Trash2,
+  Filter,
+  ExternalLink,
+  Bookmark,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  UserPlus
+} from 'lucide-react';
 import {
   setSavedListsModalOpen,
   createSavedList,
   removeSavedList,
-  fetchSavedLists
+  fetchSavedLists,
+  appendLeadsToSavedList
 } from '../store/savedListsSlice.js';
 import { setSavedListFilter } from '../store/filtersSlice.js';
 import ConfirmDeleteModal from './ConfirmDeleteModal.jsx';
+import AddLeadsToSavedListModal from './AddLeadsToSavedListModal.jsx';
 
 export default function SavedListsModal({ setActiveView, onSelectFullPageList }) {
   const dispatch = useDispatch();
@@ -20,6 +33,11 @@ export default function SavedListsModal({ setActiveView, onSelectFullPageList })
 
   const [listName, setListName] = useState('');
   const [listDesc, setListDesc] = useState('');
+  const [includeSelectedLeads, setIncludeSelectedLeads] = useState(selectedLeadIds.length > 0);
+  const [targetAppendListId, setTargetAppendListId] = useState('');
+  const [isAppending, setIsAppending] = useState(false);
+  const [appendFeedback, setAppendFeedback] = useState(null);
+  const [addLeadsModalTarget, setAddLeadsModalTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -57,10 +75,12 @@ export default function SavedListsModal({ setActiveView, onSelectFullPageList })
     e.preventDefault();
     if (!listName.trim()) return;
 
+    // STRICT: Only save leads if user explicitly selected them and chose to include them.
+    // If empty or unchecked, save strictly empty [] (0 leads) - NEVER inject 10 random leads!
     const leadIdsToSave =
-      selectedLeadIds.length > 0
+      selectedLeadIds.length > 0 && includeSelectedLeads
         ? selectedLeadIds
-        : items.slice(0, 10).map((i) => i.id);
+        : [];
 
     const activeSummaryParts = [];
     if (filters.industries.length) activeSummaryParts.push(`Industry: ${filters.industries.join(', ')}`);
@@ -68,7 +88,7 @@ export default function SavedListsModal({ setActiveView, onSelectFullPageList })
     if (filters.countries.length) activeSummaryParts.push(`Country: ${filters.countries.join(', ')}`);
     const filterSummary = activeSummaryParts.length
       ? activeSummaryParts.join(' · ')
-      : 'Custom Selected B2B Leads';
+      : (leadIdsToSave.length > 0 ? 'Custom Selected B2B Leads' : 'Empty Curated List');
 
     dispatch(
       createSavedList({
@@ -81,6 +101,29 @@ export default function SavedListsModal({ setActiveView, onSelectFullPageList })
     );
     setListName('');
     setListDesc('');
+  };
+
+  const handleAppendSelectedLeads = async (listId) => {
+    const targetId = listId || targetAppendListId;
+    if (!targetId || !selectedLeadIds.length) return;
+    setIsAppending(true);
+    setAppendFeedback(null);
+    try {
+      await dispatch(appendLeadsToSavedList({ listId: targetId, leadIds: selectedLeadIds })).unwrap();
+      const target = mergedLists.find((l) => l.id === targetId);
+      setAppendFeedback({
+        type: 'success',
+        text: `Added ${selectedLeadIds.length} lead${selectedLeadIds.length > 1 ? 's' : ''} to "${target?.name || 'list'}" successfully!`
+      });
+      setTimeout(() => setAppendFeedback(null), 4000);
+    } catch (err) {
+      setAppendFeedback({
+        type: 'error',
+        text: err?.message || 'Failed to add leads to list'
+      });
+    } finally {
+      setIsAppending(false);
+    }
   };
 
   const handleLoadList = (list) => {
@@ -141,14 +184,95 @@ export default function SavedListsModal({ setActiveView, onSelectFullPageList })
         </div>
 
         <div className="p-6 overflow-y-auto space-y-6 flex-1 overscroll-contain text-xs">
-          {/* Create New List Form */}
+          {/* Append Feedback Alert */}
+          {appendFeedback && (
+            <div
+              className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
+                appendFeedback.type === 'success'
+                  ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                  : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
+              }`}
+            >
+              {appendFeedback.type === 'success' ? (
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+              ) : (
+                <AlertCircle className="w-4 h-4 shrink-0" />
+              )}
+              <span>{appendFeedback.text}</span>
+            </div>
+          )}
+
+          {/* Quick Option 1: Add Selected Leads to an Already Saved List */}
+          {mergedLists.length > 0 && (
+            <div className="p-4 bg-orange-50/60 dark:bg-orange-950/20 border border-orange-200/80 dark:border-orange-800/60 rounded-xl space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <Bookmark className="w-4 h-4 text-orange-600" />
+                  <span>Add Leads to an Existing List</span>
+                </div>
+                {selectedLeadIds.length > 0 ? (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-orange-600 text-white">
+                    {selectedLeadIds.length} leads selected
+                  </span>
+                ) : (
+                  <span className="text-[11px] text-slate-400">
+                    (No leads selected in table yet)
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <select
+                  value={targetAppendListId}
+                  onChange={(e) => setTargetAppendListId(e.target.value)}
+                  className="flex-1 px-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white font-medium"
+                >
+                  <option value="">-- Choose an already saved list to add to --</option>
+                  {mergedLists.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.name} ({l.leadCount || (l.leadIds ? l.leadIds.length : 0)} leads)
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  type="button"
+                  disabled={!targetAppendListId || selectedLeadIds.length === 0 || isAppending}
+                  onClick={() => handleAppendSelectedLeads(targetAppendListId)}
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 disabled:opacity-40 disabled:pointer-events-none rounded-xl transition-all cursor-pointer shadow-xs whitespace-nowrap"
+                >
+                  {isAppending ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Adding...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add {selectedLeadIds.length > 0 ? `${selectedLeadIds.length} ` : ''}Leads</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Option 2: Create New List Form */}
           <form
             onSubmit={handleCreateList}
             className="p-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl space-y-3"
           >
-            <div className="text-xs font-bold text-slate-900 dark:text-white">
-              Create New Lead List ({selectedLeadIds.length > 0 ? `${selectedLeadIds.length} selected leads` : 'Top 10 current results'})
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-bold text-slate-900 dark:text-white">
+                Create New Saved List
+              </div>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                {selectedLeadIds.length > 0 && includeSelectedLeads
+                  ? `With ${selectedLeadIds.length} selected leads`
+                  : 'Empty list (0 leads)'}
+              </span>
             </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <input
                 type="text"
@@ -166,13 +290,31 @@ export default function SavedListsModal({ setActiveView, onSelectFullPageList })
                 className="px-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-orange-600"
               />
             </div>
-            <div className="flex justify-end">
+
+            {/* Checkbox option if leads are selected */}
+            {selectedLeadIds.length > 0 ? (
+              <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-700 dark:text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={includeSelectedLeads}
+                  onChange={(e) => setIncludeSelectedLeads(e.target.checked)}
+                  className="w-4 h-4 rounded text-orange-600 accent-orange-600 cursor-pointer"
+                />
+                <span>Include {selectedLeadIds.length} currently selected leads in this new list</span>
+              </label>
+            ) : (
+              <p className="text-[11px] text-slate-400">
+                No leads selected in table. This will be created as an <strong>empty list (0 leads)</strong>. You can add leads to it anytime.
+              </p>
+            )}
+
+            <div className="flex justify-end pt-1">
               <button
                 type="submit"
                 className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 active:scale-95 rounded-xl transition-colors cursor-pointer shadow-xs"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Save List</span>
+                <span>Save New List {selectedLeadIds.length > 0 && includeSelectedLeads ? `(${selectedLeadIds.length} leads)` : '(0 leads)'}</span>
               </button>
             </div>
           </form>
@@ -206,6 +348,29 @@ export default function SavedListsModal({ setActiveView, onSelectFullPageList })
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
+                      {selectedLeadIds.length > 0 && (
+                        <button
+                          type="button"
+                          disabled={isAppending}
+                          onClick={() => handleAppendSelectedLeads(list.id)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors cursor-pointer shadow-2xs"
+                          title={`Add ${selectedLeadIds.length} selected leads to "${list.name}"`}
+                        >
+                          <Plus className="w-3 h-3" />
+                          <span>Add {selectedLeadIds.length} Leads</span>
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => setAddLeadsModalTarget(list)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer shadow-2xs"
+                        title="Search and add leads to this list"
+                      >
+                        <UserPlus className="w-3 h-3 text-orange-600 dark:text-orange-400" />
+                        <span>Add Leads</span>
+                      </button>
+
                       <button
                         type="button"
                         onClick={() => handleOpenFullPage(list.id)}
@@ -272,6 +437,16 @@ export default function SavedListsModal({ setActiveView, onSelectFullPageList })
         confirmText="Yes, Delete List"
         cancelText="Cancel"
         dangerNote="This list will be erased from the database and cannot be recovered."
+      />
+
+      {/* Modal to Search and Add Leads to Any Already Saved List */}
+      <AddLeadsToSavedListModal
+        isOpen={Boolean(addLeadsModalTarget)}
+        targetList={addLeadsModalTarget}
+        onClose={() => setAddLeadsModalTarget(null)}
+        onSuccess={() => {
+          dispatch(fetchSavedLists());
+        }}
       />
     </div>
   );

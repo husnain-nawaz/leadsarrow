@@ -897,6 +897,131 @@ async function startServer() {
     }
   });
 
+  // --- ADD LEADS TO EXISTING SAVED LIST (Database 4) ---
+  app.post('/api/lists/:id/leads', async (req: any, res) => {
+    try {
+      const listId = req.params.id;
+      const body = req.body || {};
+      const newLeadIds: string[] = Array.isArray(body.leadIds)
+        ? body.leadIds.map((id: any) => String(id))
+        : [];
+
+      if (!newLeadIds.length) {
+        return res.status(400).json({ error: 'No lead IDs provided to add.' });
+      }
+
+      const ds = await (await import('./server/dataSource.ts')).getDataSource();
+      const listRepo = ds.getRepository((await import('./server/entities/SavedList.ts')).SavedList);
+
+      let list = await listRepo.findOne({ where: { id: listId } });
+      if (!list) {
+        const rows: any = await ds.query('SELECT * FROM saved_lists WHERE id = ?', [listId]);
+        if (rows && rows.length > 0) {
+          const row = rows[0];
+          list = listRepo.create({
+            id: row.id,
+            userId: row.user_id,
+            name: row.name,
+            description: row.description,
+            leadIds: typeof row.lead_ids === 'string' ? JSON.parse(row.lead_ids || '[]') : (row.lead_ids || []),
+            filterSummary: row.filter_summary,
+            leadCount: Number(row.lead_count || 0)
+          });
+        }
+      }
+
+      if (!list) {
+        return res.status(404).json({ error: 'Saved list not found' });
+      }
+
+      const existingIds: string[] = Array.isArray(list.leadIds)
+        ? list.leadIds
+        : (typeof list.leadIds === 'string' ? JSON.parse(list.leadIds || '[]') : []);
+
+      const mergedSet = new Set([...existingIds, ...newLeadIds]);
+      const mergedArray = Array.from(mergedSet);
+      const addedCount = mergedArray.length - existingIds.length;
+
+      list.leadIds = mergedArray;
+      list.leadCount = mergedArray.length;
+
+      const saved = await listRepo.save(list);
+
+      // Direct MySQL Database 4 JSON update
+      await ds.query(
+        'UPDATE saved_lists SET lead_ids = ?, lead_count = ?, updated_at = NOW() WHERE id = ?',
+        [JSON.stringify(mergedArray), mergedArray.length, listId]
+      ).catch(() => {});
+
+      res.json({
+        success: true,
+        addedCount,
+        list: {
+          id: saved.id,
+          name: saved.name,
+          description: saved.description,
+          leadIds: saved.leadIds || [],
+          filterSummary: saved.filterSummary,
+          leadCount: saved.leadCount,
+          createdAt: saved.createdAt,
+          updatedAt: saved.updatedAt
+        }
+      });
+    } catch (err: any) {
+      console.error('Failed to add leads to list:', err);
+      res.status(500).json({ error: err.message || 'Failed to add leads to list' });
+    }
+  });
+
+  // --- REMOVE A SINGLE LEAD FROM A SAVED LIST ---
+  app.delete('/api/lists/:id/leads/:leadId', async (req: any, res) => {
+    try {
+      const listId = req.params.id;
+      const leadId = req.params.leadId;
+
+      const ds = await (await import('./server/dataSource.ts')).getDataSource();
+      const listRepo = ds.getRepository((await import('./server/entities/SavedList.ts')).SavedList);
+
+      let list = await listRepo.findOne({ where: { id: listId } });
+      if (!list) {
+        return res.status(404).json({ error: 'Saved list not found' });
+      }
+
+      const existingIds: string[] = Array.isArray(list.leadIds)
+        ? list.leadIds
+        : (typeof list.leadIds === 'string' ? JSON.parse(list.leadIds || '[]') : []);
+
+      const updatedIds = existingIds.filter((id) => String(id) !== String(leadId));
+
+      list.leadIds = updatedIds;
+      list.leadCount = updatedIds.length;
+
+      const saved = await listRepo.save(list);
+
+      await ds.query(
+        'UPDATE saved_lists SET lead_ids = ?, lead_count = ?, updated_at = NOW() WHERE id = ?',
+        [JSON.stringify(updatedIds), updatedIds.length, listId]
+      ).catch(() => {});
+
+      res.json({
+        success: true,
+        list: {
+          id: saved.id,
+          name: saved.name,
+          description: saved.description,
+          leadIds: saved.leadIds || [],
+          filterSummary: saved.filterSummary,
+          leadCount: saved.leadCount,
+          createdAt: saved.createdAt,
+          updatedAt: saved.updatedAt
+        }
+      });
+    } catch (err: any) {
+      console.error('Failed to remove lead from list:', err);
+      res.status(500).json({ error: err.message || 'Failed to remove lead from list' });
+    }
+  });
+
   app.delete('/api/lists/:id', async (req: any, res) => {
     try {
       const targetId = req.params.id;
