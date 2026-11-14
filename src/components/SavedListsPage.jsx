@@ -41,7 +41,7 @@ import {
 } from '../store/savedListsSlice.js';
 import { setSavedListFilter } from '../store/filtersSlice.js';
 import { setActiveLead } from '../store/leadsSlice.js';
-import { fetchLeadsByIdsApi } from '../services/api.js';
+import { fetchLeadsByIdsApi, fetchSavedListsFromServerApi } from '../services/api.js';
 import ConfirmDeleteModal from './ConfirmDeleteModal.jsx';
 import ConfirmExportModal from './ConfirmExportModal.jsx';
 import AddLeadsToSavedListModal from './AddLeadsToSavedListModal.jsx';
@@ -54,14 +54,64 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
   const { user } = useSelector((state) => state.auth);
   const { selectedLeadIds = [] } = useSelector((state) => state.leads);
 
-  // Combine server lists and user Firestore lists without duplicates
-  const seenIds = new Set();
+  // Robustly combine server lists and user Firestore lists, strictly prioritizing authoritative MySQL server lists
   const mergedLists = useMemo(() => {
-    return [...firestoreLists, ...lists].filter((l) => {
-      if (!l || seenIds.has(l.id)) return false;
-      seenIds.add(l.id);
-      return true;
+    const map = new Map();
+
+    // 1. Authoritative MySQL server lists first
+    (lists || []).forEach((sl) => {
+      if (sl?.id) {
+        const rawIds = sl.leadIds || sl.lead_ids || [];
+        const resolvedLeadIds = Array.isArray(rawIds)
+          ? rawIds
+          : (typeof rawIds === 'string'
+              ? (() => {
+                  try { return JSON.parse(rawIds); } catch { return rawIds.split(',').map((s) => s.trim()).filter(Boolean); }
+                })()
+              : []);
+        map.set(sl.id, {
+          ...sl,
+          leadIds: resolvedLeadIds,
+          leadCount: sl.leadCount !== undefined && sl.leadCount !== null ? sl.leadCount : resolvedLeadIds.length
+        });
+      }
     });
+
+    // 2. Augment with Firestore lists without overwriting complete server leadIds
+    (firestoreLists || []).forEach((fl) => {
+      if (!fl?.id) return;
+      const rawFsIds = fl.leadIds || fl.lead_ids || (fl.leadIdsCsv ? fl.leadIdsCsv.split(',').map((s) => s.trim()).filter(Boolean) : []);
+      const resolvedFsIds = Array.isArray(rawFsIds)
+        ? rawFsIds
+        : (typeof rawFsIds === 'string'
+            ? (() => {
+                try { return JSON.parse(rawFsIds); } catch { return rawFsIds.split(',').map((s) => s.trim()).filter(Boolean); }
+              })()
+            : []);
+
+      if (map.has(fl.id)) {
+        const existing = map.get(fl.id);
+        const mergedIds = (existing.leadIds && existing.leadIds.length > 0)
+          ? (resolvedFsIds.length > existing.leadIds.length
+              ? Array.from(new Set([...existing.leadIds, ...resolvedFsIds]))
+              : existing.leadIds)
+          : resolvedFsIds;
+        map.set(fl.id, {
+          ...fl,
+          ...existing,
+          leadIds: mergedIds,
+          leadCount: Math.max(existing.leadCount || 0, fl.leadCount || 0, mergedIds.length)
+        });
+      } else {
+        map.set(fl.id, {
+          ...fl,
+          leadIds: resolvedFsIds,
+          leadCount: fl.leadCount !== undefined && fl.leadCount !== null ? fl.leadCount : resolvedFsIds.length
+        });
+      }
+    });
+
+    return Array.from(map.values());
   }, [lists, firestoreLists]);
 
   const [selectedListId, setSelectedListId] = useState(() => {
@@ -155,13 +205,48 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
 
   // Fetch full leads details whenever selected list changes
   const loadLeadsForSelectedList = useCallback(async (list, forceRefresh = false) => {
-    if (!list || !Array.isArray(list.leadIds) || list.leadIds.length === 0) {
+    if (!list) {
       setListLeads([]);
       setLeadsLoading(false);
       return;
     }
 
-    const cacheKey = `${list.id}_${list.leadIds.length}_${list.leadIds.slice(0, 5).join('_')}`;
+    let ids = [];
+    if (Array.isArray(list.leadIds) && list.leadIds.length > 0) {
+      ids = list.leadIds;
+    } else if (typeof list.leadIds === 'string' && list.leadIds.trim()) {
+      try { ids = JSON.parse(list.leadIds); } catch { ids = list.leadIds.split(',').map((s) => s.trim()).filter(Boolean); }
+    } else if (list.lead_ids) {
+      if (Array.isArray(list.lead_ids)) ids = list.lead_ids;
+      else if (typeof list.lead_ids === 'string') {
+        try { ids = JSON.parse(list.lead_ids); } catch { ids = list.lead_ids.split(',').map((s) => s.trim()).filter(Boolean); }
+      }
+    } else if (list.leadIdsCsv) {
+      ids = list.leadIdsCsv.split(',').map((s) => s.trim()).filter(Boolean);
+    }
+
+    // Self-heal: If IDs are still empty in client memory but list reports positive leadCount, query server lists
+    if ((!ids || ids.length === 0) && (list.leadCount > 0)) {
+      setLeadsLoading(true);
+      try {
+        const freshResponse = await fetchSavedListsFromServerApi();
+        const serverMatch = (freshResponse?.lists || []).find((l) => l.id === list.id);
+        if (serverMatch && Array.isArray(serverMatch.leadIds) && serverMatch.leadIds.length > 0) {
+          ids = serverMatch.leadIds;
+          dispatch(fetchSavedLists());
+        }
+      } catch (err) {
+        console.warn('Failed to self-heal list lead IDs from server:', err);
+      }
+    }
+
+    if (!ids || ids.length === 0) {
+      setListLeads([]);
+      setLeadsLoading(false);
+      return;
+    }
+
+    const cacheKey = `${list.id}_${ids.length}_${ids.slice(0, 5).join('_')}`;
 
     // Return cached leads instantly with zero layout jump if available
     if (!forceRefresh && leadsCacheRef.current[cacheKey]) {
@@ -172,7 +257,7 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
 
     setLeadsLoading(true);
     try {
-      const response = await fetchLeadsByIdsApi(list.leadIds);
+      const response = await fetchLeadsByIdsApi(ids);
       const fetched = response.leads || [];
       leadsCacheRef.current[cacheKey] = fetched;
       setListLeads(fetched);
@@ -182,7 +267,7 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
     } finally {
       setLeadsLoading(false);
     }
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     if (selectedList) {

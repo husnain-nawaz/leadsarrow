@@ -75,9 +75,14 @@ export const appendLeadsToSavedList = createAsyncThunk(
       // Also sync to Firestore if signed in
       try {
         const state = getState();
-        const existing = [...state.savedLists.firestoreLists, ...state.savedLists.lists].find((l) => l.id === listId);
+        const serverList = (state.savedLists?.lists || []).find((l) => l.id === listId);
+        const fsList = (state.savedLists?.firestoreLists || []).find((l) => l.id === listId);
+        const existing = serverList || fsList;
         if (existing) {
-          const merged = Array.from(new Set([...(existing.leadIds || []), ...leadIds]));
+          const prevIds = (serverList?.leadIds && serverList.leadIds.length > 0)
+            ? serverList.leadIds
+            : (fsList?.leadIds || []);
+          const merged = Array.from(new Set([...prevIds, ...leadIds]));
           await saveLeadListToFirestore({
             ...existing,
             id: listId,
@@ -105,9 +110,14 @@ export const removeLeadFromSavedList = createAsyncThunk(
       // Also sync to Firestore if signed in
       try {
         const state = getState();
-        const existing = [...state.savedLists.firestoreLists, ...state.savedLists.lists].find((l) => l.id === listId);
+        const serverList = (state.savedLists?.lists || []).find((l) => l.id === listId);
+        const fsList = (state.savedLists?.firestoreLists || []).find((l) => l.id === listId);
+        const existing = serverList || fsList;
         if (existing) {
-          const updatedIds = (existing.leadIds || []).filter((id) => String(id) !== String(leadId));
+          const prevIds = (serverList?.leadIds && serverList.leadIds.length > 0)
+            ? serverList.leadIds
+            : (fsList?.leadIds || []);
+          const updatedIds = prevIds.filter((id) => String(id) !== String(leadId));
           await saveLeadListToFirestore({
             ...existing,
             id: listId,
@@ -135,10 +145,15 @@ export const removeBatchLeadsFromSavedList = createAsyncThunk(
       // Also sync to Firestore if signed in
       try {
         const state = getState();
-        const existing = [...state.savedLists.firestoreLists, ...state.savedLists.lists].find((l) => l.id === listId);
+        const serverList = (state.savedLists?.lists || []).find((l) => l.id === listId);
+        const fsList = (state.savedLists?.firestoreLists || []).find((l) => l.id === listId);
+        const existing = serverList || fsList;
         if (existing) {
+          const prevIds = (serverList?.leadIds && serverList.leadIds.length > 0)
+            ? serverList.leadIds
+            : (fsList?.leadIds || []);
           const removeSet = new Set(leadIds.map((id) => String(id)));
-          const updatedIds = (existing.leadIds || []).filter((id) => !removeSet.has(String(id)));
+          const updatedIds = prevIds.filter((id) => !removeSet.has(String(id)));
           await saveLeadListToFirestore({
             ...existing,
             id: listId,

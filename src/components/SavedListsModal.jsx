@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   X,
@@ -63,13 +63,65 @@ export default function SavedListsModal({ setActiveView, onSelectFullPageList })
 
   if (!isSavedListsModalOpen) return null;
 
-  // Combine server lists and user Firestore lists without duplicates
-  const seenIds = new Set();
-  const mergedLists = [...firestoreLists, ...lists].filter((l) => {
-    if (!l || seenIds.has(l.id)) return false;
-    seenIds.add(l.id);
-    return true;
-  });
+  // Robustly combine server lists and user Firestore lists, strictly prioritizing authoritative MySQL server lists
+  const mergedLists = useMemo(() => {
+    const map = new Map();
+
+    // 1. Authoritative MySQL server lists first
+    (lists || []).forEach((sl) => {
+      if (sl?.id) {
+        const rawIds = sl.leadIds || sl.lead_ids || [];
+        const resolvedLeadIds = Array.isArray(rawIds)
+          ? rawIds
+          : (typeof rawIds === 'string'
+              ? (() => {
+                  try { return JSON.parse(rawIds); } catch { return rawIds.split(',').map((s) => s.trim()).filter(Boolean); }
+                })()
+              : []);
+        map.set(sl.id, {
+          ...sl,
+          leadIds: resolvedLeadIds,
+          leadCount: sl.leadCount !== undefined && sl.leadCount !== null ? sl.leadCount : resolvedLeadIds.length
+        });
+      }
+    });
+
+    // 2. Augment with Firestore lists without overwriting complete server leadIds
+    (firestoreLists || []).forEach((fl) => {
+      if (!fl?.id) return;
+      const rawFsIds = fl.leadIds || fl.lead_ids || (fl.leadIdsCsv ? fl.leadIdsCsv.split(',').map((s) => s.trim()).filter(Boolean) : []);
+      const resolvedFsIds = Array.isArray(rawFsIds)
+        ? rawFsIds
+        : (typeof rawFsIds === 'string'
+            ? (() => {
+                try { return JSON.parse(rawFsIds); } catch { return rawFsIds.split(',').map((s) => s.trim()).filter(Boolean); }
+              })()
+            : []);
+
+      if (map.has(fl.id)) {
+        const existing = map.get(fl.id);
+        const mergedIds = (existing.leadIds && existing.leadIds.length > 0)
+          ? (resolvedFsIds.length > existing.leadIds.length
+              ? Array.from(new Set([...existing.leadIds, ...resolvedFsIds]))
+              : existing.leadIds)
+          : resolvedFsIds;
+        map.set(fl.id, {
+          ...fl,
+          ...existing,
+          leadIds: mergedIds,
+          leadCount: Math.max(existing.leadCount || 0, fl.leadCount || 0, mergedIds.length)
+        });
+      } else {
+        map.set(fl.id, {
+          ...fl,
+          leadIds: resolvedFsIds,
+          leadCount: fl.leadCount !== undefined && fl.leadCount !== null ? fl.leadCount : resolvedFsIds.length
+        });
+      }
+    });
+
+    return Array.from(map.values());
+  }, [lists, firestoreLists]);
 
   const handleCreateList = (e) => {
     e.preventDefault();

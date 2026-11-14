@@ -152,12 +152,13 @@ export async function saveLeadListToFirestore(listInput) {
   const path = 'saved_lists';
 
   const leadIdsArray = Array.isArray(listInput.leadIds) ? listInput.leadIds : [];
-  const leadIdsCsv = leadIdsArray.join(',').slice(0, 2000);
+  const leadIdsCsv = leadIdsArray.slice(0, 1000).join(',');
 
   const payload = {
     ownerId: uid,
     name: sanitizeStr(listInput.name, 'Target Accounts List', 120),
     description: String(listInput.description ?? '').trim().slice(0, 300),
+    leadIds: leadIdsArray.slice(0, 5000),
     leadIdsCsv,
     filterSummary: String(listInput.filterSummary ?? 'All B2B Segments').trim().slice(0, 500),
     leadCount: Math.max(0, Math.min(100000, leadIdsArray.length || Number(listInput.leadCount) || 0)),
@@ -221,9 +222,9 @@ export function subscribeUserFirestoreData(uid, onCustomLeads, onSavedLists) {
     (snapshot) => {
       const items = snapshot.docs.map((d) => {
         const data = d.data();
-        const leadIds = data.leadIdsCsv
-          ? data.leadIdsCsv.split(',').map((s) => s.trim()).filter(Boolean)
-          : [];
+        const leadIds = Array.isArray(data.leadIds) && data.leadIds.length > 0
+          ? data.leadIds
+          : (data.leadIdsCsv ? data.leadIdsCsv.split(',').map((s) => s.trim()).filter(Boolean) : []);
         return {
           id: d.id,
           ...data,
