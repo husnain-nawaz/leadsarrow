@@ -4,6 +4,7 @@ import { X, Download, AlertTriangle, Zap, Sparkles, Loader2 } from 'lucide-react
 import { setExportModalOpen } from '../store/leadsSlice.js';
 import { decrementExportCredits, consumeCredits, openUpgradeModal } from '../store/authSlice.js';
 import { fetchLeadsByIdsApi } from '../services/api.js';
+import ConfirmExportModal from './ConfirmExportModal.jsx';
 
 export default function ExportModal() {
   const dispatch = useDispatch();
@@ -14,6 +15,7 @@ export default function ExportModal() {
   const [format, setFormat] = useState('csv');
   const [fetchedFullLeads, setFetchedFullLeads] = useState([]);
   const [isLoadingLeads, setIsLoadingLeads] = useState(false);
+  const [isConfirmingExport, setIsConfirmingExport] = useState(false);
 
   // 1. Daily limits and single-batch export constraints:
   // - Maximum 5,000 at once hard cap even with unlimited plan
@@ -81,13 +83,18 @@ export default function ExportModal() {
     ? fetchedFullLeads
     : items.filter((l) => targetIds.includes(l.id));
 
-  const handleDownload = () => {
+  const handleOpenExportConfirm = () => {
     if (selectedLeadIds.length === 0) return;
     if (targetLeads.length === 0 || (!isUnlimited && userCreditsRemaining <= 0)) {
       dispatch(setExportModalOpen(false));
       dispatch(openUpgradeModal('starter'));
       return;
     }
+    setIsConfirmingExport(true);
+  };
+
+  const handleExecuteDownload = () => {
+    setIsConfirmingExport(false);
     if (format === 'json') {
       const blob = new Blob([JSON.stringify(targetLeads, null, 2)], {
         type: 'application/json'
@@ -158,19 +165,19 @@ export default function ExportModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
       <div
-        className="fixed inset-0 bg-slate-900/50"
+        className="fixed inset-0"
         onClick={() => dispatch(setExportModalOpen(false))}
       />
 
-      <div className="relative z-10 w-full max-w-md bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+      <div className="relative z-10 w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col text-slate-900 dark:text-slate-100 transition-colors">
+        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-800/80">
           <div>
-            <h2 className="text-base font-bold text-slate-900 font-display">
+            <h2 className="text-base font-bold text-slate-900 dark:text-white font-display">
               Export B2B Leads Dataset
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               {selectedLeadIds.length === 0
                 ? 'No leads selected for export'
                 : isLoadingLeads
@@ -181,7 +188,7 @@ export default function ExportModal() {
           <button
             type="button"
             onClick={() => dispatch(setExportModalOpen(false))}
-            className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg cursor-pointer"
+            className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -189,54 +196,54 @@ export default function ExportModal() {
 
         <div className="p-6 space-y-4 text-xs">
           {selectedLeadIds.length === 0 ? (
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-900 space-y-2">
+            <div className="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-xl text-amber-900 dark:text-amber-200 space-y-2">
               <div className="flex items-center gap-2 font-semibold text-xs">
                 <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
                 <span>Please Select Leads First</span>
               </div>
-              <p className="text-[11px] text-amber-800">
+              <p className="text-[11px] text-amber-800 dark:text-amber-300">
                 Exports only download leads you have selected. Check the checkboxes next to the leads in the table you want to export.
               </p>
             </div>
           ) : (
             <>
               {/* Daily Limit & Batch Rules Notice */}
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1.5 text-[11px] text-slate-600">
-                <div className="flex items-center justify-between font-medium text-slate-900">
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl space-y-1.5 text-[11px] text-slate-600 dark:text-slate-300">
+                <div className="flex items-center justify-between font-medium text-slate-900 dark:text-white">
                   <span>Selected for Export:</span>
-                  <span className="font-mono tabular-nums font-bold text-slate-900">{selectedLeadIds.length} leads</span>
+                  <span className="font-mono tabular-nums font-bold text-slate-900 dark:text-white">{selectedLeadIds.length} leads</span>
                 </div>
-                <div className="flex items-center justify-between text-slate-500">
+                <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
                   <span>Single Export Limit (Max 50% daily limit or 5,000):</span>
                   <span className="font-mono tabular-nums">{maxAllowedBatch.toLocaleString()} leads</span>
                 </div>
                 {!isUnlimited && (
-                  <div className="flex items-center justify-between text-slate-500">
+                  <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
                     <span>Remaining Daily Credits:</span>
-                    <span className="font-mono tabular-nums text-orange-600 font-semibold">{userCreditsRemaining.toLocaleString()}</span>
+                    <span className="font-mono tabular-nums text-orange-600 dark:text-orange-400 font-semibold">{userCreditsRemaining.toLocaleString()}</span>
                   </div>
                 )}
                 {isCapped && (
-                  <div className="pt-1.5 border-t border-slate-200 text-amber-700 font-medium">
+                  <div className="pt-1.5 border-t border-slate-200 dark:border-slate-700 text-amber-700 dark:text-amber-400 font-medium">
                     ⚠️ Selected count exceeds batch limit. Only the first {maxAllowedBatch.toLocaleString()} selected leads will be exported in this batch.
                   </div>
                 )}
               </div>
 
               <div className="space-y-2">
-                <label className="block font-medium text-slate-700">Export Format</label>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300">Export Format</label>
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
                     onClick={() => setFormat('csv')}
-                    className={`p-3 border rounded-lg text-left transition-colors cursor-pointer ${
+                    className={`p-3 border rounded-xl text-left transition-colors cursor-pointer ${
                       format === 'csv'
-                        ? 'border-orange-600 bg-orange-50/50 text-slate-900 font-semibold'
-                        : 'border-slate-200 hover:bg-slate-50 text-slate-600'
+                        ? 'border-orange-600 bg-orange-50/60 dark:bg-orange-950/40 text-slate-900 dark:text-white font-semibold'
+                        : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
                     }`}
                   >
                     <div>CSV Spreadsheet</div>
-                    <div className="text-[11px] font-normal text-slate-500 mt-0.5">
+                    <div className="text-[11px] font-normal text-slate-500 dark:text-slate-400 mt-0.5">
                       Compatible with Salesforce, HubSpot, Excel
                     </div>
                   </button>
@@ -244,21 +251,21 @@ export default function ExportModal() {
                   <button
                     type="button"
                     onClick={() => setFormat('json')}
-                    className={`p-3 border rounded-lg text-left transition-colors cursor-pointer ${
+                    className={`p-3 border rounded-xl text-left transition-colors cursor-pointer ${
                       format === 'json'
-                        ? 'border-orange-600 bg-orange-50/50 text-slate-900 font-semibold'
-                        : 'border-slate-200 hover:bg-slate-50 text-slate-600'
+                        ? 'border-orange-600 bg-orange-50/60 dark:bg-orange-950/40 text-slate-900 dark:text-white font-semibold'
+                        : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
                     }`}
                   >
                     <div>JSON Objects</div>
-                    <div className="text-[11px] font-normal text-slate-500 mt-0.5">
+                    <div className="text-[11px] font-normal text-slate-500 dark:text-slate-400 mt-0.5">
                       Structured array for API & webhook ingestion
                     </div>
                   </button>
                 </div>
               </div>
 
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-600">
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-slate-600 dark:text-slate-400">
                 Includes verified decision-maker emails, direct phones, verification status, and company firmographics.
               </div>
             </>
@@ -268,15 +275,15 @@ export default function ExportModal() {
             <button
               type="button"
               onClick={() => dispatch(setExportModalOpen(false))}
-              className="px-4 py-2 font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 cursor-pointer"
+              className="px-4 py-2 font-semibold text-xs text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="button"
               disabled={selectedLeadIds.length === 0 || isLoadingLeads}
-              onClick={handleDownload}
-              className="inline-flex items-center gap-1.5 px-4 py-2 font-semibold text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-40 disabled:pointer-events-none rounded-lg cursor-pointer"
+              onClick={handleOpenExportConfirm}
+              className="inline-flex items-center gap-1.5 px-4 py-2 font-bold text-xs text-white bg-orange-600 hover:bg-orange-700 disabled:opacity-40 disabled:pointer-events-none rounded-xl transition-colors cursor-pointer shadow-xs active:scale-95"
             >
               {isLoadingLeads ? (
                 <>
@@ -293,6 +300,21 @@ export default function ExportModal() {
           </div>
         </div>
       </div>
+
+      {/* Confirmation Modal before starting Export download */}
+      <ConfirmExportModal
+        isOpen={isConfirmingExport}
+        onClose={() => setIsConfirmingExport(false)}
+        onConfirm={handleExecuteDownload}
+        title={`Confirm ${format.toUpperCase()} Export`}
+        message={`Are you sure you want to download and export these ${targetLeads.length} leads as a ${format.toUpperCase()} file?`}
+        exportCount={targetLeads.length}
+        targetName="Selected B2B Leads"
+        format={format}
+        creditCost={isUnlimited ? 0 : targetLeads.length}
+        remainingCredits={isUnlimited ? 'Unlimited' : userCreditsRemaining}
+        confirmText={`Yes, Download ${format.toUpperCase()}`}
+      />
     </div>
   );
 }

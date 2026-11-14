@@ -39,6 +39,7 @@ import {
   deleteCustomClusterOnServerApi
 } from '../services/api.js';
 import ConfirmDeleteModal from './ConfirmDeleteModal.jsx';
+import ConfirmExportModal from './ConfirmExportModal.jsx';
 
 export default function CustomLeadsPage() {
   const dispatch = useDispatch();
@@ -96,6 +97,8 @@ export default function CustomLeadsPage() {
   const [newClusterName, setNewClusterName] = useState('');
   const [newClusterDesc, setNewClusterDesc] = useState('');
   const [isCreatingCluster, setIsCreatingCluster] = useState(false);
+
+  const [isConfirmExportOpen, setIsConfirmExportOpen] = useState(false);
 
   const [feedbackMessage, setFeedbackMessage] = useState(null);
 
@@ -343,7 +346,7 @@ export default function CustomLeadsPage() {
     el.scrollBy({ left: dir === 'left' ? -distance : distance, behavior: 'smooth' });
   };
 
-  const handleExportCsv = () => {
+  const executeCsvDownload = () => {
     if (!leads.length) return;
     const headers = [
       'Cluster / Group',
@@ -388,9 +391,22 @@ export default function CustomLeadsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `custom_leads_${selectedCluster}_${Date.now()}.csv`;
+    a.download = `custom_leads_${(selectedCluster || 'cluster').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${Date.now()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+
+    setFeedbackMessage(`Exported ${leads.length} lead${leads.length === 1 ? '' : 's'} from cluster "${selectedCluster || 'General'}" to CSV.`);
+    setTimeout(() => setFeedbackMessage(null), 4000);
+  };
+
+  const handleOpenExportConfirm = () => {
+    if (!leads.length) return;
+    setIsConfirmExportOpen(true);
+  };
+
+  const handleConfirmExportCsv = () => {
+    setIsConfirmExportOpen(false);
+    executeCsvDownload();
   };
 
   const totalAllClusterLeads = useMemo(() => {
@@ -792,7 +808,7 @@ export default function CustomLeadsPage() {
                   {leads.length > 0 && (
                     <button
                       type="button"
-                      onClick={handleExportCsv}
+                      onClick={handleOpenExportConfirm}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer shadow-2xs"
                     >
                       <Download className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
@@ -1197,6 +1213,19 @@ export default function CustomLeadsPage() {
         confirmText="Yes, Delete Cluster"
         cancelText="Cancel"
         dangerNote="All custom leads grouped inside this cluster will be permanently deleted."
+      />
+
+      {/* Confirmation Modal for Exporting Custom Leads to CSV */}
+      <ConfirmExportModal
+        isOpen={isConfirmExportOpen}
+        onClose={() => setIsConfirmExportOpen(false)}
+        onConfirm={handleConfirmExportCsv}
+        title="Confirm Custom Leads CSV Export"
+        message="Are you sure you want to download and export these custom leads to a CSV spreadsheet?"
+        exportCount={leads.length}
+        targetName={`Cluster "${selectedCluster || 'General'}"`}
+        creditCost={0}
+        confirmText="Yes, Download CSV"
       />
 
       {/* Modal: Create New Custom Cluster */}

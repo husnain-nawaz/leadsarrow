@@ -42,6 +42,7 @@ import { setSavedListFilter } from '../store/filtersSlice.js';
 import { setActiveLead } from '../store/leadsSlice.js';
 import { fetchLeadsByIdsApi } from '../services/api.js';
 import ConfirmDeleteModal from './ConfirmDeleteModal.jsx';
+import ConfirmExportModal from './ConfirmExportModal.jsx';
 import AddLeadsToSavedListModal from './AddLeadsToSavedListModal.jsx';
 
 export default function SavedListsPage({ setActiveView, initialSelectedListId }) {
@@ -101,6 +102,7 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
   const [isRemovingSingleLead, setIsRemovingSingleLead] = useState(false);
   const [bulkDeleteTarget, setBulkDeleteTarget] = useState(null);
   const [isRemovingBulk, setIsRemovingBulk] = useState(false);
+  const [exportConfirmTarget, setExportConfirmTarget] = useState(null);
   const [feedback, setFeedback] = useState(null);
 
   // Sorting state matching Lead Finder Data Grid
@@ -535,19 +537,32 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
   };
 
   const handleExportListCsv = () => {
-    exportLeadsToCsv(
-      listLeads,
-      `saved_list_${(selectedList?.name || 'export').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${Date.now()}.csv`
-    );
+    if (!listLeads.length) return;
+    setExportConfirmTarget({
+      leads: listLeads,
+      filename: `saved_list_${(selectedList?.name || 'export').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${Date.now()}.csv`,
+      count: listLeads.length,
+      targetName: selectedList?.name ? `Saved List "${selectedList.name}"` : 'Saved List'
+    });
   };
 
   const handleExportSelectedCsv = () => {
     const selectedLeads = listLeads.filter((l) => selectedInListIds.includes(l.id));
     if (!selectedLeads.length) return;
-    exportLeadsToCsv(
-      selectedLeads,
-      `saved_list_${(selectedList?.name || 'export').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_selected_${Date.now()}.csv`
-    );
+    setExportConfirmTarget({
+      leads: selectedLeads,
+      filename: `saved_list_${(selectedList?.name || 'export').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_selected_${Date.now()}.csv`,
+      count: selectedLeads.length,
+      targetName: `${selectedLeads.length} Selected Leads from "${selectedList?.name || 'Saved List'}"`
+    });
+  };
+
+  const handleConfirmExportCsv = () => {
+    if (!exportConfirmTarget || !exportConfirmTarget.leads.length) return;
+    exportLeadsToCsv(exportConfirmTarget.leads, exportConfirmTarget.filename);
+    setFeedback(`Exported ${exportConfirmTarget.count} lead${exportConfirmTarget.count === 1 ? '' : 's'} to CSV spreadsheet.`);
+    setTimeout(() => setFeedback(null), 4000);
+    setExportConfirmTarget(null);
   };
 
   const handleConfirmBulkRemove = async () => {
@@ -1575,6 +1590,19 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
         confirmText="Yes, Remove Leads"
         cancelText="Cancel"
         dangerNote="The selected leads will be removed from this list segment in the database."
+      />
+
+      {/* Confirmation Modal for Exporting Saved List to CSV */}
+      <ConfirmExportModal
+        isOpen={Boolean(exportConfirmTarget)}
+        onClose={() => setExportConfirmTarget(null)}
+        onConfirm={handleConfirmExportCsv}
+        title="Confirm CSV Export"
+        message="Are you sure you want to download and export these leads from your saved list to a CSV spreadsheet?"
+        exportCount={exportConfirmTarget?.count || 0}
+        targetName={exportConfirmTarget?.targetName || ''}
+        creditCost={0}
+        confirmText="Yes, Download CSV"
       />
     </div>
   );
