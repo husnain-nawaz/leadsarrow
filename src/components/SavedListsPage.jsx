@@ -68,11 +68,19 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
   const [leadsLoading, setLeadsLoading] = useState(false);
   const [listSearchQuery, setListSearchQuery] = useState('');
   const [leadSearchQuery, setLeadSearchQuery] = useState('');
+  const [listPage, setListPage] = useState(1);
+  const [listPageSize, setListPageSize] = useState(() => {
+    try {
+      const saved = Number(localStorage.getItem('leadsarrow_saved_lists_sidebar_page_size'));
+      if ([10, 25, 50].includes(saved)) return saved;
+    } catch (e) {}
+    return 10;
+  });
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(() => {
     try {
       const saved = Number(localStorage.getItem('leadsarrow_saved_lists_page_size'));
-      if ([25, 50, 100].includes(saved)) return saved;
+      if ([10, 25, 50, 100].includes(saved)) return saved;
     } catch (e) {}
     return 25;
   });
@@ -155,6 +163,36 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
         (l.filterSummary && l.filterSummary.toLowerCase().includes(q))
     );
   }, [mergedLists, listSearchQuery]);
+
+  // Reset sidebar list pagination to page 1 when search changes
+  useEffect(() => {
+    setListPage(1);
+  }, [listSearchQuery]);
+
+  const totalFilteredLists = filteredLists.length;
+  const totalListPages = Math.max(1, Math.ceil(totalFilteredLists / listPageSize));
+
+  // Keep list page within bounds
+  useEffect(() => {
+    if (listPage > totalListPages) {
+      setListPage(totalListPages);
+    }
+  }, [listPage, totalListPages]);
+
+  // Paginated lists for left sidebar (active when lists exceed 10 or page size)
+  const paginatedLists = useMemo(() => {
+    if (filteredLists.length <= 10 && listPageSize === 10) return filteredLists;
+    const start = (listPage - 1) * listPageSize;
+    return filteredLists.slice(start, start + listPageSize);
+  }, [filteredLists, listPage, listPageSize]);
+
+  const handleListPageSizeChange = (newSize) => {
+    setListPageSize(newSize);
+    setListPage(1);
+    try {
+      localStorage.setItem('leadsarrow_saved_lists_sidebar_page_size', String(newSize));
+    } catch (e) {}
+  };
 
   // Filter leads in right table
   const filteredLeads = useMemo(() => {
@@ -301,6 +339,7 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
       setIsCreatingList(false);
       if (action.payload?.id) {
         setSelectedListId(action.payload.id);
+        setListPage(1);
       }
       setFeedback('New list created successfully.');
       setTimeout(() => setFeedback(null), 3500);
@@ -497,12 +536,12 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
           </div>
 
           <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60 p-2 space-y-1">
-            {filteredLists.length === 0 ? (
+            {paginatedLists.length === 0 ? (
               <div className="p-6 text-center text-xs text-slate-400 dark:text-slate-500">
                 No saved lists found.
               </div>
             ) : (
-              filteredLists.map((list) => {
+              paginatedLists.map((list) => {
                 const isSelected = list.id === selectedListId;
                 const leadCount = list.leadCount || (list.leadIds ? list.leadIds.length : 0);
                 return (
@@ -557,6 +596,81 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
               })
             )}
           </div>
+
+          {/* Sidebar Pagination when total filtered lists exceed 10 */}
+          {filteredLists.length > 10 && (
+            <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/80 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400 select-none">
+              <div className="flex items-center gap-1.5 text-[11px]">
+                <span className="font-mono text-slate-700 dark:text-slate-300 font-semibold">
+                  {(listPage - 1) * listPageSize + 1}–{Math.min(filteredLists.length, listPage * listPageSize)}
+                </span>
+                <span className="text-slate-400">of {filteredLists.length}</span>
+                <span className="text-slate-300 dark:text-slate-700">·</span>
+                <label className="inline-flex items-center gap-1">
+                  <span className="text-[10px] text-slate-400">Rows:</span>
+                  <select
+                    value={listPageSize}
+                    onChange={(e) => handleListPageSizeChange(Number(e.target.value))}
+                    className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5 text-[11px] font-mono text-slate-700 dark:text-slate-300 focus:outline-none focus:border-orange-600 cursor-pointer"
+                  >
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                  </select>
+                </label>
+              </div>
+
+              <div className="flex items-center gap-1 shrink-0 ml-auto">
+                <button
+                  type="button"
+                  disabled={listPage <= 1}
+                  onClick={() => setListPage((p) => Math.max(1, p - 1))}
+                  className="p-1 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 disabled:opacity-40 disabled:pointer-events-none cursor-pointer transition-colors"
+                  title="Previous lists page"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalListPages }, (_, i) => i + 1)
+                    .filter((p) => {
+                      if (totalListPages <= 5) return true;
+                      return p === 1 || p === totalListPages || Math.abs(p - listPage) <= 1;
+                    })
+                    .map((p, idx, arr) => {
+                      const prev = arr[idx - 1];
+                      const showEllipsis = prev && p - prev > 1;
+                      return (
+                        <React.Fragment key={p}>
+                          {showEllipsis && <span className="text-[10px] text-slate-400 px-0.5 select-none">…</span>}
+                          <button
+                            type="button"
+                            onClick={() => setListPage(p)}
+                            className={`min-w-6 h-6 px-1 rounded-md text-[11px] font-mono font-medium flex items-center justify-center transition-colors cursor-pointer ${
+                              p === listPage
+                                ? 'bg-orange-600 text-white font-bold shadow-2xs'
+                                : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        </React.Fragment>
+                      );
+                    })}
+                </div>
+
+                <button
+                  type="button"
+                  disabled={listPage >= totalListPages}
+                  onClick={() => setListPage((p) => Math.min(totalListPages, p + 1))}
+                  className="p-1 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 disabled:opacity-40 disabled:pointer-events-none cursor-pointer transition-colors"
+                  title="Next lists page"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
         </aside>
 
         {/* Right Pane: Detailed List Content & Leads Table */}
@@ -847,6 +961,7 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
                           }}
                           className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 text-xs font-mono tabular-nums text-slate-900 dark:text-white focus:outline-none focus:border-orange-600 cursor-pointer"
                         >
+                          <option value={10}>10</option>
                           <option value={25}>25</option>
                           <option value={50}>50</option>
                           <option value={100}>100</option>

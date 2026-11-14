@@ -58,7 +58,7 @@ export default function CustomLeadsPage() {
   const [pageSize, setPageSize] = useState(() => {
     try {
       const saved = Number(localStorage.getItem('leadsarrow_custom_leads_page_size'));
-      if ([25, 50, 100].includes(saved)) return saved;
+      if ([10, 25, 50, 100].includes(saved)) return saved;
     } catch (e) {}
     return 25;
   });
@@ -819,6 +819,7 @@ export default function CustomLeadsPage() {
                           }}
                           className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 text-xs font-mono tabular-nums text-slate-900 dark:text-white focus:outline-none focus:border-orange-600 cursor-pointer"
                         >
+                          <option value={10}>10</option>
                           <option value={25}>25</option>
                           <option value={50}>50</option>
                           <option value={100}>100</option>
