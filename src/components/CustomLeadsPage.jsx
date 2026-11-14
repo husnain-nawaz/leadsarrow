@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   Plus,
@@ -16,7 +16,9 @@ import {
   ExternalLink,
   Sparkles,
   AlertCircle,
-  Database
+  Database,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { setAddLeadModalOpen } from '../store/leadsSlice.js';
 import { openAuthModal } from '../store/authSlice.js';
@@ -32,8 +34,32 @@ export default function CustomLeadsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
   const [deletingId, setDeletingId] = useState(null);
   const [feedbackMessage, setFeedbackMessage] = useState(null);
+
+  // Reset page when search changes
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery]);
+
+  const totalLeadsCount = leads.length;
+  const totalPages = Math.max(1, Math.ceil(totalLeadsCount / pageSize));
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
+
+  const paginatedLeads = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return leads.slice(start, start + pageSize);
+  }, [leads, page, pageSize]);
+
+  const startIdx = totalLeadsCount === 0 ? 0 : (page - 1) * pageSize + 1;
+  const endIdx = Math.min(totalLeadsCount, page * pageSize);
 
   const loadCustomLeads = useCallback(async () => {
     if (!userId) {
@@ -312,7 +338,7 @@ export default function CustomLeadsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-sans">
-                  {leads.map((lead) => (
+                  {paginatedLeads.map((lead) => (
                     <tr
                       key={lead.id}
                       className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors"
@@ -416,14 +442,101 @@ export default function CustomLeadsPage() {
               </table>
             </div>
 
-            {/* Table Footer */}
-            <div className="px-4 py-3 bg-slate-50/80 dark:bg-slate-800/60 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-              <div>
-                Showing <span className="font-semibold text-slate-800 dark:text-slate-200">{leads.length}</span> private custom lead{leads.length !== 1 ? 's' : ''} for profile <span className="font-semibold text-slate-800 dark:text-slate-200">{user.email}</span>
+            {/* Table Footer with Pagination Controls */}
+            <div className="px-4 py-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4 text-xs text-slate-600 dark:text-slate-400">
+              <div className="flex items-center gap-3">
+                <span>
+                  Showing <strong className="font-mono tabular-nums text-slate-900 dark:text-white">{startIdx} - {endIdx}</strong> of{' '}
+                  <strong className="font-mono tabular-nums text-slate-900 dark:text-white">{totalLeadsCount}</strong> private custom lead{totalLeadsCount !== 1 ? 's' : ''}
+                </span>
+                <span>·</span>
+                <label className="inline-flex items-center gap-1.5">
+                  <span className="text-slate-500 dark:text-slate-400">Rows:</span>
+                  <select
+                    value={pageSize}
+                    onChange={(e) => {
+                      setPageSize(Number(e.target.value));
+                      setPage(1);
+                    }}
+                    className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 text-xs font-mono tabular-nums text-slate-900 dark:text-white focus:outline-none focus:border-orange-600 cursor-pointer"
+                  >
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
+                </label>
+                <span>·</span>
+                <div className="inline-flex items-center gap-1 text-[11px] text-slate-400">
+                  <Database className="w-3 h-3 text-emerald-500" />
+                  <span>Isolated DB4 Storage</span>
+                </div>
               </div>
-              <div className="flex items-center gap-1 text-[11px] text-slate-400">
-                <Database className="w-3 h-3 text-emerald-500" />
-                <span>Isolated DB4 Storage</span>
+
+              {/* Numbered Pagination & Controls */}
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:pointer-events-none cursor-pointer whitespace-nowrap transition-colors mr-1"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  Previous
+                </button>
+
+                {(() => {
+                  const pages = [];
+                  if (totalPages <= 7) {
+                    for (let i = 1; i <= totalPages; i++) pages.push(i);
+                  } else {
+                    pages.push(1);
+                    if (page > 3) pages.push('...');
+                    const start = Math.max(2, page - 1);
+                    const end = Math.min(totalPages - 1, page + 1);
+                    for (let i = start; i <= end; i++) pages.push(i);
+                    if (page < totalPages - 2) pages.push('....');
+                    pages.push(totalPages);
+                  }
+
+                  return pages.map((p, idx) => {
+                    if (typeof p === 'string') {
+                      return (
+                        <span
+                          key={`ellipsis-${idx}`}
+                          className="min-w-6 h-7 px-1 flex items-center justify-center text-xs text-slate-400 select-none font-mono"
+                        >
+                          ...
+                        </span>
+                      );
+                    }
+
+                    const isActive = p === page;
+                    return (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setPage(p)}
+                        className={`min-w-7 h-7 px-1.5 rounded-md text-xs font-mono font-medium transition-colors cursor-pointer flex items-center justify-center whitespace-nowrap ${
+                          isActive
+                            ? 'bg-orange-600 text-white shadow-xs font-semibold'
+                            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    );
+                  });
+                })()}
+
+                <button
+                  type="button"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:pointer-events-none cursor-pointer whitespace-nowrap transition-colors ml-1"
+                >
+                  Next
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
               </div>
             </div>
           </div>

@@ -20,7 +20,9 @@ import {
   CheckCircle2,
   Layers,
   Database,
-  Eye
+  Eye,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import {
   fetchSavedLists,
@@ -55,6 +57,8 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
   const [leadsLoading, setLeadsLoading] = useState(false);
   const [listSearchQuery, setListSearchQuery] = useState('');
   const [leadSearchQuery, setLeadSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
   const [isCreatingList, setIsCreatingList] = useState(false);
   const [newListName, setNewListName] = useState('');
   const [newListDesc, setNewListDesc] = useState('');
@@ -122,6 +126,30 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
         (lead.industry && lead.industry.toLowerCase().includes(q))
     );
   }, [listLeads, leadSearchQuery]);
+
+  // Reset pagination to page 1 when active list or search query changes
+  useEffect(() => {
+    setPage(1);
+  }, [selectedListId, leadSearchQuery]);
+
+  const totalFilteredLeads = filteredLeads.length;
+  const totalPages = Math.max(1, Math.ceil(totalFilteredLeads / pageSize));
+
+  // Keep page within bounds if count changes
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
+
+  // Sliced leads for current page
+  const paginatedLeads = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredLeads.slice(start, start + pageSize);
+  }, [filteredLeads, page, pageSize]);
+
+  const startIdx = totalFilteredLeads === 0 ? 0 : (page - 1) * pageSize + 1;
+  const endIdx = Math.min(totalFilteredLeads, page * pageSize);
 
   const handleApplyToFinder = (list) => {
     dispatch(
@@ -543,7 +571,7 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                        {filteredLeads.map((lead) => (
+                        {paginatedLeads.map((lead) => (
                           <tr
                             key={lead.id}
                             onClick={() => dispatch(setActiveLead(lead))}
@@ -630,14 +658,100 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
                   </div>
                 )}
 
-                {/* Table Footer */}
+                {/* Table Footer with Pagination & Page Size Controls */}
                 {listLeads.length > 0 && (
-                  <div className="px-4 py-3 bg-slate-50/80 dark:bg-slate-800/60 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                    <div>
-                      Showing <strong className="text-slate-800 dark:text-slate-200">{filteredLeads.length}</strong> of {listLeads.length} leads in list "{selectedList.name}"
+                  <div className="px-4 py-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4 text-xs text-slate-600 dark:text-slate-400">
+                    <div className="flex items-center gap-3">
+                      <span>
+                        Showing <strong className="font-mono tabular-nums text-slate-900 dark:text-white">{startIdx} - {endIdx}</strong> of{' '}
+                        <strong className="font-mono tabular-nums text-slate-900 dark:text-white">{totalFilteredLeads}</strong> leads
+                        {totalFilteredLeads !== listLeads.length && (
+                          <span className="text-slate-400 ml-1">({listLeads.length} total in list)</span>
+                        )}
+                      </span>
+                      <span>·</span>
+                      <label className="inline-flex items-center gap-1.5">
+                        <span className="text-slate-500 dark:text-slate-400">Rows:</span>
+                        <select
+                          value={pageSize}
+                          onChange={(e) => {
+                            setPageSize(Number(e.target.value));
+                            setPage(1);
+                          }}
+                          className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 text-xs font-mono tabular-nums text-slate-900 dark:text-white focus:outline-none focus:border-orange-600 cursor-pointer"
+                        >
+                          <option value={25}>25</option>
+                          <option value={50}>50</option>
+                          <option value={100}>100</option>
+                        </select>
+                      </label>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] text-slate-400">Click any row to view full dossier</span>
+
+                    {/* Numbered Pagination & Controls */}
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        disabled={page <= 1}
+                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:pointer-events-none cursor-pointer whitespace-nowrap transition-colors mr-1"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5" />
+                        Previous
+                      </button>
+
+                      {(() => {
+                        const pages = [];
+                        if (totalPages <= 7) {
+                          for (let i = 1; i <= totalPages; i++) pages.push(i);
+                        } else {
+                          pages.push(1);
+                          if (page > 3) pages.push('...');
+                          const start = Math.max(2, page - 1);
+                          const end = Math.min(totalPages - 1, page + 1);
+                          for (let i = start; i <= end; i++) pages.push(i);
+                          if (page < totalPages - 2) pages.push('....');
+                          pages.push(totalPages);
+                        }
+
+                        return pages.map((p, idx) => {
+                          if (typeof p === 'string') {
+                            return (
+                              <span
+                                key={`ellipsis-${idx}`}
+                                className="min-w-6 h-7 px-1 flex items-center justify-center text-xs text-slate-400 select-none font-mono"
+                              >
+                                ...
+                              </span>
+                            );
+                          }
+
+                          const isActive = p === page;
+                          return (
+                            <button
+                              key={p}
+                              type="button"
+                              onClick={() => setPage(p)}
+                              className={`min-w-7 h-7 px-1.5 rounded-md text-xs font-mono font-medium transition-colors cursor-pointer flex items-center justify-center whitespace-nowrap ${
+                                isActive
+                                  ? 'bg-orange-600 text-white shadow-xs font-semibold'
+                                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                              }`}
+                            >
+                              {p}
+                            </button>
+                          );
+                        });
+                      })()}
+
+                      <button
+                        type="button"
+                        disabled={page >= totalPages}
+                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:pointer-events-none cursor-pointer whitespace-nowrap transition-colors ml-1"
+                      >
+                        Next
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
                 )}
