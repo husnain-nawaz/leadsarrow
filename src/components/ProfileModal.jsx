@@ -38,6 +38,16 @@ export default function ProfileModal({ onOpenFullProfile }) {
 
   const [activeTab, setActiveTab] = useState('general'); // 'general' | 'security'
   const [formSuccess, setFormSuccess] = useState('');
+
+  const getTimeUntilReset = (nextResetAt) => {
+    if (!nextResetAt) return '24h';
+    const diffMs = new Date(nextResetAt).getTime() - Date.now();
+    if (diffMs <= 0) return 'Refilling now...';
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
+  };
   const [formError, setFormError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -492,18 +502,31 @@ export default function ProfileModal({ onOpenFullProfile }) {
                 </div>
               </div>
 
-              {/* Active Plan summary */}
-              <div className="p-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5">
-                  <Zap className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">Current Plan:</span>
-                  <span className="px-2 py-0.5 rounded bg-orange-100 dark:bg-orange-950 text-orange-800 dark:text-orange-300 font-bold text-[11px]">
-                    {user.plan || 'Free Starter'}
+              {/* Active Plan & 24h Quota summary */}
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Zap className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">Current Plan:</span>
+                    <span className="px-2 py-0.5 rounded bg-orange-100 dark:bg-orange-950 text-orange-800 dark:text-orange-300 font-bold text-[11px]">
+                      {user.plan || 'Free Starter'}
+                    </span>
+                  </div>
+                  <span className="text-slate-500 dark:text-slate-400 font-medium text-[11px]">
+                    {user.planId === 'unlimited' ? 'Unlimited Credits' : `${user.creditsRemaining ?? 100} / ${user.dailyCreditsLimit || 100} available`}
                   </span>
                 </div>
-                <span className="text-slate-500 dark:text-slate-400 font-medium text-[11px]">
-                  {user.planId === 'unlimited' ? 'Unlimited Credits' : `${user.creditsRemaining ?? 100} credits available`}
-                </span>
+                {user.planId !== 'unlimited' && (
+                  <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-orange-500" />
+                      <span>24-Hour Daily Refill:</span>
+                    </span>
+                    <span className="text-orange-600 dark:text-orange-400 font-semibold font-mono">
+                      {user.nextCreditResetAt ? `Resets in ${getTimeUntilReset(user.nextCreditResetAt)}` : 'Every 24 Hours'}
+                    </span>
+                  </div>
+                )}
               </div>
             </form>
           )}

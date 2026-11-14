@@ -71,6 +71,9 @@ export class User {
   @Column({ name: 'last_login_at', type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   lastLoginAt: Date;
 
+  @Column({ name: 'last_credit_reset_at', type: 'datetime', nullable: true })
+  lastCreditResetAt?: Date | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 }

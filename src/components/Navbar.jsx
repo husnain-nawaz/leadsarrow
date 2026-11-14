@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { openAuthModal, openSignOutModal, openUpgradeModal, openProfileModal } from '../store/authSlice.js';
 import { setOnlyCustom, resetAllFilters } from '../store/filtersSlice.js';
 import { setSavedListsModalOpen } from '../store/savedListsSlice.js';
-import { Zap, Sparkles, Shield, User as UserIcon, Globe, Sun, Moon, LogOut } from 'lucide-react';
+import { Zap, Sparkles, Shield, User as UserIcon, Globe, Sun, Moon, LogOut, Clock } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext.jsx';
 
 export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
@@ -38,6 +38,16 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
 
   // Clean first name for concise profile button
   const userFirstName = (user?.name || 'User').split(' ')[0];
+
+  const getTimeUntilReset = (nextResetAt) => {
+    if (!nextResetAt) return '24h';
+    const diffMs = new Date(nextResetAt).getTime() - Date.now();
+    if (diffMs <= 0) return 'Refilling now...';
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
+  };
 
   return (
     <header className="relative z-20 flex items-center justify-between gap-3 px-4 lg:px-6 py-2.5 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 transition-colors">
@@ -148,7 +158,11 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
           <>
             {/* Unified Credits & Plan Badge */}
             <div
-              title={`Plan: ${userPlanName} · ${isUnlimited ? 'Unlimited Daily Credits' : `${user.creditsRemaining ?? 100} / ${user.dailyCreditsLimit || 100} daily credits`}`}
+              title={`Plan: ${userPlanName} · ${
+                isUnlimited
+                  ? 'Unlimited Daily Credits (No daily limits)'
+                  : `${user.creditsRemaining ?? 100} / ${user.dailyCreditsLimit || 100} credits available · Full daily refill in ${getTimeUntilReset(user.nextCreditResetAt)} (Refills every 24 hours)`
+              }`}
               className={`px-2.5 py-1 rounded-lg text-xs font-bold border flex items-center gap-1.5 shrink-0 ${
                 isUnlimited
                   ? 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800'
@@ -222,11 +236,22 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
                       </span>
                     </div>
                     {!isUnlimited && (
-                      <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
-                        <span>Credits:</span>
-                        <span className="font-mono font-semibold text-slate-700 dark:text-slate-300">
-                          {user.creditsRemaining ?? 100} / {user.dailyCreditsLimit || 100}
-                        </span>
+                      <div className="space-y-1">
+                        <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                          <span>Daily Credits:</span>
+                          <span className="font-mono font-semibold text-slate-700 dark:text-slate-300">
+                            {user.creditsRemaining ?? 100} / {user.dailyCreditsLimit || 100}
+                          </span>
+                        </div>
+                        <div className="text-[9px] text-slate-400 dark:text-slate-500 flex items-center justify-between">
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-2.5 h-2.5 text-orange-500" />
+                            <span>Refills every 24h:</span>
+                          </span>
+                          <span className="font-semibold text-orange-600 dark:text-orange-400 font-mono">
+                            {user.nextCreditResetAt ? `in ${getTimeUntilReset(user.nextCreditResetAt)}` : 'Daily'}
+                          </span>
+                        </div>
                       </div>
                     )}
                   </div>

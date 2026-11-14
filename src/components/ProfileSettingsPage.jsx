@@ -43,6 +43,16 @@ export default function ProfileSettingsPage({ onBack }) {
   const [generalSuccess, setGeneralSuccess] = useState('');
   const [generalError, setGeneralError] = useState('');
   const [securitySuccess, setSecuritySuccess] = useState('');
+
+  const getTimeUntilReset = (nextResetAt) => {
+    if (!nextResetAt) return '24h';
+    const diffMs = new Date(nextResetAt).getTime() - Date.now();
+    if (diffMs <= 0) return 'Refilling now...';
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
+  };
   const [securityError, setSecurityError] = useState('');
   const [isSubmittingGeneral, setIsSubmittingGeneral] = useState(false);
   const [isSubmittingSecurity, setIsSubmittingSecurity] = useState(false);
@@ -328,13 +338,30 @@ export default function ProfileSettingsPage({ onBack }) {
 
               <div className="p-4 bg-gradient-to-br from-orange-50 to-amber-50/40 dark:from-orange-950/30 dark:to-amber-950/20 border border-orange-200/70 dark:border-orange-800/60 rounded-xl space-y-3">
                 <div className="flex items-baseline justify-between">
-                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Daily Allowance</span>
-                  <span className="text-lg font-extrabold text-orange-700 dark:text-orange-400">
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Daily Quota</span>
+                  <span className="text-lg font-extrabold text-orange-700 dark:text-orange-400 font-mono">
                     {isUnlimited ? 'Unlimited' : `${user.creditsRemaining ?? 100} / ${user.dailyCreditsLimit || 100}`}
                   </span>
                 </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Credits refresh automatically every 24 hours at midnight UTC.
+                {!isUnlimited && (
+                  <div className="w-full bg-orange-200/50 dark:bg-orange-900/40 h-2 rounded-full overflow-hidden">
+                    <div
+                      className="bg-orange-600 dark:bg-orange-500 h-full rounded-full transition-all duration-300"
+                      style={{ width: `${Math.min(100, Math.max(0, (((user.creditsRemaining ?? 100) / (user.dailyCreditsLimit || 100)) * 100)))}%` }}
+                    />
+                  </div>
+                )}
+                <div className="text-[11px] text-slate-600 dark:text-slate-300 flex items-center justify-between pt-1 border-t border-orange-200/60 dark:border-orange-800/50">
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <Clock className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
+                    <span>24h Replenishment:</span>
+                  </span>
+                  <span className="font-bold text-orange-700 dark:text-orange-400 font-mono">
+                    {isUnlimited ? 'Uncapped Daily' : (user.nextCreditResetAt ? `Full refill in ${getTimeUntilReset(user.nextCreditResetAt)}` : 'Every 24 Hours')}
+                  </span>
+                </div>
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Credits refill automatically to full daily capacity ({isUnlimited ? 'Unlimited' : (user.dailyCreditsLimit || 100).toLocaleString()}) every 24 hours, whether you used all credits or none.
                 </div>
               </div>
 

@@ -22,7 +22,8 @@ import {
   optionalAuthMiddleware,
   requireJwtMiddleware,
   requireSuperAdminMiddleware,
-  decrementUserCreditsInDb
+  decrementUserCreditsInDb,
+  runGlobalDailyCreditReplenishmentSweep
 } from './server/auth.ts';
 import { antiScraperProtectionMiddleware } from './server/antiScraper.ts';
 
@@ -34,7 +35,12 @@ async function startServer() {
   try {
     await initDatabaseSchema();
     await ensureSuperAdminSeed();
-    console.log('MySQL B2B_database initialized and Superadmin account secured.');
+    await runGlobalDailyCreditReplenishmentSweep();
+    // Schedule sweep every 15 minutes (900,000 ms)
+    setInterval(() => {
+      runGlobalDailyCreditReplenishmentSweep().catch((e: any) => console.error('[Daily Credit Sweep Error]:', e.message));
+    }, 15 * 60 * 1000);
+    console.log('MySQL B2B_database initialized, Superadmin account secured, and 24h Daily Credit replenishment job active.');
   } catch (err: any) {
     console.error('Failed to initialize MySQL:', err.message);
   }

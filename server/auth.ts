@@ -8,6 +8,84 @@ import { Lead } from './entities/Lead.ts';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'leadsarrow-b2b-enterprise-jwt-secret-key-2026';
 
+export const PLAN_LIMITS: Record<string, { name: string; limit: number; price: number; status: string }> = {
+  free: { name: 'Free Starter', limit: 100, price: 0, status: 'free' },
+  starter: { name: 'Growth Starter', limit: 2000, price: 10, status: 'paid' },
+  pro: { name: 'Scale Pro', limit: 10000, price: 39, status: 'paid' },
+  unlimited: { name: 'Enterprise Unlimited', limit: 999999, price: 79, status: 'paid' }
+};
+
+export async function checkAndReplenishDailyCredits(user: User): Promise<User> {
+  if (!user) return user;
+
+  const now = Date.now();
+  const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
+  const lastResetTime = user.lastCreditResetAt ? new Date(user.lastCreditResetAt).getTime() : 0;
+
+  // If user has never been reset or >= 24 hours have passed since last replenishment
+  if (!lastResetTime || (now - lastResetTime) >= TWENTY_FOUR_HOURS_MS) {
+    const isSuper = Boolean(user.isSuperAdmin || user.role === 'superadmin' || user.email === 'alex@leadsarrow.io' || user.email === 'alex@nexuslead.io');
+    const planKey = (user.planId || 'free').toLowerCase();
+    const defaultLimit = isSuper ? 999999 : (PLAN_LIMITS[planKey]?.limit || 100);
+    const targetLimit = (user.dailyCreditsLimit && user.dailyCreditsLimit > 0) ? user.dailyCreditsLimit : defaultLimit;
+
+    user.creditsRemaining = targetLimit;
+    user.dailyCreditsLimit = targetLimit;
+    user.creditsUsedToday = 0;
+    user.lastCreditResetAt = new Date();
+
+    try {
+      const ds = await getDataSource();
+      const userRepo = ds.getRepository(User);
+      await userRepo.update(user.id, {
+        creditsRemaining: targetLimit,
+        dailyCreditsLimit: targetLimit,
+        creditsUsedToday: 0,
+        lastCreditResetAt: user.lastCreditResetAt
+      });
+      console.log(`[Daily Credit Reset] Replenished 24h daily credits for ${user.email} (${user.plan}): ${targetLimit} credits`);
+    } catch (err: any) {
+      console.error(`[Daily Credit Reset] Error saving reset for ${user.email}:`, err.message);
+    }
+  }
+
+  return user;
+}
+
+export async function runGlobalDailyCreditReplenishmentSweep() {
+  try {
+    const ds = await getDataSource();
+    // 1. Ensure daily_credits_limit is aligned with plan
+    await ds.query(`
+      UPDATE users 
+      SET daily_credits_limit = CASE 
+        WHEN plan_id = 'unlimited' OR is_super_admin = 1 OR role = 'superadmin' THEN 999999
+        WHEN plan_id = 'pro' THEN 10000
+        WHEN plan_id = 'starter' THEN 2000
+        ELSE 100
+      END
+      WHERE daily_credits_limit IS NULL OR daily_credits_limit <= 0;
+    `);
+
+    // 2. Replenish credits_remaining back to daily_credits_limit and reset credits_used_today to 0
+    // for all accounts whose last_credit_reset_at is NULL or older than 24 hours
+    const result = await ds.query(`
+      UPDATE users 
+      SET credits_remaining = daily_credits_limit, 
+          credits_used_today = 0, 
+          last_credit_reset_at = NOW() 
+      WHERE (last_credit_reset_at IS NULL OR last_credit_reset_at <= DATE_SUB(NOW(), INTERVAL 24 HOUR))
+        AND is_deactivated = 0;
+    `);
+
+    if (result && result.affectedRows > 0) {
+      console.log(`[Daily Credit Sweep] Successfully replenished 24h daily credits for ${result.affectedRows} users.`);
+    }
+  } catch (err: any) {
+    console.error('[Daily Credit Sweep] Error running replenishment sweep:', err.message);
+  }
+}
+
 export async function ensureSuperAdminSeed() {
   const ds = await getDataSource();
   const userRepo = ds.getRepository(User);
@@ -31,6 +109,7 @@ export async function ensureSuperAdminSeed() {
       dailyCreditsLimit: 999999,
       creditsUsedToday: 0,
       totalCreditsUsed: 0,
+      lastCreditResetAt: new Date(),
       paymentStatus: 'paid',
       amountPaid: 79.0,
       totalPaid: 79.0,
@@ -79,6 +158,12 @@ export function issueJwtToken(user: any, rememberMe = true) {
 
 export function sanitizeUser(u: any, purchases: any[] = [], logins: any[] = []) {
   const isSuper = Boolean(u.is_super_admin || u.isSuperAdmin || u.role === 'superadmin' || u.email === 'alex@leadsarrow.io' || u.email === 'alex@nexuslead.io');
+  const lastReset = u.last_credit_reset_at || u.lastCreditResetAt;
+  const lastResetDate = lastReset ? new Date(lastReset) : new Date(u.created_at || u.createdAt || Date.now());
+  const nextResetDate = new Date(lastResetDate.getTime() + 24 * 60 * 60 * 1000);
+  const nowMs = Date.now();
+  const secondsUntilReset = Math.max(0, Math.floor((nextResetDate.getTime() - nowMs) / 1000));
+
   return {
     id: u.id,
     name: u.name,
@@ -92,6 +177,9 @@ export function sanitizeUser(u: any, purchases: any[] = [], logins: any[] = []) 
     dailyCreditsLimit: u.daily_credits_limit ?? u.dailyCreditsLimit ?? 100,
     creditsUsedToday: u.credits_used_today ?? u.creditsUsedToday ?? 0,
     totalCreditsUsed: u.total_credits_used ?? u.totalCreditsUsed ?? 0,
+    lastCreditResetAt: lastResetDate.toISOString(),
+    nextCreditResetAt: nextResetDate.toISOString(),
+    secondsUntilReset,
     paymentStatus: u.payment_status || u.paymentStatus || 'free',
     amountPaid: Number(u.amount_paid ?? u.amountPaid ?? 0),
     totalPaid: Number(u.total_paid ?? u.totalPaid ?? 0),
@@ -119,6 +207,9 @@ export async function getUserWithHistory(userId: string) {
     where: [{ id: userId }, { email: userId }]
   });
   if (!user) return null;
+
+  // Replenish daily credits if 24 hours have elapsed
+  await checkAndReplenishDailyCredits(user);
 
   const purchases = await purchaseRepo.find({
     where: { userId: user.id },
@@ -212,6 +303,7 @@ export async function registerJwtUser({ name, email, password, company, remember
     dailyCreditsLimit: 100,
     creditsUsedToday: 0,
     totalCreditsUsed: 0,
+    lastCreditResetAt: new Date(),
     paymentStatus: 'free',
     amountPaid: 0.0,
     totalPaid: 0.0,
@@ -295,6 +387,7 @@ export async function loginOrSyncGoogleUser({ uid, email, displayName, photoURL,
       dailyCreditsLimit: 100,
       creditsUsedToday: 0,
       totalCreditsUsed: 0,
+      lastCreditResetAt: new Date(),
       paymentStatus: 'free',
       amountPaid: 0.0,
       totalPaid: 0.0,
@@ -353,6 +446,8 @@ export async function upgradeUserPlan(userIdOrEmail: string, targetPlanId: strin
     planId: targetPlanId,
     creditsRemaining: spec.credits,
     dailyCreditsLimit: spec.limit,
+    creditsUsedToday: 0,
+    lastCreditResetAt: new Date(),
     paymentStatus: spec.status,
     amountPaid: spec.price,
     totalPaid: newTotalPaid
@@ -397,6 +492,7 @@ export async function verifyJwtTokenAsync(token: string) {
 
     if (user) {
       if (user.isDeactivated) return null;
+      await checkAndReplenishDailyCredits(user);
       return sanitizeUser(user);
     }
     return null;
@@ -452,6 +548,9 @@ export async function decrementUserCreditsInDb(userId: string, amount: number) {
   const userRepo = ds.getRepository(User);
   const user = await userRepo.findOne({ where: [{ id: userId }, { email: userId }] });
   if (!user) return null;
+
+  // Replenish daily credits if 24 hours have elapsed
+  await checkAndReplenishDailyCredits(user);
 
   // Unlimited / superadmin plans do not decrement credits
   if (user.isSuperAdmin || user.role === 'superadmin' || user.planId === 'unlimited' || user.email === 'alex@leadsarrow.io') {
@@ -567,6 +666,7 @@ export async function updateSelfProfile(userId: string, data: { name?: string; c
 }
 
 export async function getAllUsersForAdmin() {
+  await runGlobalDailyCreditReplenishmentSweep().catch(() => {});
   const ds = await getDataSource();
   const userRepo = ds.getRepository(User);
   const purchaseRepo = ds.getRepository(UserPurchase);
@@ -648,10 +748,13 @@ export async function updateUserByAdmin(userId: string, updates: any = {}) {
     if (updates.creditsRemaining === undefined) {
       updatePayload.creditsRemaining = spec.credits;
     }
+    updatePayload.creditsUsedToday = 0;
+    updatePayload.lastCreditResetAt = new Date();
   }
 
   if (updates.creditsRemaining !== undefined) {
     updatePayload.creditsRemaining = Number(updates.creditsRemaining);
+    updatePayload.lastCreditResetAt = new Date();
   }
 
   if (updates.paymentStatus !== undefined) {
