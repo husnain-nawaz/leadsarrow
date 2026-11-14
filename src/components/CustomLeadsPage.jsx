@@ -29,7 +29,8 @@ import {
 import {
   setAddLeadModalOpen,
   toggleSelectLead,
-  selectAllCurrentPageLeads
+  selectAllCurrentPageLeads,
+  clearSelectedLeads
 } from '../store/leadsSlice.js';
 import { openAuthModal, openUpgradeModal } from '../store/authSlice.js';
 import {
@@ -346,8 +347,13 @@ export default function CustomLeadsPage() {
     el.scrollBy({ left: dir === 'left' ? -distance : distance, behavior: 'smooth' });
   };
 
+  // Only selected leads in the currently active cluster can be exported
+  const selectedClusterLeads = useMemo(() => {
+    return leads.filter((l) => selectedLeadIds.includes(l.id));
+  }, [leads, selectedLeadIds]);
+
   const executeCsvDownload = () => {
-    if (!leads.length) return;
+    if (!selectedClusterLeads.length) return;
     const headers = [
       'Cluster / Group',
       'Company Name',
@@ -365,7 +371,7 @@ export default function CustomLeadsPage() {
       'Buying Intent Score'
     ];
 
-    const rows = leads.map((l) => [
+    const rows = selectedClusterLeads.map((l) => [
       l.clusterName || 'General',
       l.companyName,
       l.domain,
@@ -391,16 +397,20 @@ export default function CustomLeadsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `custom_leads_${(selectedCluster || 'cluster').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${Date.now()}.csv`;
+    a.download = `custom_leads_${(selectedCluster || 'cluster').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_selected_${selectedClusterLeads.length}_${Date.now()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
 
-    setFeedbackMessage(`Exported ${leads.length} lead${leads.length === 1 ? '' : 's'} from cluster "${selectedCluster || 'General'}" to CSV.`);
+    setFeedbackMessage(`Exported ${selectedClusterLeads.length} selected lead${selectedClusterLeads.length === 1 ? '' : 's'} from cluster "${selectedCluster || 'General'}" to CSV.`);
     setTimeout(() => setFeedbackMessage(null), 4000);
   };
 
   const handleOpenExportConfirm = () => {
-    if (!leads.length) return;
+    if (selectedClusterLeads.length === 0) {
+      setFeedbackMessage('Please select leads in the table using the checkboxes before exporting.');
+      setTimeout(() => setFeedbackMessage(null), 4000);
+      return;
+    }
     setIsConfirmExportOpen(true);
   };
 
@@ -805,16 +815,28 @@ export default function CustomLeadsPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {leads.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={handleOpenExportConfirm}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer shadow-2xs"
-                    >
-                      <Download className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                      <span>Export CSV ({leads.length})</span>
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={handleOpenExportConfirm}
+                    disabled={selectedClusterLeads.length === 0}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer shadow-2xs ${
+                      selectedClusterLeads.length > 0
+                        ? 'bg-orange-600 hover:bg-orange-700 text-white font-bold shadow-xs active:scale-95'
+                        : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 opacity-60 cursor-not-allowed'
+                    }`}
+                    title={
+                      selectedClusterLeads.length === 0
+                        ? 'Select leads in the table using checkboxes to export'
+                        : `Export ${selectedClusterLeads.length} selected lead(s) to CSV`
+                    }
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>
+                      {selectedClusterLeads.length > 0
+                        ? `Export Selected (${selectedClusterLeads.length})`
+                        : 'Export Selected CSV (0)'}
+                    </span>
+                  </button>
 
                   <button
                     type="button"
@@ -839,6 +861,42 @@ export default function CustomLeadsPage() {
                   </button>
                 </div>
               </div>
+
+              {/* Bulk Selection Notification Bar for Selected Custom Leads */}
+              {selectedClusterLeads.length > 0 && (
+                <div className="bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-900/60 px-4 py-2.5 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs animate-in fade-in duration-150 shadow-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                    <span className="font-semibold text-orange-900 dark:text-orange-200">
+                      {selectedClusterLeads.length} custom lead{selectedClusterLeads.length === 1 ? '' : 's'} selected in "{selectedCluster}"
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleOpenExportConfirm}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-orange-600 text-white hover:bg-orange-700 transition-colors shadow-xs cursor-pointer active:scale-95"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Export Selected CSV ({selectedClusterLeads.length})</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const clusterIdSet = new Set(leads.map((l) => l.id));
+                        const remaining = selectedLeadIds.filter((id) => !clusterIdSet.has(id));
+                        dispatch(clearSelectedLeads());
+                        if (remaining.length > 0) {
+                          dispatch(selectAllCurrentPageLeads(remaining));
+                        }
+                      }}
+                      className="px-2.5 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                    >
+                      Deselect All
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Table / Empty State Container */}
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs flex-1 flex flex-col min-h-[460px] relative transition-all duration-200">
@@ -1215,17 +1273,17 @@ export default function CustomLeadsPage() {
         dangerNote="All custom leads grouped inside this cluster will be permanently deleted."
       />
 
-      {/* Confirmation Modal for Exporting Custom Leads to CSV */}
+      {/* Confirmation Modal for Exporting Selected Custom Leads to CSV */}
       <ConfirmExportModal
         isOpen={isConfirmExportOpen}
         onClose={() => setIsConfirmExportOpen(false)}
         onConfirm={handleConfirmExportCsv}
-        title="Confirm Custom Leads CSV Export"
-        message="Are you sure you want to download and export these custom leads to a CSV spreadsheet?"
-        exportCount={leads.length}
-        targetName={`Cluster "${selectedCluster || 'General'}"`}
+        title="Confirm Selected Leads CSV Export"
+        message={`Are you sure you want to download and export ${selectedClusterLeads.length} selected lead(s) to a CSV spreadsheet?`}
+        exportCount={selectedClusterLeads.length}
+        targetName={`Cluster "${selectedCluster || 'General'}" (${selectedClusterLeads.length} Selected)`}
         creditCost={0}
-        confirmText="Yes, Download CSV"
+        confirmText={`Yes, Download ${selectedClusterLeads.length} Selected Leads (CSV)`}
       />
 
       {/* Modal: Create New Custom Cluster */}

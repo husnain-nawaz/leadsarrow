@@ -536,25 +536,26 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
     URL.revokeObjectURL(url);
   };
 
+  const selectedListLeads = useMemo(() => {
+    return listLeads.filter((l) => selectedInListIds.includes(l.id));
+  }, [listLeads, selectedInListIds]);
+
   const handleExportListCsv = () => {
-    if (!listLeads.length) return;
+    if (selectedListLeads.length === 0) {
+      setFeedback('Please select leads in this list using the checkboxes before exporting.');
+      setTimeout(() => setFeedback(null), 4000);
+      return;
+    }
     setExportConfirmTarget({
-      leads: listLeads,
-      filename: `saved_list_${(selectedList?.name || 'export').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${Date.now()}.csv`,
-      count: listLeads.length,
-      targetName: selectedList?.name ? `Saved List "${selectedList.name}"` : 'Saved List'
+      leads: selectedListLeads,
+      filename: `saved_list_${(selectedList?.name || 'export').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_selected_${selectedListLeads.length}_${Date.now()}.csv`,
+      count: selectedListLeads.length,
+      targetName: `${selectedListLeads.length} Selected Leads from "${selectedList?.name || 'Saved List'}"`
     });
   };
 
   const handleExportSelectedCsv = () => {
-    const selectedLeads = listLeads.filter((l) => selectedInListIds.includes(l.id));
-    if (!selectedLeads.length) return;
-    setExportConfirmTarget({
-      leads: selectedLeads,
-      filename: `saved_list_${(selectedList?.name || 'export').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_selected_${Date.now()}.csv`,
-      count: selectedLeads.length,
-      targetName: `${selectedLeads.length} Selected Leads from "${selectedList?.name || 'Saved List'}"`
-    });
+    handleExportListCsv();
   };
 
   const handleConfirmExportCsv = () => {
@@ -964,10 +965,24 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
                       <button
                         type="button"
                         onClick={handleExportListCsv}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer shadow-2xs"
+                        disabled={selectedListLeads.length === 0}
+                        className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg transition-colors shadow-2xs cursor-pointer ${
+                          selectedListLeads.length > 0
+                            ? 'bg-orange-600 hover:bg-orange-700 text-white font-bold shadow-xs active:scale-95'
+                            : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 opacity-60 cursor-not-allowed'
+                        }`}
+                        title={
+                          selectedListLeads.length === 0
+                            ? 'Select leads in this list using checkboxes to export'
+                            : `Export ${selectedListLeads.length} selected lead(s) to CSV`
+                        }
                       >
-                        <Download className="w-3.5 h-3.5 text-slate-500" />
-                        <span>Export CSV</span>
+                        <Download className="w-3.5 h-3.5" />
+                        <span>
+                          {selectedListLeads.length > 0
+                            ? `Export Selected CSV (${selectedListLeads.length})`
+                            : 'Export Selected CSV (0)'}
+                        </span>
                       </button>
                     )}
 
@@ -1052,10 +1067,10 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
                     <button
                       type="button"
                       onClick={handleExportSelectedCsv}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-2xs cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-orange-600 text-white hover:bg-orange-700 transition-colors shadow-xs cursor-pointer active:scale-95"
                     >
                       <Download className="w-3.5 h-3.5" />
-                      <span>Export Selected ({selectedInListIds.length})</span>
+                      <span>Export Selected CSV ({selectedInListIds.length})</span>
                     </button>
                     <button
                       type="button"
