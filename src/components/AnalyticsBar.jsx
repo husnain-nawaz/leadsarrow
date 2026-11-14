@@ -28,9 +28,10 @@ const QUICK_SEGMENTS = [
   },
   {
     id: 'very_recent',
-    name: '✨ New Leads',
+    name: '✨ High Intent Verified',
     filters: {
-      onlyCustom: true
+      minIntentScore: 90,
+      hasVerifiedEmail: true
     }
   },
   {
@@ -143,24 +144,6 @@ export default function AnalyticsBar() {
             <Bookmark className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
             Save / Load List
           </button>
-
-          {/* Custom Lead Creation Button: ONLY available in Custom Leads view (Private to user profile). Core leads (10M+) cannot be modified */}
-          {filters.onlyCustom && (
-            <button
-              type="button"
-              onClick={() => {
-                if (!user) {
-                  dispatch(openAuthModal('login'));
-                  return;
-                }
-                dispatch(setAddLeadModalOpen(true));
-              }}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer shadow-xs"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Add Custom Lead
-            </button>
-          )}
 
           <button
             type="button"

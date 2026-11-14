@@ -26,6 +26,7 @@ import PlanUpgradeModal from './components/PlanUpgradeModal.jsx';
 import SuperadminPanel from './components/SuperadminPanel.jsx';
 import ProfileModal from './components/ProfileModal.jsx';
 import ProfileSettingsPage from './components/ProfileSettingsPage.jsx';
+import CustomLeadsPage from './components/CustomLeadsPage.jsx';
 import SignOutModal from './components/SignOutModal.jsx';
 import { ThemeProvider } from './context/ThemeContext.jsx';
 
@@ -148,6 +149,10 @@ function WorkspaceContent({ activeView, setActiveView, onToggleLanding }) {
       ) : activeView === 'profile' ? (
         <main className="flex-1">
           <ProfileSettingsPage onBack={() => setActiveView('finder')} />
+        </main>
+      ) : activeView === 'custom' ? (
+        <main className="flex-1 flex flex-col min-w-0">
+          <CustomLeadsPage />
         </main>
       ) : activeView === 'superadmin' ? (
         isSuperAdmin ? (

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LeadsArrow B2B Intelligence — Global Business & Lead Database</title>
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('leadsarrow_theme') || localStorage.getItem('leadsarrow_landing_theme');
+          var theme = (saved === 'light' || saved === 'dark') ? saved : 'dark';
+          if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+            document.documentElement.setAttribute('data-theme', 'dark');
+            document.documentElement.style.backgroundColor = '#0f172a';
+            document.documentElement.style.color = '#f8fafc';
+          } else {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.setAttribute('data-theme', 'light');
+            document.documentElement.style.backgroundColor = '#f8fafc';
+            document.documentElement.style.color = '#0f172a';
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <meta name="description" content="Enterprise B2B lead discovery and company intelligence database with multi-dimensional filtering, Redux state management, JWT security, and Google authentication." />
+    <meta property="og:title" content="LeadsArrow B2B Intelligence — Global Business & Lead Database" />
+    <meta property="og:description" content="Enterprise B2B lead discovery and company intelligence database with multi-dimensional filtering, Redux state management, JWT security, and Google authentication." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script type="module" crossorigin src="/assets/index-CX1tYVMV.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CfGMOaNq.css">
+  </head>
+  <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased selection:bg-orange-600 selection:text-white">
+    <div id="root"></div>
+  </body>
+</html>

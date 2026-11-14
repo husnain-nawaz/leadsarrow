@@ -821,7 +821,7 @@ async function queryLeadsDatabase(params = {}, userId) {
           totalCatalogRows: 0,
           totalPages: 1,
           estimatedGlobalMatches: 0,
-          totalDatabaseRecords: globals.totalDatabaseRecords
+          totalDatabaseRecords: 0
         },
         metrics: {
           verifiedRatio: 100,
@@ -836,8 +836,8 @@ async function queryLeadsDatabase(params = {}, userId) {
       let whereClause = "WHERE user_id = ?";
       const sqlParams = [userId];
       if (searchLower) {
-        whereClause += " AND (company_name LIKE ? OR contact_name LIKE ? OR domain LIKE ?)";
-        sqlParams.push(`%${searchLower}%`, `%${searchLower}%`, `%${searchLower}%`);
+        whereClause += " AND (company_name LIKE ? OR contact_name LIKE ? OR domain LIKE ? OR contact_email LIKE ?)";
+        sqlParams.push(`%${searchLower}%`, `%${searchLower}%`, `%${searchLower}%`, `%${searchLower}%`);
       }
       if (indArr.length > 0) {
         whereClause += ` AND industry IN (${indArr.map(() => "?").join(",")})`;
@@ -865,7 +865,7 @@ async function queryLeadsDatabase(params = {}, userId) {
           totalCatalogRows: totalMatches2,
           totalPages: Math.max(1, Math.ceil(totalMatches2 / safePageSize)),
           estimatedGlobalMatches: totalMatches2,
-          totalDatabaseRecords: globals.totalDatabaseRecords
+          totalDatabaseRecords: totalMatches2
         },
         metrics: {
           verifiedRatio: 100,
@@ -884,7 +884,7 @@ async function queryLeadsDatabase(params = {}, userId) {
           totalCatalogRows: 0,
           totalPages: 1,
           estimatedGlobalMatches: 0,
-          totalDatabaseRecords: globals.totalDatabaseRecords
+          totalDatabaseRecords: 0
         },
         metrics: { verifiedRatio: 100, avgIntentScore: 88, activeFiltersCount: 1 },
         facets: {}
@@ -988,10 +988,6 @@ async function queryLeadsDatabase(params = {}, userId) {
   }
   if (String(hasDirectPhone) === "true") {
     qb.andWhere("lead.has_direct_phone = 1");
-    hasWhere = true;
-  }
-  if (onlyCustom) {
-    qb.andWhere("lead.is_custom = 1");
     hasWhere = true;
   }
   const savedIdsArr = parseArrayParam(savedListLeadIds);
@@ -2498,6 +2494,70 @@ async function startServer() {
     } catch (err) {
       console.error("Error fetching leads by IDs:", err);
       res.status(500).json({ error: "Failed to fetch leads by IDs" });
+    }
+  });
+  app.get("/api/leads/custom", requireJwtMiddleware, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required to view your custom leads." });
+      }
+      const q = String(req.query.q || "").trim();
+      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
+      let whereClause = "WHERE user_id = ?";
+      const sqlParams = [userId];
+      if (q) {
+        whereClause += " AND (company_name LIKE ? OR contact_name LIKE ? OR domain LIKE ? OR contact_email LIKE ?)";
+        sqlParams.push(`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`);
+      }
+      const countRows = await ds.query(
+        `SELECT COUNT(*) as total FROM custom_leads ${whereClause}`,
+        sqlParams
+      );
+      const total = Number(countRows[0]?.total || 0);
+      const rawRows = await ds.query(
+        `SELECT * FROM custom_leads ${whereClause} ORDER BY created_at DESC`,
+        sqlParams
+      );
+      const leads = (rawRows || []).map((row) => ({
+        id: row.id,
+        companyName: row.company_name,
+        domain: row.domain,
+        industry: row.industry,
+        employeeRange: row.employee_range,
+        employeeCount: Number(row.employee_count) || 120,
+        revenueRange: row.revenue_range,
+        annualRevenueUsd: Number(row.annual_revenue_usd) || 24e6,
+        country: row.country,
+        city: row.city,
+        contactName: row.contact_name,
+        contactTitle: row.contact_title,
+        seniority: row.seniority,
+        department: row.department,
+        contactEmail: row.contact_email,
+        contactPhone: row.contact_phone,
+        linkedinUrl: row.linkedin_url || "",
+        verificationStatus: row.verification_status || "Verified",
+        fundingStage: row.funding_stage || "Series B",
+        buyingIntentScore: Number(row.buying_intent_score) || 88,
+        foundedYear: Number(row.founded_year) || 2021,
+        hasDirectPhone: Boolean(row.has_direct_phone),
+        isCustom: true,
+        source: row.source || "manual_custom_lead",
+        createdAt: row.created_at ? new Date(row.created_at).toISOString() : (/* @__PURE__ */ new Date()).toISOString()
+      }));
+      res.json({
+        leads,
+        total,
+        owner: {
+          id: req.user.id,
+          name: req.user.name,
+          email: req.user.email
+        }
+      });
+    } catch (err) {
+      console.error("Failed to fetch private custom leads:", err);
+      res.status(500).json({ error: err.message || "Failed to fetch custom leads" });
     }
   });
   app.post("/api/leads/custom", requireJwtMiddleware, async (req, res) => {

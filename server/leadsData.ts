@@ -308,7 +308,7 @@ export async function queryLeadsDatabase(params: any = {}, userId?: string | nul
           totalCatalogRows: 0,
           totalPages: 1,
           estimatedGlobalMatches: 0,
-          totalDatabaseRecords: globals.totalDatabaseRecords
+          totalDatabaseRecords: 0
         },
         metrics: {
           verifiedRatio: 100,
@@ -325,8 +325,8 @@ export async function queryLeadsDatabase(params: any = {}, userId?: string | nul
       const sqlParams: any[] = [userId];
 
       if (searchLower) {
-        whereClause += ' AND (company_name LIKE ? OR contact_name LIKE ? OR domain LIKE ?)';
-        sqlParams.push(`%${searchLower}%`, `%${searchLower}%`, `%${searchLower}%`);
+        whereClause += ' AND (company_name LIKE ? OR contact_name LIKE ? OR domain LIKE ? OR contact_email LIKE ?)';
+        sqlParams.push(`%${searchLower}%`, `%${searchLower}%`, `%${searchLower}%`, `%${searchLower}%`);
       }
       if (indArr.length > 0) {
         whereClause += ` AND industry IN (${indArr.map(() => '?').join(',')})`;
@@ -358,7 +358,7 @@ export async function queryLeadsDatabase(params: any = {}, userId?: string | nul
           totalCatalogRows: totalMatches,
           totalPages: Math.max(1, Math.ceil(totalMatches / safePageSize)),
           estimatedGlobalMatches: totalMatches,
-          totalDatabaseRecords: globals.totalDatabaseRecords
+          totalDatabaseRecords: totalMatches
         },
         metrics: {
           verifiedRatio: 100,
@@ -379,7 +379,7 @@ export async function queryLeadsDatabase(params: any = {}, userId?: string | nul
           totalCatalogRows: 0,
           totalPages: 1,
           estimatedGlobalMatches: 0,
-          totalDatabaseRecords: globals.totalDatabaseRecords
+          totalDatabaseRecords: 0
         },
         metrics: { verifiedRatio: 100, avgIntentScore: 88, activeFiltersCount: 1 },
         facets: {}
@@ -479,11 +479,6 @@ export async function queryLeadsDatabase(params: any = {}, userId?: string | nul
 
   if (String(hasDirectPhone) === 'true') {
     qb.andWhere('lead.has_direct_phone = 1');
-    hasWhere = true;
-  }
-
-  if (onlyCustom) {
-    qb.andWhere('lead.is_custom = 1');
     hasWhere = true;
   }
 

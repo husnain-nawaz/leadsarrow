@@ -22,8 +22,7 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
     } else if (viewKey === 'lists') {
       dispatch(setSavedListsModalOpen(true));
     } else if (viewKey === 'custom') {
-      setActiveView('finder');
-      dispatch(setOnlyCustom(true));
+      setActiveView('custom');
     } else if (viewKey === 'schema') {
       setActiveView('schema');
     } else if (viewKey === 'superadmin') {
@@ -62,7 +61,7 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
             type="button"
             onClick={() => handleNavClick('finder')}
             className={`transition-colors whitespace-nowrap shrink-0 cursor-pointer pb-0.5 ${
-              activeView === 'finder' && !onlyCustom
+              activeView === 'finder'
                 ? 'text-slate-900 dark:text-white border-b-2 border-orange-600 font-bold'
                 : 'hover:text-slate-900 dark:hover:text-white'
             }`}
@@ -80,7 +79,7 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
             type="button"
             onClick={() => handleNavClick('custom')}
             className={`transition-colors whitespace-nowrap shrink-0 cursor-pointer pb-0.5 ${
-              activeView === 'finder' && onlyCustom
+              activeView === 'custom'
                 ? 'text-slate-900 dark:text-white border-b-2 border-orange-600 font-bold'
                 : 'hover:text-slate-900 dark:hover:text-white'
             }`}

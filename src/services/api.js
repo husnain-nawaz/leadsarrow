@@ -186,6 +186,12 @@ export async function revealLeadContactApi(leadId) {
   });
 }
 
+export async function fetchCustomLeadsFromServerApi(searchQuery = '') {
+  const query = new URLSearchParams();
+  if (searchQuery) query.set('q', searchQuery);
+  return apiRequest(`/api/leads/custom?${query.toString()}`);
+}
+
 export async function createCustomLeadOnServerApi(payload) {
   return apiRequest('/api/leads/custom', {
     method: 'POST',
