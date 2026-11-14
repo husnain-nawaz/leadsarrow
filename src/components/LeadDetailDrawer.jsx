@@ -27,7 +27,19 @@ export default function LeadDetailDrawer() {
 
   if (!activeLead) return null;
 
-  const isRevealed = revealedLeadIds.includes(activeLead.id);
+  // Determine if lead contact data is already revealed (e.g. unmasked email, in saved list, custom lead, or revealed)
+  const isAlreadyPlaintext = Boolean(
+    activeLead.contactEmail &&
+    !activeLead.contactEmail.includes('*') &&
+    activeLead.contactEmail.includes('@')
+  );
+
+  const isRevealed =
+    isAlreadyPlaintext ||
+    Boolean(activeLead.isRevealed) ||
+    Boolean(activeLead.isCustom) ||
+    Boolean(activeLead.isSaved || activeLead.listId || activeLead.savedInList) ||
+    revealedLeadIds.includes(activeLead.id);
 
   const handleCopy = (value, key) => {
     navigator.clipboard.writeText(value);

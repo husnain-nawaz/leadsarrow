@@ -478,12 +478,36 @@ export default function CustomLeadsPage() {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">
-                    {clusters.length} {clusters.length === 1 ? 'Cluster' : 'Clusters'}
-                  </span>
-                  <span>·</span>
-                  <span>{totalAllClusterLeads} Total Private Leads</span>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">
+                      {clusters.length} {clusters.length === 1 ? 'Cluster' : 'Clusters'}
+                    </span>
+                    <span>·</span>
+                    <span>{totalAllClusterLeads} Total Private Leads</span>
+                  </div>
+
+                  {/* Clean Header Navigation Arrows - Never overlapping any cards */}
+                  <div className="flex items-center gap-1 pl-2.5 border-l border-slate-200 dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => handleScrollClusters('left')}
+                      disabled={!canScrollLeft}
+                      className="p-1 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                      title="Scroll left"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleScrollClusters('right')}
+                      disabled={!canScrollRight}
+                      className="p-1 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                      title="Scroll right"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -545,32 +569,11 @@ export default function CustomLeadsPage() {
                   </div>
                 </div>
 
-                {/* SCROLLABLE TRACK FOR CLUSTERS */}
+                {/* SCROLLABLE TRACK FOR CLUSTERS WITH THEMED SCROLLBAR */}
                 <div className="relative flex-1 min-w-0 flex items-stretch">
-                  {canScrollLeft && (
-                    <button
-                      type="button"
-                      onClick={() => handleScrollClusters('left')}
-                      className="absolute -left-2 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-md flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-orange-50 dark:hover:bg-slate-700 cursor-pointer"
-                      title="Scroll left"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                  )}
-                  {canScrollRight && (
-                    <button
-                      type="button"
-                      onClick={() => handleScrollClusters('right')}
-                      className="absolute -right-2 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-md flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-orange-50 dark:hover:bg-slate-700 cursor-pointer"
-                      title="Scroll right"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  )}
-
                   <div
                     ref={clustersScrollRef}
-                    className="flex items-stretch gap-3.5 overflow-x-auto scroll-smooth py-1 px-1 scrollbar-thin flex-1"
+                    className="flex items-stretch gap-3.5 overflow-x-auto scroll-smooth py-2 px-1 cluster-horizontal-scrollbar flex-1"
                   >
                     {displayedClusters.map((cluster) => {
                       const isSelected = selectedCluster === cluster.name;
@@ -635,21 +638,44 @@ export default function CustomLeadsPage() {
                       );
                     })}
 
-                    {/* Load Next 5 Clusters Card */}
+                    {/* Modern "Load Next Clusters" Action Card with Actual Modern Button */}
                     {hasMoreClusters && (
                       <div
                         onClick={() => setClusterDisplayLimit((prev) => prev + 5)}
-                        className="shrink-0 w-64 p-4 rounded-xl border-2 border-dashed border-orange-300 dark:border-orange-800/80 bg-orange-50/40 dark:bg-orange-950/20 hover:bg-orange-100/60 dark:hover:bg-orange-900/40 transition-all cursor-pointer flex flex-col items-center justify-center text-center group min-h-[155px]"
+                        className="shrink-0 w-64 p-4 rounded-xl bg-gradient-to-b from-orange-500/[0.08] via-amber-500/[0.04] to-white dark:to-slate-900 border border-orange-400/40 dark:border-orange-500/30 hover:border-orange-500 dark:hover:border-orange-400 shadow-xs hover:shadow-lg hover:shadow-orange-500/10 transition-all duration-200 cursor-pointer flex flex-col justify-between items-center text-center group min-h-[155px]"
                       >
-                        <div className="w-9 h-9 rounded-xl bg-orange-100 dark:bg-orange-900/60 text-orange-600 dark:text-orange-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                          <Plus className="w-4 h-4 font-bold" />
+                        {/* Top: Pill Badge */}
+                        <div className="w-full flex items-center justify-between">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-100/90 dark:bg-orange-950/80 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800/60">
+                            <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+                            <span>{remainingClustersCount} Remaining</span>
+                          </span>
+
+                          <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">
+                            +{Math.min(5, remainingClustersCount)}
+                          </span>
                         </div>
-                        <span className="font-bold text-xs text-orange-700 dark:text-orange-300 group-hover:underline">
-                          + Load Next 5 Clusters
-                        </span>
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
-                          {Math.min(5, remainingClustersCount)} more ({remainingClustersCount} remaining)
-                        </span>
+
+                        {/* Center: Modern Action Button */}
+                        <div className="w-full my-1.5">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setClusterDisplayLimit((prev) => prev + 5);
+                            }}
+                            className="w-full py-2.5 px-3.5 rounded-xl bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-xs shadow-md shadow-orange-500/20 group-hover:shadow-orange-500/35 group-hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                          >
+                            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                            <span>Load Next 5 Clusters</span>
+                            <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform stroke-[2.5]" />
+                          </button>
+                        </div>
+
+                        {/* Bottom: Subtitle text */}
+                        <div className="w-full pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-center text-[10px] text-slate-500 dark:text-slate-400">
+                          <span>Reveals next {Math.min(5, remainingClustersCount)} clusters in row</span>
+                        </div>
                       </div>
                     )}
 
