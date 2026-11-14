@@ -255,6 +255,13 @@ export async function removeLeadFromSavedListOnServerApi(listId, leadId) {
   });
 }
 
+export async function removeLeadsBatchFromSavedListOnServerApi(listId, leadIds) {
+  return apiRequest(`/api/lists/${encodeURIComponent(listId)}/leads`, {
+    method: 'DELETE',
+    body: JSON.stringify({ leadIds })
+  });
+}
+
 // Superadmin API functions
 export async function fetchAdminUsersApi() {
   return apiRequest('/api/admin/users');

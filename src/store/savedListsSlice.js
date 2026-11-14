@@ -4,7 +4,8 @@ import {
   createSavedListOnServerApi,
   deleteSavedListOnServerApi,
   addLeadsToSavedListOnServerApi,
-  removeLeadFromSavedListOnServerApi
+  removeLeadFromSavedListOnServerApi,
+  removeLeadsBatchFromSavedListOnServerApi
 } from '../services/api.js';
 import {
   saveLeadListToFirestore,
@@ -125,6 +126,37 @@ export const removeLeadFromSavedList = createAsyncThunk(
   }
 );
 
+export const removeBatchLeadsFromSavedList = createAsyncThunk(
+  'savedLists/removeBatchLeadsFromSavedList',
+  async ({ listId, leadIds }, { getState, rejectWithValue }) => {
+    try {
+      const response = await removeLeadsBatchFromSavedListOnServerApi(listId, leadIds);
+
+      // Also sync to Firestore if signed in
+      try {
+        const state = getState();
+        const existing = [...state.savedLists.firestoreLists, ...state.savedLists.lists].find((l) => l.id === listId);
+        if (existing) {
+          const removeSet = new Set(leadIds.map((id) => String(id)));
+          const updatedIds = (existing.leadIds || []).filter((id) => !removeSet.has(String(id)));
+          await saveLeadListToFirestore({
+            ...existing,
+            id: listId,
+            leadIds: updatedIds,
+            leadCount: updatedIds.length
+          });
+        }
+      } catch (e) {
+        console.warn('Firestore batch remove leads sync skipped:', e);
+      }
+
+      return response.list;
+    } catch (error) {
+      return rejectWithValue(error.message || 'Failed to remove leads from list');
+    }
+  }
+);
+
 export const removeSavedList = createAsyncThunk(
   'savedLists/removeSavedList',
   async (listId, { rejectWithValue }) => {
@@ -213,6 +245,18 @@ const savedListsSlice = createSlice({
         }
       })
       .addCase(removeLeadFromSavedList.fulfilled, (state, action) => {
+        const updated = action.payload;
+        if (!updated) return;
+        const idx = state.lists.findIndex((l) => l.id === updated.id);
+        if (idx >= 0) {
+          state.lists[idx] = { ...state.lists[idx], ...updated };
+        }
+        const fsIdx = state.firestoreLists.findIndex((l) => l.id === updated.id);
+        if (fsIdx >= 0) {
+          state.firestoreLists[fsIdx] = { ...state.firestoreLists[fsIdx], ...updated };
+        }
+      })
+      .addCase(removeBatchLeadsFromSavedList.fulfilled, (state, action) => {
         const updated = action.payload;
         if (!updated) return;
         const idx = state.lists.findIndex((l) => l.id === updated.id);

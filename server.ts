@@ -1178,6 +1178,64 @@ async function startServer() {
     }
   });
 
+  // --- REMOVE MULTIPLE LEADS IN BATCH FROM A SAVED LIST ---
+  app.delete('/api/lists/:id/leads', async (req: any, res) => {
+    try {
+      const listId = req.params.id;
+      const body = req.body || {};
+      const leadIdsToRemove: string[] = Array.isArray(body.leadIds)
+        ? body.leadIds.map((id: any) => String(id))
+        : [];
+
+      if (!leadIdsToRemove.length) {
+        return res.status(400).json({ error: 'No lead IDs provided to remove.' });
+      }
+
+      const ds = await (await import('./server/dataSource.ts')).getDataSource();
+      const listRepo = ds.getRepository((await import('./server/entities/SavedList.ts')).SavedList);
+
+      let list = await listRepo.findOne({ where: { id: listId } });
+      if (!list) {
+        return res.status(404).json({ error: 'Saved list not found' });
+      }
+
+      const removeSet = new Set(leadIdsToRemove);
+      const existingIds: string[] = Array.isArray(list.leadIds)
+        ? list.leadIds
+        : (typeof list.leadIds === 'string' ? JSON.parse(list.leadIds || '[]') : []);
+
+      const updatedIds = existingIds.filter((id) => !removeSet.has(String(id)));
+
+      list.leadIds = updatedIds;
+      list.leadCount = updatedIds.length;
+
+      const saved = await listRepo.save(list);
+
+      await ds.query(
+        'UPDATE saved_lists SET lead_ids = ?, lead_count = ?, updated_at = NOW() WHERE id = ?',
+        [JSON.stringify(updatedIds), updatedIds.length, listId]
+      ).catch(() => {});
+
+      res.json({
+        success: true,
+        removedCount: existingIds.length - updatedIds.length,
+        list: {
+          id: saved.id,
+          name: saved.name,
+          description: saved.description,
+          leadIds: saved.leadIds || [],
+          filterSummary: saved.filterSummary,
+          leadCount: saved.leadCount,
+          createdAt: saved.createdAt,
+          updatedAt: saved.updatedAt
+        }
+      });
+    } catch (err: any) {
+      console.error('Failed to batch remove leads from list:', err);
+      res.status(500).json({ error: err.message || 'Failed to remove leads from list' });
+    }
+  });
+
   // --- REMOVE A SINGLE LEAD FROM A SAVED LIST ---
   app.delete('/api/lists/:id/leads/:leadId', async (req: any, res) => {
     try {
