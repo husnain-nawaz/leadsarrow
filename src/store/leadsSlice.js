@@ -145,6 +145,7 @@ const initialState = {
   activeLead: null,
   isAddLeadModalOpen: false,
   isExportModalOpen: false,
+  customLeadsVersion: 0,
   loading: false,
   error: null
 };
@@ -235,11 +236,13 @@ const leadsSlice = createSlice({
       })
       .addCase(addCustomLead.fulfilled, (state) => {
         state.isAddLeadModalOpen = false;
+        state.customLeadsVersion += 1;
       })
       .addCase(deleteCustomLead.fulfilled, (state, action) => {
         const deletedId = action.payload;
         state.items = state.items.filter((i) => i.id !== deletedId);
         state.firestoreCustomLeads = state.firestoreCustomLeads.filter((i) => i.id !== deletedId);
+        state.customLeadsVersion += 1;
         if (state.activeLead?.id === deletedId) {
           state.activeLead = null;
         }

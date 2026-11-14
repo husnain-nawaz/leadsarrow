@@ -25,7 +25,8 @@ import { fetchCustomLeadsFromServerApi, deleteCustomLeadOnServerApi } from '../s
 export default function CustomLeadsPage() {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  const { isAddLeadModalOpen } = useSelector((state) => state.leads);
+  const userId = user?.id || null;
+  const customLeadsVersion = useSelector((state) => state.leads.customLeadsVersion);
 
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -35,7 +36,7 @@ export default function CustomLeadsPage() {
   const [feedbackMessage, setFeedbackMessage] = useState(null);
 
   const loadCustomLeads = useCallback(async () => {
-    if (!user) {
+    if (!userId) {
       setLeads([]);
       return;
     }
@@ -50,18 +51,12 @@ export default function CustomLeadsPage() {
     } finally {
       setLoading(false);
     }
-  }, [user, searchQuery]);
+  }, [userId, searchQuery]);
 
+  // Only refresh on mount, when search query changes, or when custom leads are actually added/deleted
   useEffect(() => {
     loadCustomLeads();
-  }, [loadCustomLeads]);
-
-  // Reload when AddLeadModal closes (e.g. after adding a lead)
-  useEffect(() => {
-    if (!isAddLeadModalOpen) {
-      loadCustomLeads();
-    }
-  }, [isAddLeadModalOpen, loadCustomLeads]);
+  }, [userId, searchQuery, customLeadsVersion]);
 
   const handleDelete = async (leadId, companyName) => {
     if (!window.confirm(`Are you sure you want to delete custom lead "${companyName}" from your private workspace?`)) {
