@@ -25,7 +25,6 @@ export default function AddLeadModal() {
     contactPhone: '+1 (415) 890-4321',
     verificationStatus: 'Verified',
     fundingStage: 'Series B',
-    techStack: 'AWS, Snowflake, React',
     buyingIntentScore: 88
   });
 
@@ -172,6 +171,17 @@ export default function AddLeadModal() {
             </div>
 
             <div>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">HQ City / State</label>
+              <input
+                type="text"
+                value={form.city}
+                onChange={(e) => handleChange('city', e.target.value)}
+                placeholder="e.g. San Francisco, CA"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:bg-white dark:focus:bg-slate-800 focus:border-orange-600"
+              />
+            </div>
+
+            <div>
               <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Decision Maker Name *</label>
               <input
                 type="text"
@@ -214,19 +224,6 @@ export default function AddLeadModal() {
                 value={form.contactPhone}
                 onChange={(e) => handleChange('contactPhone', e.target.value)}
                 placeholder="+1 (415) 555-0142"
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:bg-white dark:focus:bg-slate-800 focus:border-orange-600"
-              />
-            </div>
-
-            <div className="sm:col-span-2">
-              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Installed Technologies (comma-separated)
-              </label>
-              <input
-                type="text"
-                value={form.techStack}
-                onChange={(e) => handleChange('techStack', e.target.value)}
-                placeholder="AWS, Snowflake, Salesforce, Kubernetes"
                 className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:bg-white dark:focus:bg-slate-800 focus:border-orange-600"
               />
             </div>

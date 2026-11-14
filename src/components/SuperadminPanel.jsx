@@ -85,8 +85,7 @@ export default function SuperadminPanel({ onBack }) {
     employeeRange: '201-500',
     revenueRange: '$10M - $50M',
     fundingStage: 'Series B',
-    buyingIntentScore: 88,
-    techStack: 'AWS, Salesforce, React'
+    buyingIntentScore: 88
   });
 
   const [csvRawText, setCsvRawText] = useState('');
@@ -271,7 +270,6 @@ export default function SuperadminPanel({ onBack }) {
         ...manualForm,
         employeeCount: Number(manualForm.employeeCount) || 150,
         buyingIntentScore: Number(manualForm.buyingIntentScore) || 85,
-        techStack: manualForm.techStack.split(',').map((s) => s.trim()).filter(Boolean),
         source: 'manual_superadmin'
       };
       await batchIngestLeadsApi({ leads: [newLead], source: 'manual_entry' });
@@ -291,8 +289,7 @@ export default function SuperadminPanel({ onBack }) {
         employeeRange: '201-500',
         revenueRange: '$10M - $50M',
         fundingStage: 'Series B',
-        buyingIntentScore: 88,
-        techStack: 'AWS, Salesforce, React'
+        buyingIntentScore: 88
       });
       loadAdminData();
     } catch (err) {
@@ -1922,13 +1919,13 @@ Snowflake,snowflake.com,Frank Slootman,Chairman,frank@snowflake.com,+14085550182
                   </div>
 
                   <div>
-                    <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">Tech Stack (comma separated)</label>
+                    <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">HQ City / State</label>
                     <input
                       type="text"
-                      value={manualForm.techStack}
-                      onChange={(e) => setManualForm({ ...manualForm, techStack: e.target.value })}
-                      placeholder="AWS, PyTorch, Kubernetes"
-                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white font-mono"
+                      value={manualForm.city}
+                      onChange={(e) => setManualForm({ ...manualForm, city: e.target.value })}
+                      placeholder="e.g. San Francisco, CA"
+                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
                     />
                   </div>
                 </div>

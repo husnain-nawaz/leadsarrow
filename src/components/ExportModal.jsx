@@ -115,8 +115,7 @@ export default function ExportModal() {
         'Direct Phone',
         'Verification Status',
         'Funding Stage',
-        'Buying Intent Score',
-        'Tech Stack'
+        'Buying Intent Score'
       ];
       const rows = targetLeads.map((l) => [
         l.companyName,
@@ -134,8 +133,7 @@ export default function ExportModal() {
         l.contactPhone,
         l.verificationStatus,
         l.fundingStage,
-        l.buyingIntentScore,
-        (l.techStack || []).join('; ')
+        l.buyingIntentScore
       ]);
 
       const csvContent = [
