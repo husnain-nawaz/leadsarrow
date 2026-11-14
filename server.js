@@ -1247,7 +1247,7 @@ async function batchInsertLeads(newLeads = []) {
     totalRecords
   };
 }
-async function fetchLeadsByIds(ids) {
+async function fetchLeadsByIds(ids, userId) {
   if (!Array.isArray(ids) || ids.length === 0) return [];
   const results = [];
   try {
@@ -1262,12 +1262,12 @@ async function fetchLeadsByIds(ids) {
   }
   const foundIds = new Set(results.map((r) => r.id));
   const missingIds = ids.filter((id) => !foundIds.has(id));
-  if (missingIds.length > 0) {
+  if (missingIds.length > 0 && userId) {
     try {
       const ds4 = await getDataSource();
       const customRows = await ds4.query(
-        `SELECT * FROM custom_leads WHERE id IN (${missingIds.map(() => "?").join(",")})`,
-        missingIds
+        `SELECT * FROM custom_leads WHERE id IN (${missingIds.map(() => "?").join(",")}) AND user_id = ?`,
+        [...missingIds, userId]
       );
       if (customRows && customRows.length > 0) {
         results.push(...customRows.map(mapCustomRowToLead));
@@ -2512,7 +2512,8 @@ async function startServer() {
   app.post("/api/leads/by-ids", antiScraperProtectionMiddleware, async (req, res) => {
     try {
       const { ids } = req.body || {};
-      const leads = await fetchLeadsByIds(ids || []);
+      const userId = req.user?.id ? String(req.user.id) : null;
+      const leads = await fetchLeadsByIds(ids || [], userId);
       res.json({ leads });
     } catch (err) {
       console.error("Error fetching leads by IDs:", err);

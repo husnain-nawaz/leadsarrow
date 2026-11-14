@@ -622,10 +622,11 @@ async function startServer() {
     }
   });
 
-  app.post('/api/leads/by-ids', antiScraperProtectionMiddleware, async (req, res) => {
+  app.post('/api/leads/by-ids', antiScraperProtectionMiddleware, async (req: any, res) => {
     try {
       const { ids } = req.body || {};
-      const leads = await fetchLeadsByIds(ids || []);
+      const userId = req.user?.id ? String(req.user.id) : null;
+      const leads = await fetchLeadsByIds(ids || [], userId);
       res.json({ leads });
     } catch (err: any) {
       console.error('Error fetching leads by IDs:', err);

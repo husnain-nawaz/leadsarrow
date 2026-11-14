@@ -810,7 +810,7 @@ export async function insertSingleLead(lead: any) {
   return { ...lead, id: lead.id || `lead_${Date.now()}` };
 }
 
-export async function fetchLeadsByIds(ids: string[]) {
+export async function fetchLeadsByIds(ids: string[], userId?: string | null) {
   if (!Array.isArray(ids) || ids.length === 0) return [];
   const results: any[] = [];
 
@@ -828,15 +828,15 @@ export async function fetchLeadsByIds(ids: string[]) {
     console.warn('Error reading from core cluster in fetchLeadsByIds:', err.message);
   }
 
-  // 2. Check Database 4 custom_leads for any custom or missing lead IDs
+  // 2. Check Database 4 custom_leads ONLY for the authenticated profile's own leads
   const foundIds = new Set(results.map((r) => r.id));
   const missingIds = ids.filter((id) => !foundIds.has(id));
-  if (missingIds.length > 0) {
+  if (missingIds.length > 0 && userId) {
     try {
       const ds4 = await getDataSource();
       const customRows: any = await ds4.query(
-        `SELECT * FROM custom_leads WHERE id IN (${missingIds.map(() => '?').join(',')})`,
-        missingIds
+        `SELECT * FROM custom_leads WHERE id IN (${missingIds.map(() => '?').join(',')}) AND user_id = ?`,
+        [...missingIds, userId]
       );
       if (customRows && customRows.length > 0) {
         results.push(...customRows.map(mapCustomRowToLead));

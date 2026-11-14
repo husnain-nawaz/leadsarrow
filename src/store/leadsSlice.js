@@ -222,13 +222,8 @@ const leadsSlice = createSlice({
         const serverLeads = action.payload.leads || [];
         const requestedPageSize = action.payload.pagination?.pageSize || 25;
         
-        // Merge any Firestore custom leads not yet in server memory, keeping total items capped to requested pageSize
-        const existingIds = new Set(serverLeads.map((l) => l.id));
-        const extraFirestore = state.firestoreCustomLeads.filter(
-          (fl) => !existingIds.has(fl.id)
-        );
-        const combined = [...extraFirestore, ...serverLeads];
-        state.items = combined.slice(0, requestedPageSize);
+        // Lead Finder items strictly show queried core leads; custom leads are isolated to CustomLeadsPage
+        state.items = serverLeads.slice(0, requestedPageSize);
         state.pagination = action.payload.pagination || state.pagination;
         state.metrics = action.payload.metrics || state.metrics;
         state.facets = action.payload.facets || state.facets;
@@ -238,12 +233,7 @@ const leadsSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      .addCase(addCustomLead.fulfilled, (state, action) => {
-        const newLead = action.payload;
-        if (newLead && !state.items.some((i) => i.id === newLead.id)) {
-          state.items.unshift(newLead);
-          state.revealedLeadIds.push(newLead.id);
-        }
+      .addCase(addCustomLead.fulfilled, (state) => {
         state.isAddLeadModalOpen = false;
       })
       .addCase(deleteCustomLead.fulfilled, (state, action) => {
