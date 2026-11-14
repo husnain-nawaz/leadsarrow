@@ -133,20 +133,43 @@ export default function CustomLeadsPage() {
   const startIdx = totalLeadsCount === 0 ? 0 : (page - 1) * pageSize + 1;
   const endIdx = Math.min(totalLeadsCount, page * pageSize);
 
-  const loadCustomLeads = useCallback(async (clusterOverride) => {
+  // In-memory cache for custom cluster leads to enable instant 0ms, flicker-free cluster switching
+  const clusterLeadsCacheRef = useRef({});
+
+  const loadCustomLeads = useCallback(async (clusterOverride, forceRefresh = false) => {
     if (!userId) {
       setLeads([]);
       setClusters([]);
+      setLoading(false);
       return;
     }
+
+    const activeCls = clusterOverride !== undefined ? clusterOverride : selectedCluster;
+    const cacheKey = `${userId}_${activeCls || ''}_${searchQuery || ''}`;
+
+    // If cluster leads already in memory and not forceRefresh, restore instantly with 0ms delay!
+    if (!forceRefresh && clusterLeadsCacheRef.current[cacheKey]) {
+      const cached = clusterLeadsCacheRef.current[cacheKey];
+      setLeads(cached.leads);
+      if (cached.clusters) setClusters(cached.clusters);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
-      const activeCls = clusterOverride !== undefined ? clusterOverride : selectedCluster;
       const response = await fetchCustomLeadsFromServerApi(searchQuery, activeCls || '');
       const fetchedClusters = response.clusters || [];
+      const fetchedLeads = response.leads || [];
+
+      clusterLeadsCacheRef.current[cacheKey] = {
+        leads: fetchedLeads,
+        clusters: fetchedClusters
+      };
+
       setClusters(fetchedClusters);
-      setLeads(response.leads || []);
+      setLeads(fetchedLeads);
 
       if (fetchedClusters.length > 0) {
         const clusterNames = fetchedClusters.map((c) => c.name);
@@ -183,8 +206,9 @@ export default function CustomLeadsPage() {
       setFeedbackMessage(`Permanently deleted "${deletingTarget.name}" from your custom leads database.`);
       setTimeout(() => setFeedbackMessage(null), 4000);
       setDeletingTarget(null);
-      // Reload cluster counts
-      loadCustomLeads();
+      // Invalidate cluster cache on deletion to reload fresh counts
+      clusterLeadsCacheRef.current = {};
+      loadCustomLeads(undefined, true);
     } catch (err) {
       alert(err.message || 'Failed to delete custom lead from database');
     } finally {
@@ -227,7 +251,8 @@ export default function CustomLeadsPage() {
       setNewClusterDesc('');
       setIsCreateClusterModalOpen(false);
       setSelectedCluster(trimmed);
-      loadCustomLeads(trimmed);
+      clusterLeadsCacheRef.current = {};
+      loadCustomLeads(trimmed, true);
     } catch (err) {
       alert(err.message || 'Failed to create cluster');
     } finally {
@@ -249,7 +274,8 @@ export default function CustomLeadsPage() {
       const nextCluster = remainingClusters[0]?.name || null;
       setSelectedCluster(nextCluster);
       setDeleteClusterTarget(null);
-      loadCustomLeads(nextCluster);
+      clusterLeadsCacheRef.current = {};
+      loadCustomLeads(nextCluster, true);
     } catch (err) {
       alert(err.message || 'Failed to delete cluster');
     } finally {
@@ -609,13 +635,17 @@ export default function CustomLeadsPage() {
                             </div>
                           </div>
 
-                          <div className="mt-2.5 text-left">
+                          <div className="mt-2 text-left">
                             <h3 className="font-bold text-xs text-slate-900 dark:text-white truncate" title={cluster.name}>
                               {cluster.name}
                             </h3>
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1" title={cluster.description}>
-                              {cluster.description || 'Target account cluster'}
-                            </p>
+                            {cluster.description &&
+                              cluster.description.toLowerCase() !== `${cluster.name.toLowerCase()} lead cluster` &&
+                              cluster.description.toLowerCase() !== 'target account cluster' && (
+                                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 line-clamp-1" title={cluster.description}>
+                                  {cluster.description}
+                                </p>
+                              )}
                           </div>
 
                           <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px]">
@@ -771,79 +801,86 @@ export default function CustomLeadsPage() {
               </div>
 
               {/* Table / Empty State Container */}
-              {loading && leads.length === 0 ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map((n) => (
-                    <div key={n} className="h-16 bg-white dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800 animate-pulse" />
-                  ))}
-                </div>
-              ) : error ? (
-                <div className="max-w-md mx-auto my-8 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-2xl p-6 text-center">
-                  <AlertCircle className="w-8 h-8 text-rose-600 dark:text-rose-400 mx-auto mb-2" />
-                  <h3 className="text-sm font-bold text-rose-900 dark:text-rose-200">Unable to load cluster leads</h3>
-                  <p className="text-xs text-rose-600 dark:text-rose-400 mt-1">{error}</p>
-                  <button
-                    type="button"
-                    onClick={() => loadCustomLeads()}
-                    className="mt-4 px-4 py-2 text-xs font-semibold text-rose-700 dark:text-rose-300 bg-white dark:bg-slate-800 border border-rose-300 dark:border-rose-700 rounded-lg hover:bg-rose-50 cursor-pointer"
-                  >
-                    Try Again
-                  </button>
-                </div>
-              ) : clusters.length === 0 ? (
-                /* No Clusters Yet Empty State */
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 text-center shadow-xs">
-                  <div className="w-12 h-12 rounded-xl bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 flex items-center justify-center mx-auto mb-3 border border-orange-200/50 dark:border-orange-800/50">
-                    <FolderPlus className="w-5 h-5" />
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs flex-1 flex flex-col min-h-[460px] relative transition-all duration-200">
+                {/* Sleek top indeterminate shimmer progress bar while loading */}
+                {loading && (
+                  <div className="absolute top-0 left-0 right-0 z-30 h-0.5 bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600 animate-indeterminate" />
+                )}
+
+                {error ? (
+                  <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-200">
+                    <AlertCircle className="w-8 h-8 text-rose-600 dark:text-rose-400 mx-auto mb-2" />
+                    <h3 className="text-sm font-bold text-rose-900 dark:text-rose-200">Unable to load cluster leads</h3>
+                    <p className="text-xs text-rose-600 dark:text-rose-400 mt-1">{error}</p>
+                    <button
+                      type="button"
+                      onClick={() => loadCustomLeads(undefined, true)}
+                      className="mt-4 px-4 py-2 text-xs font-semibold text-rose-700 dark:text-rose-300 bg-white dark:bg-slate-800 border border-rose-300 dark:border-rose-700 rounded-lg hover:bg-rose-50 cursor-pointer"
+                    >
+                      Try Again
+                    </button>
                   </div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
-                    No custom clusters created yet
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto mb-4">
-                    Custom leads are organized strictly into clusters. Create your first cluster to start adding targeted decision makers.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleOpenCreateCluster}
-                    className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-xl shadow-xs transition-colors cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>+ Create First Cluster</span>
-                  </button>
-                </div>
-              ) : leads.length === 0 ? (
-                /* Empty Cluster Leads */
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 text-center shadow-xs">
-                  <div className="w-12 h-12 rounded-xl bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 flex items-center justify-center mx-auto mb-3 border border-orange-200/50 dark:border-orange-800/50">
-                    <Folder className="w-5 h-5" />
+                ) : clusters.length === 0 ? (
+                  /* No Clusters Yet Empty State */
+                  <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-200">
+                    <div className="w-12 h-12 rounded-xl bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 flex items-center justify-center mx-auto mb-3 border border-orange-200/50 dark:border-orange-800/50">
+                      <FolderPlus className="w-5 h-5" />
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
+                      No custom clusters created yet
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto mb-4">
+                      Custom leads are organized strictly into clusters. Create your first cluster to start adding targeted decision makers.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleOpenCreateCluster}
+                      className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-xl shadow-xs transition-colors cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>+ Create First Cluster</span>
+                    </button>
                   </div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
-                    No custom leads in cluster "{selectedCluster}" yet
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto mb-4">
-                    You can add targeted B2B decision makers directly into cluster "{selectedCluster}".
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      dispatch(
-                        setAddLeadModalOpen({
-                          open: true,
-                          cluster: selectedCluster
-                        })
-                      );
-                    }}
-                    className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-xl shadow-xs transition-colors cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>+ Add First Lead to "{selectedCluster}"</span>
-                  </button>
-                </div>
-              ) : (
-                /* Leads Table */
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs border-collapse">
+                ) : leads.length === 0 ? (
+                  /* Empty Cluster Leads */
+                  loading ? (
+                    <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+                      <div className="w-8 h-8 rounded-full border-2 border-orange-500 border-t-transparent animate-spin mb-3" />
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Loading cluster leads...</p>
+                    </div>
+                  ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-200">
+                      <div className="w-12 h-12 rounded-xl bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 flex items-center justify-center mx-auto mb-3 border border-orange-200/50 dark:border-orange-800/50">
+                        <Folder className="w-5 h-5" />
+                      </div>
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
+                        No custom leads in cluster "{selectedCluster}" yet
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto mb-4">
+                        You can add targeted B2B decision makers directly into cluster "{selectedCluster}".
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          dispatch(
+                            setAddLeadModalOpen({
+                              open: true,
+                              cluster: selectedCluster
+                            })
+                          );
+                        }}
+                        className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-xl shadow-xs transition-colors cursor-pointer"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>+ Add First Lead to "{selectedCluster}"</span>
+                      </button>
+                    </div>
+                  )
+                ) : (
+                  /* Leads Table with smooth transitions */
+                  <div className={`flex-1 flex flex-col min-h-0 transition-opacity duration-200 ${loading ? 'opacity-65 pointer-events-none' : 'opacity-100'}`}>
+                    <div className="overflow-x-auto flex-1 min-h-0">
+                      <table className="w-full text-left text-xs border-collapse">
                       <thead>
                         <tr className="bg-slate-50/80 dark:bg-slate-800/70 border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                           <th className="py-3 px-3 w-10 text-center">
@@ -1104,6 +1141,7 @@ export default function CustomLeadsPage() {
                   </div>
                 </div>
               )}
+            </div>
             </div>
           </>
         )}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   Bookmark,
@@ -147,16 +147,32 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
     return mergedLists.find((l) => l.id === selectedListId) || null;
   }, [mergedLists, selectedListId]);
 
+  // In-memory cache for loaded list leads to enable 0ms instant, flicker-free switching between lists
+  const leadsCacheRef = useRef({});
+
   // Fetch full leads details whenever selected list changes
-  const loadLeadsForSelectedList = useCallback(async (list) => {
+  const loadLeadsForSelectedList = useCallback(async (list, forceRefresh = false) => {
     if (!list || !Array.isArray(list.leadIds) || list.leadIds.length === 0) {
       setListLeads([]);
+      setLeadsLoading(false);
       return;
     }
+
+    const cacheKey = `${list.id}_${list.leadIds.length}_${list.leadIds.slice(0, 5).join('_')}`;
+
+    // Return cached leads instantly with zero layout jump if available
+    if (!forceRefresh && leadsCacheRef.current[cacheKey]) {
+      setListLeads(leadsCacheRef.current[cacheKey]);
+      setLeadsLoading(false);
+      return;
+    }
+
     setLeadsLoading(true);
     try {
       const response = await fetchLeadsByIdsApi(list.leadIds);
-      setListLeads(response.leads || []);
+      const fetched = response.leads || [];
+      leadsCacheRef.current[cacheKey] = fetched;
+      setListLeads(fetched);
     } catch (err) {
       console.error('Failed to load leads for list:', err);
       setListLeads([]);
@@ -703,53 +719,63 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
               paginatedLists.map((list) => {
                 const isSelected = list.id === selectedListId;
                 const leadCount = list.leadCount || (list.leadIds ? list.leadIds.length : 0);
+                const hasCustomDesc =
+                  list.description &&
+                  list.description.toLowerCase() !== 'curated b2b target account segment' &&
+                  list.description.toLowerCase() !== 'target account segment';
+
                 return (
                   <div
                     key={list.id}
                     onClick={() => setSelectedListId(list.id)}
-                    className={`p-3.5 rounded-xl cursor-pointer transition-all ${
+                    className={`px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-150 group flex items-center justify-between gap-2.5 ${
                       isSelected
-                        ? 'bg-orange-50/80 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900/60 shadow-2xs'
-                        : 'hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-transparent'
+                        ? 'bg-orange-500/10 dark:bg-orange-950/40 border border-orange-500/30 text-orange-900 dark:text-orange-200 shadow-2xs font-semibold'
+                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100/80 dark:hover:bg-slate-800/60 border border-transparent'
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <Bookmark
+                        className={`w-3.5 h-3.5 shrink-0 transition-colors ${
+                          isSelected
+                            ? 'text-orange-600 dark:text-orange-400 fill-orange-500/20'
+                            : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'
+                        }`}
+                      />
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <Bookmark className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-orange-600 dark:text-orange-400' : 'text-slate-400'}`} />
-                          <h3 className={`text-xs font-bold truncate ${isSelected ? 'text-orange-900 dark:text-orange-200' : 'text-slate-900 dark:text-white'}`}>
+                        <div className="flex items-center justify-between gap-1.5">
+                          <span className="text-xs truncate font-medium">
                             {list.name}
-                          </h3>
+                          </span>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold shrink-0 transition-colors ${
+                              isSelected
+                                ? 'bg-orange-200/60 dark:bg-orange-950 text-orange-700 dark:text-orange-300'
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                            }`}
+                          >
+                            {leadCount} leads
+                          </span>
                         </div>
-                        {list.description && (
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                        {hasCustomDesc && (
+                          <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate mt-0.5 font-normal">
                             {list.description}
                           </p>
                         )}
-                        <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
-                            {leadCount} leads
-                          </span>
-                          {list.filterSummary && (
-                            <span className="px-1.5 py-0.5 rounded-md text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-[160px]">
-                              {list.filterSummary}
-                            </span>
-                          )}
-                        </div>
                       </div>
-
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteListClick(list.id, list.name);
-                        }}
-                        title="Delete list"
-                        className="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-md transition-colors cursor-pointer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
                     </div>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteListClick(list.id, list.name);
+                      }}
+                      title="Delete list"
+                      className="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-md transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 cursor-pointer shrink-0"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 );
               })
@@ -848,13 +874,16 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
                         {selectedList.leadCount || (selectedList.leadIds ? selectedList.leadIds.length : 0)} Leads
                       </span>
                     </div>
-                    <p className="text-xs text-slate-600 dark:text-slate-300 mt-1">
-                      {selectedList.description || 'Target account segment'}
-                    </p>
-                    <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-400 mt-1.5">
-                      <span>Segment: <strong className="text-slate-700 dark:text-slate-300">{selectedList.filterSummary || 'Custom Curated Leads'}</strong></span>
+                    {selectedList.description &&
+                      selectedList.description.toLowerCase() !== 'curated b2b target account segment' &&
+                      selectedList.description.toLowerCase() !== 'target account segment' && (
+                        <p className="text-xs text-slate-600 dark:text-slate-300 mt-1">
+                          {selectedList.description}
+                        </p>
+                      )}
+                    <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-400 mt-1">
                       {selectedList.createdAt && (
-                        <span>Created: {new Date(selectedList.createdAt).toLocaleDateString()}</span>
+                        <span>Created {new Date(selectedList.createdAt).toLocaleDateString()}</span>
                       )}
                     </div>
                   </div>
@@ -1033,42 +1062,48 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
               )}
 
               {/* High-Density Enterprise Data Grid matching Lead Finder */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs flex-1 flex flex-col">
-                {leadsLoading ? (
-                  <div className="p-8 space-y-3">
-                    {[1, 2, 3, 4, 5, 6].map((n) => (
-                      <div key={n} className="h-12 bg-slate-100 dark:bg-slate-800 rounded-lg animate-pulse" />
-                    ))}
-                  </div>
-                ) : listLeads.length === 0 ? (
-                  <div className="p-12 text-center">
-                    <Building2 className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
-                    <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                      This List is Currently Empty (0 Leads)
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
-                      Search and append leads from the 10.3M database or your custom leads, or browse in Lead Finder.
-                    </p>
-                    <div className="flex flex-wrap items-center justify-center gap-3 mt-4">
-                      <button
-                        type="button"
-                        onClick={() => setIsAddLeadsModalOpen(true)}
-                        className="px-4 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-xs cursor-pointer inline-flex items-center gap-1.5"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>Add Leads Now</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setActiveView && setActiveView('finder')}
-                        className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg shadow-xs cursor-pointer"
-                      >
-                        Browse Lead Finder
-                      </button>
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs flex-1 flex flex-col min-h-[460px] relative transition-all duration-200">
+                {/* Sleek top indeterminate shimmer progress bar while loading */}
+                {leadsLoading && (
+                  <div className="absolute top-0 left-0 right-0 z-30 h-0.5 bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600 animate-indeterminate" />
+                )}
+
+                {listLeads.length === 0 ? (
+                  leadsLoading ? (
+                    <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
+                      <div className="w-8 h-8 rounded-full border-2 border-orange-500 border-t-transparent animate-spin mb-3" />
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Loading list leads...</p>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center p-12 text-center animate-in fade-in duration-200">
+                      <Building2 className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+                      <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                        This List is Currently Empty (0 Leads)
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
+                        Search and append leads from the 10.3M database or your custom leads, or browse in Lead Finder.
+                      </p>
+                      <div className="flex flex-wrap items-center justify-center gap-3 mt-4">
+                        <button
+                          type="button"
+                          onClick={() => setIsAddLeadsModalOpen(true)}
+                          className="px-4 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Add Leads Now</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setActiveView && setActiveView('finder')}
+                          className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg shadow-xs cursor-pointer"
+                        >
+                          Browse Lead Finder
+                        </button>
+                      </div>
+                    </div>
+                  )
                 ) : totalFilteredLeads === 0 ? (
-                  <div className="p-12 text-center">
+                  <div className="flex-1 flex flex-col items-center justify-center p-12 text-center animate-in fade-in duration-200">
                     <Search className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
                     <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
                       No Leads Found Matching "{leadSearchQuery}"
@@ -1085,7 +1120,7 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
                     </button>
                   </div>
                 ) : (
-                  <div className="overflow-auto flex-1 min-h-0 bg-white dark:bg-slate-900">
+                  <div className={`overflow-auto flex-1 min-h-0 bg-white dark:bg-slate-900 transition-opacity duration-200 ${leadsLoading ? 'opacity-65 pointer-events-none' : 'opacity-100'}`}>
                     <table className="w-full text-left border-collapse table-fixed min-w-[1240px]">
                       <colgroup>
                         <col style={{ width: '48px' }} />
