@@ -25,7 +25,11 @@ import {
   CheckCircle2,
   X
 } from 'lucide-react';
-import { setAddLeadModalOpen } from '../store/leadsSlice.js';
+import {
+  setAddLeadModalOpen,
+  toggleSelectLead,
+  selectAllCurrentPageLeads
+} from '../store/leadsSlice.js';
 import { openAuthModal } from '../store/authSlice.js';
 import {
   fetchCustomLeadsFromServerApi,
@@ -40,6 +44,7 @@ export default function CustomLeadsPage() {
   const { user } = useSelector((state) => state.auth);
   const userId = user?.id || null;
   const customLeadsVersion = useSelector((state) => state.leads.customLeadsVersion);
+  const { selectedLeadIds = [] } = useSelector((state) => state.leads);
 
   const [leads, setLeads] = useState([]);
   const [clusters, setClusters] = useState([]);
@@ -669,6 +674,18 @@ export default function CustomLeadsPage() {
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
                         <tr className="bg-slate-50/80 dark:bg-slate-800/70 border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                          <th className="py-3 px-3 w-10 text-center">
+                            <input
+                              type="checkbox"
+                              checked={paginatedLeads.length > 0 && paginatedLeads.every((l) => selectedLeadIds.includes(l.id))}
+                              onChange={() => {
+                                const pageIds = paginatedLeads.map((l) => l.id);
+                                dispatch(selectAllCurrentPageLeads(pageIds));
+                              }}
+                              className="w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-orange-600 focus:ring-orange-500 cursor-pointer"
+                              title="Select all on this page"
+                            />
+                          </th>
                           <th className="py-3 px-4">Company & Domain</th>
                           <th className="py-3 px-4">Cluster / Group</th>
                           <th className="py-3 px-4">Decision Maker</th>
@@ -684,8 +701,22 @@ export default function CustomLeadsPage() {
                         {paginatedLeads.map((lead) => (
                           <tr
                             key={lead.id}
-                            className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors"
+                            className={`transition-colors ${
+                              selectedLeadIds.includes(lead.id)
+                                ? 'bg-orange-50/50 dark:bg-orange-950/25'
+                                : 'hover:bg-slate-50/60 dark:hover:bg-slate-800/40'
+                            }`}
                           >
+                            {/* Checkbox Column */}
+                            <td className="py-3.5 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                              <input
+                                type="checkbox"
+                                checked={selectedLeadIds.includes(lead.id)}
+                                onChange={() => dispatch(toggleSelectLead(lead.id))}
+                                className="w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-orange-600 focus:ring-orange-500 cursor-pointer"
+                              />
+                            </td>
+
                             {/* Column 1: Company & Sector */}
                             <td className="py-3.5 px-4 min-w-[180px]">
                               <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">

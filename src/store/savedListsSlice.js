@@ -146,6 +146,7 @@ const initialState = {
   lists: [],
   firestoreLists: [],
   isSavedListsModalOpen: false,
+  targetListForAdding: null, // { id: string, name: string, leadCount: number }
   loading: false,
   error: null
 };
@@ -159,6 +160,18 @@ const savedListsSlice = createSlice({
     },
     setFirestoreSavedLists(state, action) {
       state.firestoreLists = Array.isArray(action.payload) ? action.payload : [];
+    },
+    setTargetListForAdding(state, action) {
+      state.targetListForAdding = action.payload || null;
+    },
+    clearTargetListForAdding(state) {
+      state.targetListForAdding = null;
+    },
+    incrementTargetListCount(state, action) {
+      const addedCount = Number(action.payload) || 0;
+      if (state.targetListForAdding) {
+        state.targetListForAdding.leadCount = (state.targetListForAdding.leadCount || 0) + addedCount;
+      }
     },
     addLeadsToExistingList(state, action) {
       const { listId, leadIds } = action.payload;
@@ -217,6 +230,9 @@ const savedListsSlice = createSlice({
 export const {
   setSavedListsModalOpen,
   setFirestoreSavedLists,
+  setTargetListForAdding,
+  clearTargetListForAdding,
+  incrementTargetListCount,
   addLeadsToExistingList
 } = savedListsSlice.actions;
 

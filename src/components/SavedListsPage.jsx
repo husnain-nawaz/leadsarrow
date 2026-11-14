@@ -30,7 +30,8 @@ import {
   removeSavedList,
   createSavedList,
   appendLeadsToSavedList,
-  removeLeadFromSavedList
+  removeLeadFromSavedList,
+  setTargetListForAdding
 } from '../store/savedListsSlice.js';
 import { setSavedListFilter } from '../store/filtersSlice.js';
 import { setActiveLead } from '../store/leadsSlice.js';
@@ -318,6 +319,20 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
       alert(err?.message || 'Failed to remove lead from list');
     } finally {
       setIsRemovingSingleLead(false);
+    }
+  };
+
+  const handleStartAddingInMainPage = (targetView) => {
+    if (!selectedList) return;
+    dispatch(
+      setTargetListForAdding({
+        id: selectedList.id,
+        name: selectedList.name,
+        leadCount: selectedList.leadCount || (selectedList.leadIds ? selectedList.leadIds.length : 0)
+      })
+    );
+    if (setActiveView) {
+      setActiveView(targetView);
     }
   };
 
@@ -702,14 +717,36 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
 
                   {/* Actions for this list */}
                   <div className="flex flex-wrap items-center gap-2">
-                    {/* Add Leads Button */}
+                    {/* Add from Core Lead Finder (Full Database with filters and pagination) */}
+                    <button
+                      type="button"
+                      onClick={() => handleStartAddingInMainPage('finder')}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 active:scale-95 rounded-lg transition-all cursor-pointer shadow-2xs"
+                      title="Open Lead Finder in Target List mode to search, filter, and append core database leads"
+                    >
+                      <Search className="w-3.5 h-3.5" />
+                      <span>+ Add from Lead Finder</span>
+                    </button>
+
+                    {/* Add from Custom Leads Workspace */}
+                    <button
+                      type="button"
+                      onClick={() => handleStartAddingInMainPage('custom')}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 rounded-lg transition-all cursor-pointer shadow-2xs"
+                      title="Open Custom Leads workspace to select and append custom cluster leads"
+                    >
+                      <Layers className="w-3.5 h-3.5 text-orange-500" />
+                      <span>+ Add from Custom Leads</span>
+                    </button>
+
+                    {/* Quick Modal Option */}
                     <button
                       type="button"
                       onClick={() => setIsAddLeadsModalOpen(true)}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 active:scale-95 rounded-lg transition-all cursor-pointer shadow-2xs"
+                      className="p-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer shadow-2xs"
+                      title="Open scrollable modal with search and pagination"
                     >
                       <UserPlus className="w-3.5 h-3.5" />
-                      <span>Add Leads to List</span>
                     </button>
 
                     {/* Quick Add Selected Leads if any selected in Lead Finder */}
@@ -1080,6 +1117,8 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
         isOpen={isAddLeadsModalOpen}
         targetList={selectedList}
         onClose={() => setIsAddLeadsModalOpen(false)}
+        onRedirectToFinder={() => handleStartAddingInMainPage('finder')}
+        onRedirectToCustom={() => handleStartAddingInMainPage('custom')}
         onSuccess={async () => {
           if (selectedList) {
             await dispatch(fetchSavedLists());

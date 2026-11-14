@@ -29,6 +29,7 @@ import ProfileSettingsPage from './components/ProfileSettingsPage.jsx';
 import CustomLeadsPage from './components/CustomLeadsPage.jsx';
 import SavedListsPage from './components/SavedListsPage.jsx';
 import SignOutModal from './components/SignOutModal.jsx';
+import TargetListModeBanner from './components/TargetListModeBanner.jsx';
 import { ThemeProvider } from './context/ThemeContext.jsx';
 
 function WorkspaceContent({ activeView, setActiveView, onToggleLanding }) {
@@ -142,6 +143,12 @@ function WorkspaceContent({ activeView, setActiveView, onToggleLanding }) {
         activeView={activeView}
         setActiveView={setActiveView}
         onToggleLanding={onToggleLanding}
+      />
+
+      <TargetListModeBanner
+        activeView={activeView}
+        setActiveView={setActiveView}
+        onReturnToList={(id) => setFocusedSavedListId(id)}
       />
 
       {activeView === 'schema' ? (
