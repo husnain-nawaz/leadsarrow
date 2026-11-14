@@ -2942,11 +2942,26 @@ async function startServer() {
         lead: {
           id: customId,
           clusterName,
-          companyName: body.companyName,
-          domain: body.domain,
-          contactName: body.contactName,
-          contactEmail: body.contactEmail,
-          isCustom: true
+          companyName: safeTrim(body.companyName, 255, "My Custom Business"),
+          domain: safeTrim(body.domain, 255, "business.io"),
+          industry: safeTrim(body.industry, 255, "Enterprise Software & SaaS"),
+          employeeRange: safeTrim(body.employeeRange, 100, "51-200"),
+          employeeCount: Number(body.employeeCount) || 120,
+          revenueRange: safeTrim(body.revenueRange, 100, "$10M - $50M"),
+          annualRevenueUsd: Number(body.annualRevenueUsd) || 24e6,
+          country: safeTrim(body.country, 100, "United States"),
+          city: safeTrim(body.city, 255, "San Francisco, CA"),
+          contactName: safeTrim(body.contactName, 255, "Executive Contact"),
+          contactTitle: safeTrim(body.contactTitle, 255, "VP of Operations"),
+          seniority: safeTrim(body.seniority, 100, "VP"),
+          department: safeTrim(body.department, 100, "Operations & Supply Chain"),
+          contactEmail: safeTrim(body.contactEmail, 255, "contact@business.io"),
+          contactPhone: safeTrim(body.contactPhone, 100, "+1 (415) 555-0142"),
+          verificationStatus: safeTrim(body.verificationStatus, 50, "Verified"),
+          fundingStage: safeTrim(body.fundingStage, 100, "Series B"),
+          buyingIntentScore: Number(body.buyingIntentScore) || 88,
+          isCustom: true,
+          createdAt: (/* @__PURE__ */ new Date()).toISOString()
         },
         message: `Custom lead added to cluster "${clusterName}".`
       });

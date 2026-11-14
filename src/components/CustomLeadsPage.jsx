@@ -47,6 +47,7 @@ export default function CustomLeadsPage() {
   const { user } = useSelector((state) => state.auth);
   const userId = user?.id || null;
   const customLeadsVersion = useSelector((state) => state.leads.customLeadsVersion);
+  const lastAddedCustomLead = useSelector((state) => state.leads.lastAddedCustomLead);
   const { selectedLeadIds = [] } = useSelector((state) => state.leads);
 
   // Check if current user is on Free Starter tier (max 5 active clusters)
@@ -192,9 +193,63 @@ export default function CustomLeadsPage() {
     }
   }, [userId, searchQuery, selectedCluster]);
 
+  // Load custom leads on mount or when active cluster/search query changes
   useEffect(() => {
     loadCustomLeads();
-  }, [loadCustomLeads, customLeadsVersion]);
+  }, [loadCustomLeads]);
+
+  // When a custom lead is added or deleted via Redux actions, immediately clear cache, optimistically update UI, and force-refresh
+  const prevCustomVersionRef = useRef(customLeadsVersion);
+  useEffect(() => {
+    if (prevCustomVersionRef.current === customLeadsVersion) return;
+    prevCustomVersionRef.current = customLeadsVersion;
+
+    // Immediately clear in-memory cache so fresh data from server is guaranteed
+    clusterLeadsCacheRef.current = {};
+
+    if (lastAddedCustomLead && lastAddedCustomLead.clusterName) {
+      const targetCls = lastAddedCustomLead.clusterName;
+
+      // Ensure active cluster switches to the one the lead was added to
+      if (selectedCluster !== targetCls) {
+        setSelectedCluster(targetCls);
+      }
+
+      // Optimistically increment or register target cluster count in the cluster cards
+      setClusters((prev) => {
+        const exists = prev.some((c) => c.name === targetCls);
+        if (exists) {
+          return prev.map((c) =>
+            c.name === targetCls ? { ...c, leadCount: (c.leadCount || 0) + 1 } : c
+          );
+        }
+        return [
+          {
+            id: `cls_${Date.now()}`,
+            name: targetCls,
+            description: `${targetCls} lead cluster`,
+            leadCount: 1,
+            createdAt: new Date().toISOString()
+          },
+          ...prev
+        ];
+      });
+
+      // Optimistically prepend new lead to current view immediately (0ms visual feedback!)
+      setLeads((prev) => {
+        if (prev.some((l) => l.id === lastAddedCustomLead.id)) return prev;
+        return [lastAddedCustomLead, ...prev];
+      });
+
+      setFeedbackMessage(`Custom lead added to cluster "${targetCls}"!`);
+      setTimeout(() => setFeedbackMessage(null), 4000);
+
+      // Force refresh from server for authoritative state
+      loadCustomLeads(targetCls, true);
+    } else {
+      loadCustomLeads(undefined, true);
+    }
+  }, [customLeadsVersion, lastAddedCustomLead, selectedCluster, loadCustomLeads]);
 
   // Handle lead deletion
   const handleDeleteClick = (leadId, companyName) => {

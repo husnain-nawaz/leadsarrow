@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { X, Plus, Sparkles, Layers, Folder, Lock } from 'lucide-react';
+import { X, Plus, Sparkles, Layers, Folder, Lock, Loader2 } from 'lucide-react';
 import { setAddLeadModalOpen, addCustomLead, fetchLeads } from '../store/leadsSlice.js';
 
 export default function AddLeadModal() {
@@ -38,6 +38,8 @@ export default function AddLeadModal() {
     }
   }, [isAddLeadModalOpen, targetClusterName]);
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   if (!isAddLeadModalOpen) return null;
 
   const handleChange = (field, value) => {
@@ -46,10 +48,18 @@ export default function AddLeadModal() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const action = await dispatch(addCustomLead(form));
-    if (addCustomLead.fulfilled.match(action)) {
-      dispatch(setAddLeadModalOpen(false));
-      dispatch(fetchLeads(filters));
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const action = await dispatch(addCustomLead(form));
+      if (addCustomLead.fulfilled.match(action)) {
+        dispatch(setAddLeadModalOpen(false));
+        dispatch(fetchLeads(filters));
+      } else {
+        alert(action.payload || action.error?.message || 'Failed to add custom lead');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -276,10 +286,20 @@ export default function AddLeadModal() {
             </button>
             <button
               type="submit"
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 active:scale-95 rounded-xl shadow-xs transition-colors cursor-pointer"
+              disabled={isSubmitting}
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 disabled:opacity-50 active:scale-95 rounded-xl shadow-xs transition-colors cursor-pointer"
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Save to My Custom Leads</span>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Saving Lead...</span>
+                </>
+              ) : (
+                <>
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Save to My Custom Leads</span>
+                </>
+              )}
             </button>
           </div>
         </form>

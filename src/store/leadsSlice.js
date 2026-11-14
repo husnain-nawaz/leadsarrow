@@ -162,6 +162,7 @@ const initialState = {
   targetClusterName: '',
   isExportModalOpen: false,
   customLeadsVersion: 0,
+  lastAddedCustomLead: null,
   loading: false,
   error: null
 };
@@ -256,15 +257,17 @@ const leadsSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      .addCase(addCustomLead.fulfilled, (state) => {
+      .addCase(addCustomLead.fulfilled, (state, action) => {
         state.isAddLeadModalOpen = false;
         state.customLeadsVersion += 1;
+        state.lastAddedCustomLead = action.payload || null;
       })
       .addCase(deleteCustomLead.fulfilled, (state, action) => {
         const deletedId = action.payload;
         state.items = state.items.filter((i) => i.id !== deletedId);
         state.firestoreCustomLeads = state.firestoreCustomLeads.filter((i) => i.id !== deletedId);
         state.customLeadsVersion += 1;
+        state.lastAddedCustomLead = null;
         if (state.activeLead?.id === deletedId) {
           state.activeLead = null;
         }
