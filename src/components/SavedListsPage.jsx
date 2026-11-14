@@ -237,6 +237,31 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
     }
   };
 
+  const handleQuickAppendSelected = async () => {
+    if (!selectedList || !selectedLeadIds || selectedLeadIds.length === 0) return;
+    setIsAppendingSelected(true);
+    try {
+      await dispatch(
+        appendLeadsToSavedList({
+          listId: selectedList.id,
+          leadIds: selectedLeadIds
+        })
+      ).unwrap();
+      setFeedback(`Successfully added ${selectedLeadIds.length} lead(s) to "${selectedList.name}"!`);
+      setTimeout(() => setFeedback(null), 3500);
+      await dispatch(fetchSavedLists());
+      const updatedList = {
+        ...selectedList,
+        leadIds: Array.from(new Set([...(selectedList.leadIds || []), ...selectedLeadIds]))
+      };
+      await loadLeadsForSelectedList(updatedList);
+    } catch (err) {
+      alert(err?.message || 'Failed to add selected leads to list');
+    } finally {
+      setIsAppendingSelected(false);
+    }
+  };
+
   const handleConfirmRemoveLead = async () => {
     if (!deleteSingleLeadTarget) return;
     setIsRemovingSingleLead(true);
