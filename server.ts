@@ -607,10 +607,11 @@ async function startServer() {
     }
   });
 
-  app.get('/api/leads', async (req, res) => {
+  app.get('/api/leads', async (req: any, res) => {
     const tStart = Date.now();
     try {
-      const result = await queryLeadsDatabase(req.query);
+      const userId = req.user?.id ? String(req.user.id) : null;
+      const result = await queryLeadsDatabase(req.query, userId);
       const elapsed = Date.now() - tStart;
       console.log(`[QUERY MONITOR] ${elapsed}ms | Filters: ${JSON.stringify(req.query)}`);
       res.json(result);
@@ -632,69 +633,103 @@ async function startServer() {
     }
   });
 
-  app.post('/api/leads/custom', optionalAuthMiddleware, async (req: any, res) => {
+  // --- USER-PRIVATE CUSTOM LEADS (Stored Isolated in Database 4 - Never touching Core 10.3M Leads) ---
+  app.post('/api/leads/custom', requireJwtMiddleware, async (req: any, res) => {
     try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: 'Authentication required to create custom leads.' });
+      }
       const body = req.body || {};
-      const result = await batchInsertLeads([{
-        id: body.id || `custom_${Date.now()}`,
-        companyName: String(body.companyName || 'Untitled Business').trim(),
-        domain: String(body.domain || 'company.io').trim(),
-        industry: String(body.industry || 'Enterprise Software & SaaS').trim(),
-        employeeRange: String(body.employeeRange || '51-200').trim(),
-        employeeCount: Number(body.employeeCount) || 120,
-        revenueRange: String(body.revenueRange || '$10M - $50M').trim(),
-        annualRevenueUsd: Number(body.annualRevenueUsd) || 24000000,
-        country: String(body.country || 'United States').trim(),
-        city: String(body.city || 'San Francisco, CA').trim(),
-        contactName: String(body.contactName || 'Executive Contact').trim(),
-        contactTitle: String(body.contactTitle || 'VP of Operations').trim(),
-        seniority: String(body.seniority || 'VP').trim(),
-        department: String(body.department || 'Operations & Supply Chain').trim(),
-        contactEmail: String(body.contactEmail || 'contact@company.io').trim(),
-        contactPhone: String(body.contactPhone || '+1 (415) 555-0142').trim(),
-        verificationStatus: body.verificationStatus || 'Verified',
-        fundingStage: body.fundingStage || 'Series B',
-        techStack: Array.isArray(body.techStack)
+      const ds = await (await import('./server/dataSource.ts')).getDataSource();
+      
+      const customId = body.id || `custom_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      const safeTrim = (v: any, maxLen: number, fallback = '') => {
+        if (v === null || v === undefined) return fallback.slice(0, maxLen);
+        const s = String(v).replace(/\0/g, '').trim();
+        return (s || fallback).slice(0, maxLen);
+      };
+
+      const techStackJson = JSON.stringify(
+        Array.isArray(body.techStack)
           ? body.techStack
-          : String(body.techStack || 'AWS, Salesforce')
-              .split(',')
-              .map((s) => s.trim())
-              .filter(Boolean),
-        buyingIntentScore: Number(body.buyingIntentScore) || 88,
-        foundedYear: Number(body.foundedYear) || 2021,
-        hasDirectPhone: true,
-        isCustom: true,
-        source: 'manual_lead_entry',
-        createdAt: new Date().toISOString()
-      }]);
-      res.status(201).json({ success: true, result });
+          : String(body.techStack || 'AWS, Salesforce').split(/[,;|]/).map((s: string) => s.trim()).filter(Boolean)
+      );
+
+      // Isolated write into Database 4 custom_leads table only - core leads are 100% untouched
+      await ds.query(
+        `INSERT INTO custom_leads (
+          id, user_id, company_name, domain, industry, employee_range, employee_count,
+          revenue_range, annual_revenue_usd, country, city, contact_name, contact_title,
+          seniority, department, contact_email, contact_phone, linkedin_url,
+          verification_status, funding_stage, tech_stack, buying_intent_score,
+          founded_year, has_direct_phone, source, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+        [
+          customId,
+          userId,
+          safeTrim(body.companyName, 255, 'My Custom Business'),
+          safeTrim(body.domain, 255, 'business.io'),
+          safeTrim(body.industry, 255, 'Enterprise Software & SaaS'),
+          safeTrim(body.employeeRange, 100, '51-200'),
+          Number(body.employeeCount) || 120,
+          safeTrim(body.revenueRange, 100, '$10M - $50M'),
+          Number(body.annualRevenueUsd) || 24000000,
+          safeTrim(body.country, 100, 'United States'),
+          safeTrim(body.city, 255, 'San Francisco, CA'),
+          safeTrim(body.contactName, 255, 'Executive Contact'),
+          safeTrim(body.contactTitle, 255, 'VP of Operations'),
+          safeTrim(body.seniority, 100, 'VP'),
+          safeTrim(body.department, 100, 'Operations & Supply Chain'),
+          safeTrim(body.contactEmail, 255, 'contact@business.io'),
+          safeTrim(body.contactPhone, 100, '+1 (415) 555-0142'),
+          safeTrim(body.linkedinUrl, 500, ''),
+          safeTrim(body.verificationStatus, 50, 'Verified'),
+          safeTrim(body.fundingStage, 100, 'Series B'),
+          techStackJson,
+          Number(body.buyingIntentScore) || 88,
+          Number(body.foundedYear) || 2021,
+          body.hasDirectPhone !== undefined ? (body.hasDirectPhone ? 1 : 0) : 1,
+          'manual_custom_lead'
+        ]
+      );
+
+      res.status(201).json({
+        success: true,
+        lead: {
+          id: customId,
+          companyName: body.companyName,
+          domain: body.domain,
+          contactName: body.contactName,
+          contactEmail: body.contactEmail,
+          isCustom: true
+        },
+        message: 'Custom lead added to your private workspace.'
+      });
     } catch (error: any) {
       res.status(400).json({ error: error.message || 'Could not add custom lead' });
     }
   });
 
-  app.delete('/api/leads/custom/:id', optionalAuthMiddleware, async (req, res) => {
+  // --- DELETE USER-PRIVATE CUSTOM LEAD (Strictly restricted to own custom leads; Core leads are immune) ---
+  app.delete('/api/leads/custom/:id', requireJwtMiddleware, async (req: any, res) => {
     try {
       const targetId = req.params.id;
-      const { getDataSource, getPrimaryDataSource, getSecondaryDataSource, getTertiaryDataSource } = await import('./server/dataSource.ts');
-      
-      const dsList = [
-        await getDataSource(),
-        await getTertiaryDataSource(),
-        await getSecondaryDataSource(),
-        await getPrimaryDataSource()
-      ].filter(Boolean);
-
-      let deleted = false;
-      for (const ds of dsList) {
-        try {
-          const result = await ds!.query('DELETE FROM leads WHERE id = ?', [targetId]);
-          if (result && result.affectedRows > 0) {
-            deleted = true;
-          }
-        } catch (_) {}
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: 'Authentication required' });
       }
 
+      const ds = await (await import('./server/dataSource.ts')).getDataSource();
+      
+      // STRICT SECURITY: Only delete from custom_leads WHERE user_id = req.user.id!
+      // Core leads table (10,363,423 records) is strictly protected and cannot be deleted or modified!
+      const result: any = await ds.query(
+        'DELETE FROM custom_leads WHERE id = ? AND user_id = ?',
+        [targetId, userId]
+      );
+
+      const deleted = (result?.affectedRows || 0) > 0;
       res.json({ deleted, id: targetId });
     } catch (err: any) {
       res.status(500).json({ error: err.message });

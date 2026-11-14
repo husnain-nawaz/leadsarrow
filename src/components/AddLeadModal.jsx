@@ -37,8 +37,11 @@ export default function AddLeadModal() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await dispatch(addCustomLead(form));
-    dispatch(fetchLeads(filters));
+    const action = await dispatch(addCustomLead(form));
+    if (addCustomLead.fulfilled.match(action)) {
+      dispatch(setAddLeadModalOpen(false));
+      dispatch(fetchLeads(filters));
+    }
   };
 
   return (
@@ -56,10 +59,10 @@ export default function AddLeadModal() {
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-900 dark:text-white font-display leading-tight">
-                Create & Add Custom B2B Lead
+                Create Private Custom Lead
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Manually add a custom lead to your workspace & index
+                Saved privately to your profile only in Database 4 (never alters core database)
               </p>
             </div>
           </div>
@@ -242,7 +245,7 @@ export default function AddLeadModal() {
               className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 active:scale-95 rounded-xl shadow-xs transition-colors cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Save & Index Custom Lead</span>
+              <span>Save to My Custom Leads</span>
             </button>
           </div>
         </form>

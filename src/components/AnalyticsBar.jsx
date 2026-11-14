@@ -18,6 +18,7 @@ import {
   clearSelectedLeads
 } from '../store/leadsSlice.js';
 import { setSavedListsModalOpen } from '../store/savedListsSlice.js';
+import { openAuthModal } from '../store/authSlice.js';
 
 const QUICK_SEGMENTS = [
   {
@@ -143,14 +144,23 @@ export default function AnalyticsBar() {
             Save / Load List
           </button>
 
-          <button
-            type="button"
-            onClick={() => dispatch(setAddLeadModalOpen(true))}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-            Add B2B Lead
-          </button>
+          {/* Custom Lead Creation Button: ONLY available in Custom Leads view (Private to user profile). Core leads (10M+) cannot be modified */}
+          {filters.onlyCustom && (
+            <button
+              type="button"
+              onClick={() => {
+                if (!user) {
+                  dispatch(openAuthModal('login'));
+                  return;
+                }
+                dispatch(setAddLeadModalOpen(true));
+              }}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer shadow-xs"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add Custom Lead
+            </button>
+          )}
 
           <button
             type="button"

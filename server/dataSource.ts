@@ -9,7 +9,7 @@ import { SavedList } from './entities/SavedList.ts';
 
 dotenv.config();
 
-// Primary Application & Auth Database (Database 4: u340392193_leadsarrow4 - Dedicated for Users, Profiles, Auth, Lists, Revealed Leads)
+// Primary Application & Auth Database (Database 4: u340392193_leadsarrow4 - Dedicated for Users, Profiles, Auth, Lists, Revealed Leads & New Ingestion)
 export const AppDataSource = new DataSource({
   type: 'mysql',
   host: process.env.MYSQL_HOST_DB4 || (process.env.MYSQL_HOST && process.env.MYSQL_HOST !== '127.0.0.1' && process.env.MYSQL_HOST !== 'localhost' ? process.env.MYSQL_HOST : '193.203.184.241'),
@@ -19,7 +19,7 @@ export const AppDataSource = new DataSource({
   database: process.env.MYSQL_DATABASE_MAIN || process.env.MYSQL_DATABASE_DB4 || 'u340392193_leadsarrow4',
   synchronize: false, // Schema already exists and indexed
   logging: false,
-  entities: [User, UserPurchase, UserLogin, SavedList],
+  entities: [User, UserPurchase, UserLogin, SavedList, Lead],
   extra: {
     connectionLimit: 15,
     waitForConnections: true,
@@ -137,15 +137,32 @@ export async function getTertiaryDataSource(): Promise<DataSource | null> {
   return TertiaryDataSource;
 }
 
-export async function getLeadsDataSource(): Promise<DataSource> {
+export async function getLeadsWriteDataSource(): Promise<DataSource> {
+  // Database 4 (u340392193_leadsarrow4) is the designated active write cluster node!
+  // Hostinger DB1, DB2, and DB3 are full (~3072 MB disk limit), so all new writes use DB4.
+  const ds4 = await getDataSource();
+  if (ds4 && ds4.isInitialized) return ds4;
+  throw new Error('Database 4 write cluster node is not available.');
+}
+
+export async function getLeadsReadDataSource(): Promise<DataSource> {
   const ds3 = await getTertiaryDataSource();
   if (ds3 && ds3.isInitialized) return ds3;
   const ds2 = await getSecondaryDataSource();
   if (ds2 && ds2.isInitialized) return ds2;
   const ds1 = await getPrimaryDataSource();
   if (ds1 && ds1.isInitialized) return ds1;
+  const ds4 = await getDataSource();
+  if (ds4 && ds4.isInitialized) return ds4;
   throw new Error('No lead cluster node is available.');
 }
+
+export async function getLeadsDataSource(): Promise<DataSource> {
+  return getLeadsWriteDataSource();
+}
+
+export const QuaternaryDataSource = AppDataSource;
+export const getQuaternaryDataSource = getDataSource;
 
 export async function getDataSource(): Promise<DataSource> {
   if (!isInitialized) {

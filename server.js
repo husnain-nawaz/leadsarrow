@@ -355,11 +355,15 @@ var dataSource_exports = {};
 __export(dataSource_exports, {
   AppDataSource: () => AppDataSource,
   PrimaryDataSource: () => PrimaryDataSource,
+  QuaternaryDataSource: () => QuaternaryDataSource,
   SecondaryDataSource: () => SecondaryDataSource,
   TertiaryDataSource: () => TertiaryDataSource,
   getDataSource: () => getDataSource,
   getLeadsDataSource: () => getLeadsDataSource,
+  getLeadsReadDataSource: () => getLeadsReadDataSource,
+  getLeadsWriteDataSource: () => getLeadsWriteDataSource,
   getPrimaryDataSource: () => getPrimaryDataSource,
+  getQuaternaryDataSource: () => getQuaternaryDataSource,
   getSecondaryDataSource: () => getSecondaryDataSource,
   getTertiaryDataSource: () => getTertiaryDataSource,
   initDatabaseSchema: () => initDatabaseSchema
@@ -412,14 +416,24 @@ async function getTertiaryDataSource() {
   }
   return TertiaryDataSource;
 }
-async function getLeadsDataSource() {
+async function getLeadsWriteDataSource() {
+  const ds4 = await getDataSource();
+  if (ds4 && ds4.isInitialized) return ds4;
+  throw new Error("Database 4 write cluster node is not available.");
+}
+async function getLeadsReadDataSource() {
   const ds3 = await getTertiaryDataSource();
   if (ds3 && ds3.isInitialized) return ds3;
   const ds2 = await getSecondaryDataSource();
   if (ds2 && ds2.isInitialized) return ds2;
   const ds1 = await getPrimaryDataSource();
   if (ds1 && ds1.isInitialized) return ds1;
+  const ds4 = await getDataSource();
+  if (ds4 && ds4.isInitialized) return ds4;
   throw new Error("No lead cluster node is available.");
+}
+async function getLeadsDataSource() {
+  return getLeadsWriteDataSource();
 }
 async function getDataSource() {
   if (!isInitialized) {
@@ -445,7 +459,7 @@ async function initDatabaseSchema() {
   console.log("TypeORM initialized schema connection.");
   return ds;
 }
-var AppDataSource, isInitialized, PrimaryDataSource, isDb1Initialized, SecondaryDataSource, isDb2Initialized, TertiaryDataSource, isDb3Initialized;
+var AppDataSource, isInitialized, PrimaryDataSource, isDb1Initialized, SecondaryDataSource, isDb2Initialized, TertiaryDataSource, isDb3Initialized, QuaternaryDataSource, getQuaternaryDataSource;
 var init_dataSource = __esm({
   "server/dataSource.ts"() {
     init_Lead();
@@ -464,7 +478,7 @@ var init_dataSource = __esm({
       synchronize: false,
       // Schema already exists and indexed
       logging: false,
-      entities: [User, UserPurchase, UserLogin, SavedList],
+      entities: [User, UserPurchase, UserLogin, SavedList, Lead],
       extra: {
         connectionLimit: 15,
         waitForConnections: true,
@@ -523,6 +537,8 @@ var init_dataSource = __esm({
       }
     });
     isDb3Initialized = false;
+    QuaternaryDataSource = AppDataSource;
+    getQuaternaryDataSource = getDataSource;
   }
 });
 
@@ -642,6 +658,48 @@ function mapEntityToLead(entity) {
     createdAt: entity.createdAt ? new Date(entity.createdAt).toISOString() : (/* @__PURE__ */ new Date()).toISOString()
   };
 }
+function mapCustomRowToLead(row) {
+  let tech = [];
+  if (row.tech_stack) {
+    if (Array.isArray(row.tech_stack)) tech = row.tech_stack;
+    else if (typeof row.tech_stack === "string") {
+      try {
+        tech = JSON.parse(row.tech_stack);
+      } catch {
+        tech = row.tech_stack.split(/[,;|]/).map((s) => s.trim()).filter(Boolean);
+      }
+    }
+  }
+  return {
+    id: row.id,
+    companyName: row.company_name,
+    domain: row.domain,
+    industry: row.industry,
+    employeeRange: row.employee_range,
+    employeeCount: Number(row.employee_count) || 120,
+    revenueRange: row.revenue_range,
+    annualRevenueUsd: Number(row.annual_revenue_usd) || 24e6,
+    country: row.country,
+    city: row.city,
+    contactName: row.contact_name,
+    contactTitle: row.contact_title,
+    seniority: row.seniority,
+    department: row.department,
+    contactEmail: row.contact_email,
+    contactPhone: row.contact_phone,
+    linkedinUrl: row.linkedin_url || "",
+    verificationStatus: row.verification_status || "Verified",
+    fundingStage: row.funding_stage || "Series B",
+    techStack: tech.length > 0 ? tech : ["AWS", "Salesforce"],
+    buyingIntentScore: Number(row.buying_intent_score) || 88,
+    foundedYear: Number(row.founded_year) || 2021,
+    hasDirectPhone: Boolean(row.has_direct_phone),
+    isCustom: true,
+    isRecent: true,
+    source: row.source || "manual_custom",
+    createdAt: row.created_at ? new Date(row.created_at).toISOString() : (/* @__PURE__ */ new Date()).toISOString()
+  };
+}
 var cachedGlobals = {
   timestamp: 0,
   totalDatabaseRecords: 10363428,
@@ -693,6 +751,14 @@ async function getGlobalMetricsAndFacets(ds) {
     } catch (_) {
       totalDatabaseRecords += 4154641;
     }
+    try {
+      const ds4 = await getDataSource();
+      if (ds4) {
+        const rawCount4 = await ds4.query("SELECT COUNT(*) as cnt FROM leads;");
+        totalDatabaseRecords += Number(rawCount4[0]?.cnt) || 0;
+      }
+    } catch (_) {
+    }
     if (totalDatabaseRecords < 1e7) {
       totalDatabaseRecords = 10363428;
     }
@@ -706,8 +772,8 @@ async function getGlobalMetricsAndFacets(ds) {
   }
   return cachedGlobals;
 }
-async function queryLeadsDatabase(params = {}) {
-  const ds = await getLeadsDataSource();
+async function queryLeadsDatabase(params = {}, userId) {
+  const ds = await getLeadsReadDataSource();
   const leadRepo = ds.getRepository(Lead);
   const globals = await getGlobalMetricsAndFacets(ds);
   const {
@@ -742,6 +808,89 @@ async function queryLeadsDatabase(params = {}) {
   const techArr = parseArrayParam(techStack);
   const minScore = Number(minIntentScore) || 0;
   const searchLower = String(q || "").trim();
+  const safePage = Math.max(1, Number(page) || 1);
+  const safePageSize = Math.min(100, Math.max(10, Number(pageSize) || 25));
+  const offset = (safePage - 1) * safePageSize;
+  if (String(onlyCustom) === "true" || onlyCustom === true) {
+    if (!userId) {
+      return {
+        leads: [],
+        pagination: {
+          page: 1,
+          pageSize: safePageSize,
+          totalCatalogRows: 0,
+          totalPages: 1,
+          estimatedGlobalMatches: 0,
+          totalDatabaseRecords: globals.totalDatabaseRecords
+        },
+        metrics: {
+          verifiedRatio: 100,
+          avgIntentScore: 88,
+          activeFiltersCount: 1
+        },
+        facets: {}
+      };
+    }
+    try {
+      const ds4 = await getDataSource();
+      let whereClause = "WHERE user_id = ?";
+      const sqlParams = [userId];
+      if (searchLower) {
+        whereClause += " AND (company_name LIKE ? OR contact_name LIKE ? OR domain LIKE ?)";
+        sqlParams.push(`%${searchLower}%`, `%${searchLower}%`, `%${searchLower}%`);
+      }
+      if (indArr.length > 0) {
+        whereClause += ` AND industry IN (${indArr.map(() => "?").join(",")})`;
+        sqlParams.push(...indArr);
+      }
+      if (minScore > 0) {
+        whereClause += " AND buying_intent_score >= ?";
+        sqlParams.push(minScore);
+      }
+      const countRows = await ds4.query(
+        `SELECT COUNT(*) as total FROM custom_leads ${whereClause}`,
+        sqlParams
+      );
+      const totalMatches2 = Number(countRows[0]?.total || 0);
+      const rawRows = await ds4.query(
+        `SELECT * FROM custom_leads ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+        [...sqlParams, safePageSize, offset]
+      );
+      const customLeads = (rawRows || []).map(mapCustomRowToLead);
+      return {
+        leads: customLeads,
+        pagination: {
+          page: safePage,
+          pageSize: safePageSize,
+          totalCatalogRows: totalMatches2,
+          totalPages: Math.max(1, Math.ceil(totalMatches2 / safePageSize)),
+          estimatedGlobalMatches: totalMatches2,
+          totalDatabaseRecords: globals.totalDatabaseRecords
+        },
+        metrics: {
+          verifiedRatio: 100,
+          avgIntentScore: customLeads.length > 0 ? Math.round(customLeads.reduce((s, l) => s + (l.buyingIntentScore || 88), 0) / customLeads.length) : 88,
+          activeFiltersCount: 1
+        },
+        facets: {}
+      };
+    } catch (e) {
+      console.error("Failed to query private custom_leads from DB4:", e.message);
+      return {
+        leads: [],
+        pagination: {
+          page: 1,
+          pageSize: safePageSize,
+          totalCatalogRows: 0,
+          totalPages: 1,
+          estimatedGlobalMatches: 0,
+          totalDatabaseRecords: globals.totalDatabaseRecords
+        },
+        metrics: { verifiedRatio: 100, avgIntentScore: 88, activeFiltersCount: 1 },
+        facets: {}
+      };
+    }
+  }
   const qb = leadRepo.createQueryBuilder("lead");
   let hasWhere = false;
   if (searchLower) {
@@ -878,9 +1027,6 @@ async function queryLeadsDatabase(params = {}) {
   };
   const sortCol = sortMap[sortBy] || "lead.buying_intent_score";
   const sortDirection = String(sortOrder).toLowerCase() === "asc" ? "ASC" : "DESC";
-  const safePage = Math.max(1, Number(page) || 1);
-  const safePageSize = Math.min(100, Math.max(10, Number(pageSize) || 25));
-  const offset = (safePage - 1) * safePageSize;
   let leads = [];
   try {
     if (isUnfiltered && offset < 5e4 && sortBy === "buying_intent_score") {
@@ -2333,7 +2479,8 @@ async function startServer() {
   app.get("/api/leads", async (req, res) => {
     const tStart = Date.now();
     try {
-      const result = await queryLeadsDatabase(req.query);
+      const userId = req.user?.id ? String(req.user.id) : null;
+      const result = await queryLeadsDatabase(req.query, userId);
       const elapsed = Date.now() - tStart;
       console.log(`[QUERY MONITOR] ${elapsed}ms | Filters: ${JSON.stringify(req.query)}`);
       res.json(result);
@@ -2353,61 +2500,88 @@ async function startServer() {
       res.status(500).json({ error: "Failed to fetch leads by IDs" });
     }
   });
-  app.post("/api/leads/custom", optionalAuthMiddleware, async (req, res) => {
+  app.post("/api/leads/custom", requireJwtMiddleware, async (req, res) => {
     try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required to create custom leads." });
+      }
       const body = req.body || {};
-      const result = await batchInsertLeads([{
-        id: body.id || `custom_${Date.now()}`,
-        companyName: String(body.companyName || "Untitled Business").trim(),
-        domain: String(body.domain || "company.io").trim(),
-        industry: String(body.industry || "Enterprise Software & SaaS").trim(),
-        employeeRange: String(body.employeeRange || "51-200").trim(),
-        employeeCount: Number(body.employeeCount) || 120,
-        revenueRange: String(body.revenueRange || "$10M - $50M").trim(),
-        annualRevenueUsd: Number(body.annualRevenueUsd) || 24e6,
-        country: String(body.country || "United States").trim(),
-        city: String(body.city || "San Francisco, CA").trim(),
-        contactName: String(body.contactName || "Executive Contact").trim(),
-        contactTitle: String(body.contactTitle || "VP of Operations").trim(),
-        seniority: String(body.seniority || "VP").trim(),
-        department: String(body.department || "Operations & Supply Chain").trim(),
-        contactEmail: String(body.contactEmail || "contact@company.io").trim(),
-        contactPhone: String(body.contactPhone || "+1 (415) 555-0142").trim(),
-        verificationStatus: body.verificationStatus || "Verified",
-        fundingStage: body.fundingStage || "Series B",
-        techStack: Array.isArray(body.techStack) ? body.techStack : String(body.techStack || "AWS, Salesforce").split(",").map((s) => s.trim()).filter(Boolean),
-        buyingIntentScore: Number(body.buyingIntentScore) || 88,
-        foundedYear: Number(body.foundedYear) || 2021,
-        hasDirectPhone: true,
-        isCustom: true,
-        source: "manual_lead_entry",
-        createdAt: (/* @__PURE__ */ new Date()).toISOString()
-      }]);
-      res.status(201).json({ success: true, result });
+      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
+      const customId = body.id || `custom_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      const safeTrim = (v, maxLen, fallback = "") => {
+        if (v === null || v === void 0) return fallback.slice(0, maxLen);
+        const s = String(v).replace(/\0/g, "").trim();
+        return (s || fallback).slice(0, maxLen);
+      };
+      const techStackJson = JSON.stringify(
+        Array.isArray(body.techStack) ? body.techStack : String(body.techStack || "AWS, Salesforce").split(/[,;|]/).map((s) => s.trim()).filter(Boolean)
+      );
+      await ds.query(
+        `INSERT INTO custom_leads (
+          id, user_id, company_name, domain, industry, employee_range, employee_count,
+          revenue_range, annual_revenue_usd, country, city, contact_name, contact_title,
+          seniority, department, contact_email, contact_phone, linkedin_url,
+          verification_status, funding_stage, tech_stack, buying_intent_score,
+          founded_year, has_direct_phone, source, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+        [
+          customId,
+          userId,
+          safeTrim(body.companyName, 255, "My Custom Business"),
+          safeTrim(body.domain, 255, "business.io"),
+          safeTrim(body.industry, 255, "Enterprise Software & SaaS"),
+          safeTrim(body.employeeRange, 100, "51-200"),
+          Number(body.employeeCount) || 120,
+          safeTrim(body.revenueRange, 100, "$10M - $50M"),
+          Number(body.annualRevenueUsd) || 24e6,
+          safeTrim(body.country, 100, "United States"),
+          safeTrim(body.city, 255, "San Francisco, CA"),
+          safeTrim(body.contactName, 255, "Executive Contact"),
+          safeTrim(body.contactTitle, 255, "VP of Operations"),
+          safeTrim(body.seniority, 100, "VP"),
+          safeTrim(body.department, 100, "Operations & Supply Chain"),
+          safeTrim(body.contactEmail, 255, "contact@business.io"),
+          safeTrim(body.contactPhone, 100, "+1 (415) 555-0142"),
+          safeTrim(body.linkedinUrl, 500, ""),
+          safeTrim(body.verificationStatus, 50, "Verified"),
+          safeTrim(body.fundingStage, 100, "Series B"),
+          techStackJson,
+          Number(body.buyingIntentScore) || 88,
+          Number(body.foundedYear) || 2021,
+          body.hasDirectPhone !== void 0 ? body.hasDirectPhone ? 1 : 0 : 1,
+          "manual_custom_lead"
+        ]
+      );
+      res.status(201).json({
+        success: true,
+        lead: {
+          id: customId,
+          companyName: body.companyName,
+          domain: body.domain,
+          contactName: body.contactName,
+          contactEmail: body.contactEmail,
+          isCustom: true
+        },
+        message: "Custom lead added to your private workspace."
+      });
     } catch (error) {
       res.status(400).json({ error: error.message || "Could not add custom lead" });
     }
   });
-  app.delete("/api/leads/custom/:id", optionalAuthMiddleware, async (req, res) => {
+  app.delete("/api/leads/custom/:id", requireJwtMiddleware, async (req, res) => {
     try {
       const targetId = req.params.id;
-      const { getDataSource: getDataSource2, getPrimaryDataSource: getPrimaryDataSource2, getSecondaryDataSource: getSecondaryDataSource2, getTertiaryDataSource: getTertiaryDataSource2 } = await Promise.resolve().then(() => (init_dataSource(), dataSource_exports));
-      const dsList = [
-        await getDataSource2(),
-        await getTertiaryDataSource2(),
-        await getSecondaryDataSource2(),
-        await getPrimaryDataSource2()
-      ].filter(Boolean);
-      let deleted = false;
-      for (const ds of dsList) {
-        try {
-          const result = await ds.query("DELETE FROM leads WHERE id = ?", [targetId]);
-          if (result && result.affectedRows > 0) {
-            deleted = true;
-          }
-        } catch (_) {
-        }
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
       }
+      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
+      const result = await ds.query(
+        "DELETE FROM custom_leads WHERE id = ? AND user_id = ?",
+        [targetId, userId]
+      );
+      const deleted = (result?.affectedRows || 0) > 0;
       res.json({ deleted, id: targetId });
     } catch (err) {
       res.status(500).json({ error: err.message });
