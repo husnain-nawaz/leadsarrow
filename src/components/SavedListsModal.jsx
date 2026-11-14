@@ -222,6 +222,26 @@ export default function SavedListsModal({ setActiveView, onSelectFullPageList })
             </div>
           </div>
         </div>
+
+        {/* Modal Footer with Direct Link to Full Details Page (Just like ProfileModal) */}
+        <div className="px-6 py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80 flex items-center justify-between gap-3 shrink-0">
+          <button
+            type="button"
+            onClick={() => handleOpenFullPage()}
+            className="text-xs font-semibold text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 hover:underline flex items-center gap-1.5 cursor-pointer"
+          >
+            <span>Open Full Saved Lists Manager & Details Page</span>
+            <ExternalLink className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => dispatch(setSavedListsModalOpen(false))}
+            className="px-3.5 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
+          >
+            Close
+          </button>
+        </div>
       </div>
     </div>
   );
