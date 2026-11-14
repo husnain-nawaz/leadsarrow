@@ -12,7 +12,9 @@ import {
   Sparkles,
   Loader2,
   SearchX,
-  FilterX
+  FilterX,
+  CheckCircle2,
+  X
 } from 'lucide-react';
 import {
   toggleSelectLead,
@@ -180,14 +182,6 @@ export default function LeadsTable() {
       {loading && (
         <div className="absolute top-0 left-0 right-0 h-1 bg-orange-100 dark:bg-orange-950/60 z-30 overflow-hidden shadow-xs">
           <div className="h-full bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600 animate-indeterminate w-1/2" />
-        </div>
-      )}
-
-      {/* Superadmin Database Feedback Notice */}
-      {feedbackMessage && (
-        <div className="px-6 py-2.5 bg-emerald-50 dark:bg-emerald-950/40 border-b border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 flex items-center justify-between z-20 animate-in fade-in duration-150">
-          <span className="font-medium">{feedbackMessage}</span>
-          <button onClick={() => setFeedbackMessage(null)} className="text-emerald-700 dark:text-emerald-400 font-bold ml-2 hover:opacity-80">×</button>
         </div>
       )}
 
@@ -672,6 +666,26 @@ export default function LeadsTable() {
             : "This lead will be permanently erased from Database 4."
         }
       />
+
+      {/* Floating Modern Toast (Position Fixed - Never Causes Layout Shift) */}
+      {feedbackMessage && (
+        <div className="fixed bottom-6 right-6 z-50 max-w-sm pointer-events-auto animate-in fade-in slide-in-from-bottom-5 duration-200">
+          <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-emerald-500/40 dark:border-emerald-500/50 shadow-2xl shadow-emerald-950/20 text-slate-800 dark:text-slate-100 text-xs font-semibold backdrop-blur-md">
+            <div className="w-6 h-6 rounded-lg bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+            </div>
+            <span className="flex-1 leading-snug">{feedbackMessage}</span>
+            <button
+              type="button"
+              onClick={() => setFeedbackMessage(null)}
+              className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              title="Dismiss"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
