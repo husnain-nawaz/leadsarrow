@@ -717,9 +717,9 @@ async function startServer() {
       const requestedCluster = String(req.query.cluster || '').trim();
       const ds = await (await import('./server/dataSource.ts')).getDataSource();
 
-      // 1. Fetch user's registered clusters and compute counts
+      // 1. Fetch user's registered clusters and compute counts (newest first so newly created cluster is always first)
       const clusterRows: any = await ds.query(
-        `SELECT id, name, description, created_at FROM custom_clusters WHERE user_id = ? ORDER BY created_at ASC`,
+        `SELECT id, name, description, created_at FROM custom_clusters WHERE user_id = ? ORDER BY created_at DESC`,
         [userId]
       );
 
@@ -736,30 +736,37 @@ async function startServer() {
       });
 
       const seenClusterNames = new Set<string>();
-      const clusters = (clusterRows || []).map((row: any) => {
-        seenClusterNames.add(row.name);
-        return {
-          id: row.id,
-          name: row.name,
-          description: row.description || '',
-          leadCount: countMap[row.name] || 0,
-          createdAt: row.created_at ? new Date(row.created_at).toISOString() : new Date().toISOString()
-        };
-      });
+      const clusters = (clusterRows || [])
+        .filter((row: any) => row.name && String(row.name).trim())
+        .map((row: any) => {
+          const trimmedName = String(row.name).trim();
+          seenClusterNames.add(trimmedName);
+          return {
+            id: row.id,
+            name: trimmedName,
+            description: row.description || '',
+            leadCount: countMap[trimmedName] || 0,
+            createdAt: row.created_at ? new Date(row.created_at).toISOString() : new Date().toISOString()
+          };
+        });
 
       // Include any distinct cluster_name from custom_leads not in custom_clusters
       Object.keys(countMap).forEach((name) => {
-        if (!seenClusterNames.has(name)) {
-          seenClusterNames.add(name);
+        const trimmed = String(name || '').trim();
+        if (trimmed && !seenClusterNames.has(trimmed)) {
+          seenClusterNames.add(trimmed);
           clusters.push({
-            id: `cls_${Buffer.from(userId + '_' + name).toString('base64').replace(/[^a-zA-Z0-9]/g, '').slice(0, 32)}`,
-            name,
-            description: `${name} cluster`,
-            leadCount: countMap[name],
+            id: `cls_${Buffer.from(userId + '_' + trimmed).toString('base64').replace(/[^a-zA-Z0-9]/g, '').slice(0, 32)}`,
+            name: trimmed,
+            description: `${trimmed} cluster`,
+            leadCount: countMap[trimmed],
             createdAt: new Date().toISOString()
           });
         }
       });
+
+      // Sort clusters strictly newest first (createdAt DESC) so newest cluster is always index 0
+      clusters.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
       // Determine active cluster: leads must always belong to a specific cluster
       let activeCluster = requestedCluster && requestedCluster !== 'all' ? requestedCluster : null;

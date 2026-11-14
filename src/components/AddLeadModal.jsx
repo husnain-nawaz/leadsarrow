@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { X, Plus, Sparkles, Layers, Folder } from 'lucide-react';
+import { X, Plus, Sparkles, Layers, Folder, Lock } from 'lucide-react';
 import { setAddLeadModalOpen, addCustomLead, fetchLeads } from '../store/leadsSlice.js';
 
 export default function AddLeadModal() {
@@ -85,42 +85,31 @@ export default function AddLeadModal() {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4 text-xs overscroll-contain">
-          {/* Target Cluster / Group Selector */}
+          {/* Target Cluster / Group Selector (Strictly Unchangeable / Locked to Active Cluster) */}
           <div className="p-3 bg-orange-50/60 dark:bg-orange-950/30 border border-orange-200/80 dark:border-orange-800/60 rounded-xl space-y-1.5">
             <div className="flex items-center justify-between">
               <label className="font-bold text-orange-950 dark:text-orange-300 flex items-center gap-1.5">
                 <Layers className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
                 <span>Lead Cluster / Group *</span>
               </label>
-              <span className="text-[10px] text-orange-700/80 dark:text-orange-400 font-medium">
-                Organizes leads into clusters
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800/70">
+                <Lock className="w-2.5 h-2.5" />
+                <span>Locked to Selected Cluster</span>
               </span>
             </div>
-            <input
-              type="text"
-              required
-              value={form.clusterName}
-              onChange={(e) => handleChange('clusterName', e.target.value)}
-              placeholder="e.g. Enterprise SaaS, FinTech, Q4 Targets..."
-              className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-orange-300/80 dark:border-orange-700/80 rounded-lg text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
-            <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 pt-0.5">
-              <span>Quick tags:</span>
-              {['Enterprise SaaS', 'High Intent SDR', 'Outreach Wave 1', 'Strategic Accounts'].map((tag) => (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => handleChange('clusterName', tag)}
-                  className={`px-1.5 py-0.5 rounded border transition-colors cursor-pointer ${
-                    form.clusterName === tag
-                      ? 'bg-orange-600 text-white border-orange-600 font-bold'
-                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-orange-400'
-                  }`}
-                >
-                  {tag}
-                </button>
-              ))}
+            <div className="relative">
+              <input
+                type="text"
+                readOnly
+                required
+                value={form.clusterName || 'General'}
+                className="w-full pl-8 pr-3 py-2 bg-slate-100 dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 font-semibold cursor-not-allowed select-none focus:outline-none"
+              />
+              <Lock className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
             </div>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 pt-0.5 leading-tight">
+              To prevent accidental assignment, leads are locked to cluster <span className="font-semibold text-orange-600 dark:text-orange-400">"{form.clusterName || 'General'}"</span>. To target another cluster, select it from your Custom Leads workspace.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">

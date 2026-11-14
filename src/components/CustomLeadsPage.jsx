@@ -222,7 +222,7 @@ export default function CustomLeadsPage() {
       dispatch(openAuthModal('login'));
       return;
     }
-    if (isFreeUser && clusters.length >= 5) {
+    if (isFreeUser && validClusters.length >= 5) {
       setIsClusterLimitModalOpen(true);
       return;
     }
@@ -234,14 +234,14 @@ export default function CustomLeadsPage() {
     e.preventDefault();
     const trimmed = newClusterName.trim();
     if (!trimmed) return;
-    if (isFreeUser && clusters.length >= 5) {
+    if (isFreeUser && validClusters.length >= 5) {
       setIsCreateClusterModalOpen(false);
       setIsClusterLimitModalOpen(true);
       return;
     }
     setIsCreatingCluster(true);
     try {
-      await createCustomClusterOnServerApi({
+      const res = await createCustomClusterOnServerApi({
         name: trimmed,
         description: newClusterDesc.trim() || `${trimmed} lead cluster`
       });
@@ -251,8 +251,27 @@ export default function CustomLeadsPage() {
       setNewClusterDesc('');
       setIsCreateClusterModalOpen(false);
       setSelectedCluster(trimmed);
+
+      const newClusterObj = res?.cluster || {
+        id: `cls_${Date.now()}`,
+        name: trimmed,
+        description: newClusterDesc.trim() || `${trimmed} lead cluster`,
+        leadCount: 0,
+        createdAt: new Date().toISOString()
+      };
+
+      // Put newly created cluster FIRST (immediately next to "+ Create New Cluster" card)
+      setClusters((prev) => [newClusterObj, ...prev.filter((c) => c.name !== trimmed)]);
+
       clusterLeadsCacheRef.current = {};
-      loadCustomLeads(trimmed, true);
+      await loadCustomLeads(trimmed, true);
+
+      // Scroll horizontal row to the left (0) so newly created cluster is immediately in view next to pinned card
+      setTimeout(() => {
+        if (clustersScrollRef.current) {
+          clustersScrollRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+        }
+      }, 50);
     } catch (err) {
       alert(err.message || 'Failed to create cluster');
     } finally {
@@ -283,13 +302,18 @@ export default function CustomLeadsPage() {
     }
   };
 
+  // Valid non-empty clusters
+  const validClusters = useMemo(() => {
+    return (clusters || []).filter((c) => c && c.name && String(c.name).trim().length > 0);
+  }, [clusters]);
+
   // Displayed slice of clusters (starting with 5, loading +5 progressively)
   const displayedClusters = useMemo(() => {
-    return clusters.slice(0, clusterDisplayLimit);
-  }, [clusters, clusterDisplayLimit]);
+    return validClusters.slice(0, clusterDisplayLimit);
+  }, [validClusters, clusterDisplayLimit]);
 
-  const hasMoreClusters = clusters.length > clusterDisplayLimit;
-  const remainingClustersCount = Math.max(0, clusters.length - clusterDisplayLimit);
+  const hasMoreClusters = validClusters.length > clusterDisplayLimit;
+  const remainingClustersCount = Math.max(0, validClusters.length - clusterDisplayLimit);
 
   // Horizontal scroll buttons detection
   const checkScroll = useCallback(() => {
@@ -412,7 +436,7 @@ export default function CustomLeadsPage() {
             <div className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 text-xs">
               <span className="text-slate-500 dark:text-slate-400">Total Clusters: </span>
               <span className="font-bold text-slate-900 dark:text-white font-mono">
-                {clusters.length}
+                {validClusters.length}
               </span>
             </div>
 
@@ -439,14 +463,14 @@ export default function CustomLeadsPage() {
                   dispatch(openAuthModal('login'));
                   return;
                 }
-                if (clusters.length === 0) {
+                if (validClusters.length === 0) {
                   handleOpenCreateCluster();
                   return;
                 }
                 dispatch(
                   setAddLeadModalOpen({
                     open: true,
-                    cluster: selectedCluster || clusters[0]?.name || ''
+                    cluster: selectedCluster || validClusters[0]?.name || ''
                   })
                 );
               }}
@@ -507,7 +531,7 @@ export default function CustomLeadsPage() {
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                     <span className="font-semibold text-slate-700 dark:text-slate-300">
-                      {clusters.length} {clusters.length === 1 ? 'Cluster' : 'Clusters'}
+                      {validClusters.length} {validClusters.length === 1 ? 'Cluster' : 'Clusters'}
                     </span>
                     <span>·</span>
                     <span>{totalAllClusterLeads} Total Private Leads</span>
@@ -543,7 +567,7 @@ export default function CustomLeadsPage() {
                 <div
                   onClick={handleOpenCreateCluster}
                   className={`shrink-0 w-64 p-4 rounded-xl border-2 border-dashed transition-all cursor-pointer flex flex-col justify-between group min-h-[155px] ${
-                    isFreeUser && clusters.length >= 5
+                    isFreeUser && validClusters.length >= 5
                       ? 'border-amber-400 dark:border-amber-700 bg-amber-50/40 dark:bg-amber-950/20 hover:border-amber-500'
                       : 'border-slate-300 dark:border-slate-700 hover:border-orange-500 dark:hover:border-orange-500 bg-white dark:bg-slate-900 hover:bg-orange-50/20 dark:hover:bg-orange-950/20 shadow-xs'
                   }`}
@@ -555,16 +579,16 @@ export default function CustomLeadsPage() {
                     {isFreeUser ? (
                       <span
                         className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono ${
-                          clusters.length >= 5
+                          validClusters.length >= 5
                             ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
                             : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
                         }`}
                       >
-                        {clusters.length} / 5 Used
+                        {validClusters.length} / 5 Used
                       </span>
                     ) : (
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold font-mono bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                        {clusters.length} Clusters
+                        {validClusters.length} Clusters
                       </span>
                     )}
                   </div>
@@ -579,7 +603,7 @@ export default function CustomLeadsPage() {
                   </div>
 
                   <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px]">
-                    {isFreeUser && clusters.length >= 5 ? (
+                    {isFreeUser && validClusters.length >= 5 ? (
                       <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
                         <AlertCircle className="w-3 h-3" />
                         <span>Limit reached · Upgrade</span>
@@ -709,7 +733,7 @@ export default function CustomLeadsPage() {
                       </div>
                     )}
 
-                    {clusters.length === 0 && (
+                    {validClusters.length === 0 && (
                       <div className="flex-1 min-h-[140px] flex flex-col items-center justify-center p-4 rounded-xl border border-dashed border-slate-300 dark:border-slate-800 bg-white/50 dark:bg-slate-900/40 text-center">
                         <Folder className="w-6 h-6 text-slate-400 mb-1.5" />
                         <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
@@ -779,14 +803,14 @@ export default function CustomLeadsPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      if (clusters.length === 0) {
+                      if (validClusters.length === 0) {
                         handleOpenCreateCluster();
                         return;
                       }
                       dispatch(
                         setAddLeadModalOpen({
                           open: true,
-                          cluster: selectedCluster || clusters[0]?.name || ''
+                          cluster: selectedCluster || validClusters[0]?.name || ''
                         })
                       );
                     }}

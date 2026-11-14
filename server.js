@@ -2703,7 +2703,7 @@ async function startServer() {
       const requestedCluster = String(req.query.cluster || "").trim();
       const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
       const clusterRows = await ds.query(
-        `SELECT id, name, description, created_at FROM custom_clusters WHERE user_id = ? ORDER BY created_at ASC`,
+        `SELECT id, name, description, created_at FROM custom_clusters WHERE user_id = ? ORDER BY created_at DESC`,
         [userId]
       );
       const countByCluster = await ds.query(
@@ -2717,28 +2717,31 @@ async function startServer() {
         }
       });
       const seenClusterNames = /* @__PURE__ */ new Set();
-      const clusters = (clusterRows || []).map((row) => {
-        seenClusterNames.add(row.name);
+      const clusters = (clusterRows || []).filter((row) => row.name && String(row.name).trim()).map((row) => {
+        const trimmedName = String(row.name).trim();
+        seenClusterNames.add(trimmedName);
         return {
           id: row.id,
-          name: row.name,
+          name: trimmedName,
           description: row.description || "",
-          leadCount: countMap[row.name] || 0,
+          leadCount: countMap[trimmedName] || 0,
           createdAt: row.created_at ? new Date(row.created_at).toISOString() : (/* @__PURE__ */ new Date()).toISOString()
         };
       });
       Object.keys(countMap).forEach((name) => {
-        if (!seenClusterNames.has(name)) {
-          seenClusterNames.add(name);
+        const trimmed = String(name || "").trim();
+        if (trimmed && !seenClusterNames.has(trimmed)) {
+          seenClusterNames.add(trimmed);
           clusters.push({
-            id: `cls_${Buffer.from(userId + "_" + name).toString("base64").replace(/[^a-zA-Z0-9]/g, "").slice(0, 32)}`,
-            name,
-            description: `${name} cluster`,
-            leadCount: countMap[name],
+            id: `cls_${Buffer.from(userId + "_" + trimmed).toString("base64").replace(/[^a-zA-Z0-9]/g, "").slice(0, 32)}`,
+            name: trimmed,
+            description: `${trimmed} cluster`,
+            leadCount: countMap[trimmed],
             createdAt: (/* @__PURE__ */ new Date()).toISOString()
           });
         }
       });
+      clusters.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       let activeCluster = requestedCluster && requestedCluster !== "all" ? requestedCluster : null;
       if (!activeCluster && clusters.length > 0) {
         activeCluster = clusters[0].name;
