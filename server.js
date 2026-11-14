@@ -2700,38 +2700,21 @@ async function startServer() {
         return res.status(401).json({ error: "Authentication required to view your custom leads." });
       }
       const q = String(req.query.q || "").trim();
-      const clusterFilter = String(req.query.cluster || "").trim();
+      const requestedCluster = String(req.query.cluster || "").trim();
       const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
-      let whereClause = "WHERE user_id = ?";
-      const sqlParams = [userId];
-      if (clusterFilter && clusterFilter !== "all") {
-        whereClause += " AND cluster_name = ?";
-        sqlParams.push(clusterFilter);
-      }
-      if (q) {
-        whereClause += " AND (company_name LIKE ? OR contact_name LIKE ? OR domain LIKE ? OR contact_email LIKE ? OR cluster_name LIKE ?)";
-        sqlParams.push(`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`);
-      }
-      const countRows = await ds.query(
-        `SELECT COUNT(*) as total FROM custom_leads ${whereClause}`,
-        sqlParams
-      );
-      const total = Number(countRows[0]?.total || 0);
-      const rawRows = await ds.query(
-        `SELECT * FROM custom_leads ${whereClause} ORDER BY created_at DESC`,
-        sqlParams
-      );
       const clusterRows = await ds.query(
         `SELECT id, name, description, created_at FROM custom_clusters WHERE user_id = ? ORDER BY created_at ASC`,
         [userId]
       );
       const countByCluster = await ds.query(
-        `SELECT cluster_name, COUNT(*) as cnt FROM custom_leads WHERE user_id = ? GROUP BY cluster_name`,
+        `SELECT cluster_name, COUNT(*) as cnt FROM custom_leads WHERE user_id = ? AND cluster_name IS NOT NULL AND cluster_name != '' GROUP BY cluster_name`,
         [userId]
       );
       const countMap = {};
       (countByCluster || []).forEach((r) => {
-        countMap[r.cluster_name || "General"] = Number(r.cnt) || 0;
+        if (r.cluster_name) {
+          countMap[r.cluster_name] = Number(r.cnt) || 0;
+        }
       });
       const seenClusterNames = /* @__PURE__ */ new Set();
       const clusters = (clusterRows || []).map((row) => {
@@ -2756,18 +2739,34 @@ async function startServer() {
           });
         }
       });
-      if (clusters.length === 0) {
-        clusters.push({
-          id: `cls_default_${Date.now()}`,
-          name: "General",
-          description: "Primary custom target cluster",
-          leadCount: 0,
-          createdAt: (/* @__PURE__ */ new Date()).toISOString()
-        });
+      let activeCluster = requestedCluster && requestedCluster !== "all" ? requestedCluster : null;
+      if (!activeCluster && clusters.length > 0) {
+        activeCluster = clusters[0].name;
       }
+      let whereClause = "WHERE user_id = ?";
+      const sqlParams = [userId];
+      if (activeCluster) {
+        whereClause += " AND cluster_name = ?";
+        sqlParams.push(activeCluster);
+      } else {
+        whereClause += " AND 1 = 0";
+      }
+      if (q) {
+        whereClause += " AND (company_name LIKE ? OR contact_name LIKE ? OR domain LIKE ? OR contact_email LIKE ?)";
+        sqlParams.push(`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`);
+      }
+      const countRows = await ds.query(
+        `SELECT COUNT(*) as total FROM custom_leads ${whereClause}`,
+        sqlParams
+      );
+      const total = Number(countRows[0]?.total || 0);
+      const rawRows = await ds.query(
+        `SELECT * FROM custom_leads ${whereClause} ORDER BY created_at DESC`,
+        sqlParams
+      );
       const leads = (rawRows || []).map((row) => ({
         id: row.id,
-        clusterName: row.cluster_name || "General",
+        clusterName: row.cluster_name,
         companyName: row.company_name,
         domain: row.domain,
         industry: row.industry,
@@ -2797,7 +2796,7 @@ async function startServer() {
         leads,
         total,
         clusters,
-        activeCluster: clusterFilter || "all",
+        activeCluster,
         owner: {
           id: req.user.id,
           name: req.user.name,
@@ -2817,6 +2816,21 @@ async function startServer() {
       const description = String(req.body?.description || "").trim();
       if (!name) return res.status(400).json({ error: "Cluster name is required" });
       const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
+      const userPlan = (req.user?.planId || req.user?.plan || "free").toLowerCase();
+      const userRole = (req.user?.role || "").toLowerCase();
+      const isPaidOrSuperadmin = userRole === "superadmin" || userPlan.includes("growth") || userPlan.includes("scale") || userPlan.includes("unlimited") || userPlan.includes("pro") || userPlan.includes("starter");
+      if (!isPaidOrSuperadmin) {
+        const countRes = await ds.query(
+          "SELECT COUNT(*) as count FROM custom_clusters WHERE user_id = ?",
+          [userId]
+        );
+        const existingCount = Number(countRes[0]?.count || 0);
+        if (existingCount >= 5) {
+          return res.status(403).json({
+            error: "Free accounts are limited to 5 clusters at a time. Delete an existing cluster or upgrade your plan to create more."
+          });
+        }
+      }
       const clusterId = `cls_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
       await ds.query(
         `INSERT INTO custom_clusters (id, user_id, name, description, created_at)
@@ -2870,7 +2884,10 @@ async function startServer() {
         const s = String(v).replace(/\0/g, "").trim();
         return (s || fallback).slice(0, maxLen);
       };
-      const clusterName = safeTrim(body.clusterName || body.cluster || "General", 128, "General");
+      const clusterName = safeTrim(body.clusterName || body.cluster, 128, "");
+      if (!clusterName) {
+        return res.status(400).json({ error: "A valid cluster name is required. Every custom lead must belong to a cluster." });
+      }
       const techStackJson = JSON.stringify(
         Array.isArray(body.techStack) ? body.techStack : String(body.techStack || "AWS, Salesforce").split(/[,;|]/).map((s) => s.trim()).filter(Boolean)
       );

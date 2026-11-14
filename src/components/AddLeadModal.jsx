@@ -10,7 +10,7 @@ export default function AddLeadModal() {
   const { user } = useSelector((state) => state.auth);
 
   const [form, setForm] = useState({
-    clusterName: targetClusterName || 'General',
+    clusterName: targetClusterName || '',
     companyName: '',
     domain: '',
     industry: 'Enterprise Software & SaaS',
@@ -33,7 +33,7 @@ export default function AddLeadModal() {
     if (isAddLeadModalOpen) {
       setForm((prev) => ({
         ...prev,
-        clusterName: targetClusterName || prev.clusterName || 'General'
+        clusterName: targetClusterName || prev.clusterName || ''
       }));
     }
   }, [isAddLeadModalOpen, targetClusterName]);
@@ -106,7 +106,7 @@ export default function AddLeadModal() {
             />
             <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 pt-0.5">
               <span>Quick tags:</span>
-              {['General', 'Enterprise SaaS', 'High Intent SDR', 'Outreach Wave 1'].map((tag) => (
+              {['Enterprise SaaS', 'High Intent SDR', 'Outreach Wave 1', 'Strategic Accounts'].map((tag) => (
                 <button
                   key={tag}
                   type="button"

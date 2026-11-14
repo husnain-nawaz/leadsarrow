@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   Plus,
@@ -16,6 +16,7 @@ import {
   ExternalLink,
   Sparkles,
   AlertCircle,
+  AlertTriangle,
   Database,
   ChevronLeft,
   ChevronRight,
@@ -30,7 +31,7 @@ import {
   toggleSelectLead,
   selectAllCurrentPageLeads
 } from '../store/leadsSlice.js';
-import { openAuthModal } from '../store/authSlice.js';
+import { openAuthModal, openUpgradeModal } from '../store/authSlice.js';
 import {
   fetchCustomLeadsFromServerApi,
   deleteCustomLeadOnServerApi,
@@ -46,15 +47,31 @@ export default function CustomLeadsPage() {
   const customLeadsVersion = useSelector((state) => state.leads.customLeadsVersion);
   const { selectedLeadIds = [] } = useSelector((state) => state.leads);
 
+  // Check if current user is on Free Starter tier (max 5 active clusters)
+  const isFreeUser =
+    user?.role !== 'superadmin' &&
+    (!user?.planId ||
+      user?.planId === 'free' ||
+      user?.plan?.toLowerCase().includes('free'));
+
   const [leads, setLeads] = useState([]);
   const [clusters, setClusters] = useState([]);
   const [selectedCluster, setSelectedCluster] = useState(() => {
     try {
       const saved = localStorage.getItem('leadsarrow_custom_selected_cluster');
-      if (saved) return saved;
+      if (saved && saved !== 'all') return saved;
     } catch (e) {}
-    return 'all';
+    return null;
   });
+
+  // Display limit for horizontal clusters (loads 5 at a time, adds +5 on click)
+  const [clusterDisplayLimit, setClusterDisplayLimit] = useState(5);
+  const [isClusterLimitModalOpen, setIsClusterLimitModalOpen] = useState(false);
+
+  // Horizontal scroll refs and controls
+  const clustersScrollRef = useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -85,7 +102,11 @@ export default function CustomLeadsPage() {
   // Persist cluster selection
   useEffect(() => {
     try {
-      localStorage.setItem('leadsarrow_custom_selected_cluster', selectedCluster);
+      if (selectedCluster) {
+        localStorage.setItem('leadsarrow_custom_selected_cluster', selectedCluster);
+      } else {
+        localStorage.removeItem('leadsarrow_custom_selected_cluster');
+      }
     } catch (e) {}
     setPage(1);
   }, [selectedCluster]);
@@ -112,7 +133,7 @@ export default function CustomLeadsPage() {
   const startIdx = totalLeadsCount === 0 ? 0 : (page - 1) * pageSize + 1;
   const endIdx = Math.min(totalLeadsCount, page * pageSize);
 
-  const loadCustomLeads = useCallback(async () => {
+  const loadCustomLeads = useCallback(async (clusterOverride) => {
     if (!userId) {
       setLeads([]);
       setClusters([]);
@@ -121,10 +142,20 @@ export default function CustomLeadsPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetchCustomLeadsFromServerApi(searchQuery, selectedCluster);
+      const activeCls = clusterOverride !== undefined ? clusterOverride : selectedCluster;
+      const response = await fetchCustomLeadsFromServerApi(searchQuery, activeCls || '');
+      const fetchedClusters = response.clusters || [];
+      setClusters(fetchedClusters);
       setLeads(response.leads || []);
-      if (response.clusters) {
-        setClusters(response.clusters);
+
+      if (fetchedClusters.length > 0) {
+        const clusterNames = fetchedClusters.map((c) => c.name);
+        if (!activeCls || !clusterNames.includes(activeCls)) {
+          const nextActive = response.activeCluster || clusterNames[0];
+          setSelectedCluster(nextActive);
+        }
+      } else {
+        setSelectedCluster(null);
       }
     } catch (err) {
       console.error('Failed to load user custom leads:', err);
@@ -161,11 +192,29 @@ export default function CustomLeadsPage() {
     }
   };
 
+  // Handle opening cluster creation modal (with 5-cluster limit check for free users)
+  const handleOpenCreateCluster = () => {
+    if (!user) {
+      dispatch(openAuthModal('login'));
+      return;
+    }
+    if (isFreeUser && clusters.length >= 5) {
+      setIsClusterLimitModalOpen(true);
+      return;
+    }
+    setIsCreateClusterModalOpen(true);
+  };
+
   // Handle cluster creation
   const handleCreateCluster = async (e) => {
     e.preventDefault();
     const trimmed = newClusterName.trim();
     if (!trimmed) return;
+    if (isFreeUser && clusters.length >= 5) {
+      setIsCreateClusterModalOpen(false);
+      setIsClusterLimitModalOpen(true);
+      return;
+    }
     setIsCreatingCluster(true);
     try {
       await createCustomClusterOnServerApi({
@@ -178,7 +227,7 @@ export default function CustomLeadsPage() {
       setNewClusterDesc('');
       setIsCreateClusterModalOpen(false);
       setSelectedCluster(trimmed);
-      loadCustomLeads();
+      loadCustomLeads(trimmed);
     } catch (err) {
       alert(err.message || 'Failed to create cluster');
     } finally {
@@ -186,7 +235,7 @@ export default function CustomLeadsPage() {
     }
   };
 
-  // Handle cluster deletion
+  // Handle cluster deletion (all clusters can be deleted, including their leads)
   const handleConfirmDeleteCluster = async () => {
     if (!deleteClusterTarget) return;
     setIsDeletingCluster(true);
@@ -194,16 +243,54 @@ export default function CustomLeadsPage() {
       await deleteCustomClusterOnServerApi(deleteClusterTarget.name);
       setFeedbackMessage(`Cluster "${deleteClusterTarget.name}" and its associated custom leads have been removed.`);
       setTimeout(() => setFeedbackMessage(null), 4000);
+      
+      const remainingClusters = clusters.filter((c) => c.name !== deleteClusterTarget.name);
+      setClusters(remainingClusters);
+      const nextCluster = remainingClusters[0]?.name || null;
+      setSelectedCluster(nextCluster);
       setDeleteClusterTarget(null);
-      if (selectedCluster === deleteClusterTarget.name) {
-        setSelectedCluster('all');
-      }
-      loadCustomLeads();
+      loadCustomLeads(nextCluster);
     } catch (err) {
       alert(err.message || 'Failed to delete cluster');
     } finally {
       setIsDeletingCluster(false);
     }
+  };
+
+  // Displayed slice of clusters (starting with 5, loading +5 progressively)
+  const displayedClusters = useMemo(() => {
+    return clusters.slice(0, clusterDisplayLimit);
+  }, [clusters, clusterDisplayLimit]);
+
+  const hasMoreClusters = clusters.length > clusterDisplayLimit;
+  const remainingClustersCount = Math.max(0, clusters.length - clusterDisplayLimit);
+
+  // Horizontal scroll buttons detection
+  const checkScroll = useCallback(() => {
+    const el = clustersScrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 10);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 10);
+  }, []);
+
+  useEffect(() => {
+    checkScroll();
+    const el = clustersScrollRef.current;
+    if (el) {
+      el.addEventListener('scroll', checkScroll, { passive: true });
+      window.addEventListener('resize', checkScroll);
+      return () => {
+        el.removeEventListener('scroll', checkScroll);
+        window.removeEventListener('resize', checkScroll);
+      };
+    }
+  }, [checkScroll, displayedClusters]);
+
+  const handleScrollClusters = (dir) => {
+    const el = clustersScrollRef.current;
+    if (!el) return;
+    const distance = 280 * 2;
+    el.scrollBy({ left: dir === 'left' ? -distance : distance, behavior: 'smooth' });
   };
 
   const handleExportCsv = () => {
@@ -312,13 +399,7 @@ export default function CustomLeadsPage() {
 
             <button
               type="button"
-              onClick={() => {
-                if (!user) {
-                  dispatch(openAuthModal('login'));
-                  return;
-                }
-                setIsCreateClusterModalOpen(true);
-              }}
+              onClick={handleOpenCreateCluster}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-950/40 border border-orange-300 dark:border-orange-800 hover:bg-orange-100 dark:hover:bg-orange-900/40 rounded-xl transition-colors cursor-pointer"
             >
               <FolderPlus className="w-3.5 h-3.5" />
@@ -332,10 +413,16 @@ export default function CustomLeadsPage() {
                   dispatch(openAuthModal('login'));
                   return;
                 }
-                dispatch(setAddLeadModalOpen({
-                  open: true,
-                  cluster: selectedCluster !== 'all' ? selectedCluster : 'General'
-                }));
+                if (clusters.length === 0) {
+                  handleOpenCreateCluster();
+                  return;
+                }
+                dispatch(
+                  setAddLeadModalOpen({
+                    open: true,
+                    cluster: selectedCluster || clusters[0]?.name || ''
+                  })
+                );
               }}
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-xl transition-colors cursor-pointer shadow-xs active:scale-95"
             >
@@ -378,7 +465,7 @@ export default function CustomLeadsPage() {
           </div>
         ) : (
           <>
-            {/* 1. CLUSTERS / GROUPS COMPONENTS SECTION ("First show components and their some add the custom leads") */}
+            {/* 1. CLUSTERS / GROUPS COMPONENTS SECTION */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div>
@@ -387,153 +474,197 @@ export default function CustomLeadsPage() {
                     <span>Lead Clusters & Target Groups</span>
                   </h2>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Segment custom leads into dedicated clusters instead of mixing all leads together. Add leads directly to any cluster below.
+                    Segment custom leads into dedicated clusters. Every custom lead belongs to a cluster. Free plan limit: 5 active clusters.
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  {selectedCluster !== 'all' && (
-                    <button
-                      type="button"
-                      onClick={() => setSelectedCluster('all')}
-                      className="text-xs text-orange-600 dark:text-orange-400 hover:underline font-semibold cursor-pointer"
-                    >
-                      View All Clusters ({totalAllClusterLeads})
-                    </button>
-                  )}
+                <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">
+                    {clusters.length} {clusters.length === 1 ? 'Cluster' : 'Clusters'}
+                  </span>
+                  <span>·</span>
+                  <span>{totalAllClusterLeads} Total Private Leads</span>
                 </div>
               </div>
 
-              {/* Grid of Cluster Components / Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-                {/* Cluster Card 0: All Custom Leads */}
+              {/* Cluster Components Row: First Card (+ Create New Cluster) is Pinned / Non-scrollable */}
+              <div className="flex items-stretch gap-3.5">
+                {/* PINNED FIRST CARD: + Create New Cluster */}
                 <div
-                  onClick={() => setSelectedCluster('all')}
-                  className={`p-4 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
-                    selectedCluster === 'all'
-                      ? 'border-orange-500 bg-orange-50/40 dark:bg-orange-950/30 shadow-md ring-2 ring-orange-400/20'
-                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700'
+                  onClick={handleOpenCreateCluster}
+                  className={`shrink-0 w-64 p-4 rounded-xl border-2 border-dashed transition-all cursor-pointer flex flex-col justify-between group min-h-[155px] ${
+                    isFreeUser && clusters.length >= 5
+                      ? 'border-amber-400 dark:border-amber-700 bg-amber-50/40 dark:bg-amber-950/20 hover:border-amber-500'
+                      : 'border-slate-300 dark:border-slate-700 hover:border-orange-500 dark:hover:border-orange-500 bg-white dark:bg-slate-900 hover:bg-orange-50/20 dark:hover:bg-orange-950/20 shadow-xs'
                   }`}
                 >
                   <div className="flex items-start justify-between">
-                    <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center font-bold">
-                      <Layers className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                    <div className="w-9 h-9 rounded-lg bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+                      <FolderPlus className="w-4 h-4" />
                     </div>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold font-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                      {totalAllClusterLeads} leads
-                    </span>
+                    {isFreeUser ? (
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono ${
+                          clusters.length >= 5
+                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                            : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                        }`}
+                      >
+                        {clusters.length} / 5 Used
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold font-mono bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                        {clusters.length} Clusters
+                      </span>
+                    )}
                   </div>
 
-                  <div className="mt-3">
-                    <h3 className="font-bold text-xs text-slate-900 dark:text-white">
-                      All Custom Leads
+                  <div className="my-2 text-left">
+                    <h3 className="font-bold text-xs text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
+                      + Create New Cluster
                     </h3>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">
-                      Aggregate view across all private clusters
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
+                      Group custom leads by campaign or niche
                     </p>
                   </div>
 
-                  <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px]">
-                    <span className={`font-semibold ${selectedCluster === 'all' ? 'text-orange-600 dark:text-orange-400' : 'text-slate-500'}`}>
-                      {selectedCluster === 'all' ? '● Currently Active' : 'Select to view'}
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px]">
+                    {isFreeUser && clusters.length >= 5 ? (
+                      <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        <span>Limit reached · Upgrade</span>
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-semibold text-orange-600 dark:text-orange-400">
+                        + Click to add cluster
+                      </span>
+                    )}
+                    <span className="text-[10px] text-slate-400">
+                      Private DB4
                     </span>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        dispatch(setAddLeadModalOpen({ open: true, cluster: 'General' }));
-                      }}
-                      className="inline-flex items-center gap-1 font-bold text-orange-600 hover:text-orange-700 dark:text-orange-400"
-                    >
-                      <Plus className="w-3 h-3" />
-                      <span>Add Lead</span>
-                    </button>
                   </div>
                 </div>
 
-                {/* Individual Cluster Cards */}
-                {clusters.map((cluster) => {
-                  const isSelected = selectedCluster === cluster.name;
-                  const isDefaultGeneral = cluster.name.toLowerCase() === 'general';
-
-                  return (
-                    <div
-                      key={cluster.id || cluster.name}
-                      onClick={() => setSelectedCluster(cluster.name)}
-                      className={`p-4 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
-                        isSelected
-                          ? 'border-orange-500 bg-orange-50/40 dark:bg-orange-950/30 shadow-md ring-2 ring-orange-400/20'
-                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700'
-                      }`}
+                {/* SCROLLABLE TRACK FOR CLUSTERS */}
+                <div className="relative flex-1 min-w-0 flex items-stretch">
+                  {canScrollLeft && (
+                    <button
+                      type="button"
+                      onClick={() => handleScrollClusters('left')}
+                      className="absolute -left-2 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-md flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-orange-50 dark:hover:bg-slate-700 cursor-pointer"
+                      title="Scroll left"
                     >
-                      <div className="flex items-start justify-between">
-                        <div className="w-9 h-9 rounded-lg bg-orange-100/70 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center">
-                          <Folder className="w-4 h-4" />
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold font-mono bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300">
-                            {cluster.leadCount || 0} leads
-                          </span>
-                          {!isDefaultGeneral && (
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                  )}
+                  {canScrollRight && (
+                    <button
+                      type="button"
+                      onClick={() => handleScrollClusters('right')}
+                      className="absolute -right-2 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-md flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-orange-50 dark:hover:bg-slate-700 cursor-pointer"
+                      title="Scroll right"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  )}
+
+                  <div
+                    ref={clustersScrollRef}
+                    className="flex items-stretch gap-3.5 overflow-x-auto scroll-smooth py-1 px-1 scrollbar-thin flex-1"
+                  >
+                    {displayedClusters.map((cluster) => {
+                      const isSelected = selectedCluster === cluster.name;
+                      return (
+                        <div
+                          key={cluster.id || cluster.name}
+                          onClick={() => setSelectedCluster(cluster.name)}
+                          className={`shrink-0 w-64 p-4 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
+                            isSelected
+                              ? 'border-orange-500 bg-orange-50/40 dark:bg-orange-950/30 shadow-md ring-2 ring-orange-400/20'
+                              : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="w-9 h-9 rounded-lg bg-orange-100/70 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold">
+                              <Folder className="w-4 h-4" />
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold font-mono bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300">
+                                {cluster.leadCount || 0} leads
+                              </span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeleteClusterTarget(cluster);
+                                }}
+                                title={`Delete cluster "${cluster.name}"`}
+                                className="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="mt-2.5 text-left">
+                            <h3 className="font-bold text-xs text-slate-900 dark:text-white truncate" title={cluster.name}>
+                              {cluster.name}
+                            </h3>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1" title={cluster.description}>
+                              {cluster.description || 'Target account cluster'}
+                            </p>
+                          </div>
+
+                          <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px]">
+                            <span className={`font-semibold ${isSelected ? 'text-orange-600 dark:text-orange-400' : 'text-slate-500'}`}>
+                              {isSelected ? '● Active' : 'Click to view'}
+                            </span>
                             <button
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setDeleteClusterTarget(cluster);
+                                dispatch(setAddLeadModalOpen({ open: true, cluster: cluster.name }));
                               }}
-                              title={`Delete cluster "${cluster.name}"`}
-                              className="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded transition-colors"
+                              className="inline-flex items-center gap-1 font-bold text-orange-600 hover:text-orange-700 dark:text-orange-400 hover:underline"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <Plus className="w-3 h-3" />
+                              <span>Add Lead</span>
                             </button>
-                          )}
+                          </div>
                         </div>
-                      </div>
+                      );
+                    })}
 
-                      <div className="mt-3">
-                        <h3 className="font-bold text-xs text-slate-900 dark:text-white truncate" title={cluster.name}>
-                          {cluster.name}
-                        </h3>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1" title={cluster.description}>
-                          {cluster.description || 'Target account cluster'}
+                    {/* Load Next 5 Clusters Card */}
+                    {hasMoreClusters && (
+                      <div
+                        onClick={() => setClusterDisplayLimit((prev) => prev + 5)}
+                        className="shrink-0 w-64 p-4 rounded-xl border-2 border-dashed border-orange-300 dark:border-orange-800/80 bg-orange-50/40 dark:bg-orange-950/20 hover:bg-orange-100/60 dark:hover:bg-orange-900/40 transition-all cursor-pointer flex flex-col items-center justify-center text-center group min-h-[155px]"
+                      >
+                        <div className="w-9 h-9 rounded-xl bg-orange-100 dark:bg-orange-900/60 text-orange-600 dark:text-orange-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                          <Plus className="w-4 h-4 font-bold" />
+                        </div>
+                        <span className="font-bold text-xs text-orange-700 dark:text-orange-300 group-hover:underline">
+                          + Load Next 5 Clusters
+                        </span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+                          {Math.min(5, remainingClustersCount)} more ({remainingClustersCount} remaining)
+                        </span>
+                      </div>
+                    )}
+
+                    {clusters.length === 0 && (
+                      <div className="flex-1 min-h-[140px] flex flex-col items-center justify-center p-4 rounded-xl border border-dashed border-slate-300 dark:border-slate-800 bg-white/50 dark:bg-slate-900/40 text-center">
+                        <Folder className="w-6 h-6 text-slate-400 mb-1.5" />
+                        <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                          No clusters created yet
+                        </p>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                          Click "+ Create New Cluster" on the left to start organizing your custom leads.
                         </p>
                       </div>
-
-                      {/* Cluster Actions on the Card */}
-                      <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px]">
-                        <span className={`font-semibold ${isSelected ? 'text-orange-600 dark:text-orange-400' : 'text-slate-500'}`}>
-                          {isSelected ? '● Viewing Leads' : 'Click to view'}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            dispatch(setAddLeadModalOpen({ open: true, cluster: cluster.name }));
-                          }}
-                          className="inline-flex items-center gap-1 font-bold text-orange-600 hover:text-orange-700 dark:text-orange-400 hover:underline"
-                        >
-                          <Plus className="w-3 h-3" />
-                          <span>Add to Cluster</span>
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-
-                {/* Card: + Create New Cluster */}
-                <div
-                  onClick={() => setIsCreateClusterModalOpen(true)}
-                  className="p-4 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-orange-500 dark:hover:border-orange-500 bg-white/60 dark:bg-slate-900/60 hover:bg-orange-50/20 dark:hover:bg-orange-950/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group min-h-[140px]"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 flex items-center justify-center group-hover:scale-110 transition-transform mb-2">
-                    <FolderPlus className="w-5 h-5" />
+                    )}
                   </div>
-                  <span className="font-bold text-xs text-slate-800 dark:text-slate-200 group-hover:text-orange-600 dark:group-hover:text-orange-400">
-                    + Create New Cluster
-                  </span>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                    Group custom leads by campaign or niche
-                  </span>
                 </div>
               </div>
             </div>
@@ -546,22 +677,12 @@ export default function CustomLeadsPage() {
                   <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-orange-50 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800/60 font-bold text-xs">
                     <Folder className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
                     <span>
-                      Cluster: {selectedCluster === 'all' ? 'All Custom Leads' : selectedCluster}
+                      Cluster: {selectedCluster || 'No Cluster Selected'}
                     </span>
                     <span className="font-mono text-[10px] ml-1 opacity-75">
                       ({leads.length} leads)
                     </span>
                   </div>
-
-                  {selectedCluster !== 'all' && (
-                    <button
-                      type="button"
-                      onClick={() => setSelectedCluster('all')}
-                      className="text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:underline"
-                    >
-                      Clear filter
-                    </button>
-                  )}
                 </div>
 
                 {/* Search in this cluster */}
@@ -572,13 +693,13 @@ export default function CustomLeadsPage() {
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder={`Search within ${selectedCluster === 'all' ? 'all clusters' : selectedCluster}...`}
+                      placeholder={selectedCluster ? `Search within cluster "${selectedCluster}"...` : 'Search custom leads...'}
                       className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:bg-white dark:focus:bg-slate-800 focus:border-orange-600"
                     />
                   </div>
                   <button
                     type="button"
-                    onClick={loadCustomLeads}
+                    onClick={() => loadCustomLeads()}
                     disabled={loading}
                     title="Refresh leads"
                     className="p-1.5 text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
@@ -602,16 +723,22 @@ export default function CustomLeadsPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      dispatch(setAddLeadModalOpen({
-                        open: true,
-                        cluster: selectedCluster !== 'all' ? selectedCluster : 'General'
-                      }));
+                      if (clusters.length === 0) {
+                        handleOpenCreateCluster();
+                        return;
+                      }
+                      dispatch(
+                        setAddLeadModalOpen({
+                          open: true,
+                          cluster: selectedCluster || clusters[0]?.name || ''
+                        })
+                      );
                     }}
                     className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors cursor-pointer shadow-xs active:scale-95"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>
-                      {selectedCluster !== 'all' ? `+ Add to ${selectedCluster}` : '+ Add Custom Lead'}
+                      {selectedCluster ? `+ Add to ${selectedCluster}` : '+ Add Custom Lead'}
                     </span>
                   </button>
                 </div>
@@ -631,10 +758,31 @@ export default function CustomLeadsPage() {
                   <p className="text-xs text-rose-600 dark:text-rose-400 mt-1">{error}</p>
                   <button
                     type="button"
-                    onClick={loadCustomLeads}
-                    className="mt-4 px-4 py-2 text-xs font-semibold text-rose-700 dark:text-rose-300 bg-white dark:bg-slate-800 border border-rose-300 dark:border-rose-700 rounded-lg hover:bg-rose-50"
+                    onClick={() => loadCustomLeads()}
+                    className="mt-4 px-4 py-2 text-xs font-semibold text-rose-700 dark:text-rose-300 bg-white dark:bg-slate-800 border border-rose-300 dark:border-rose-700 rounded-lg hover:bg-rose-50 cursor-pointer"
                   >
                     Try Again
+                  </button>
+                </div>
+              ) : clusters.length === 0 ? (
+                /* No Clusters Yet Empty State */
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 text-center shadow-xs">
+                  <div className="w-12 h-12 rounded-xl bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 flex items-center justify-center mx-auto mb-3 border border-orange-200/50 dark:border-orange-800/50">
+                    <FolderPlus className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
+                    No custom clusters created yet
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto mb-4">
+                    Custom leads are organized strictly into clusters. Create your first cluster to start adding targeted decision makers.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleOpenCreateCluster}
+                    className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-xl shadow-xs transition-colors cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>+ Create First Cluster</span>
                   </button>
                 </div>
               ) : leads.length === 0 ? (
@@ -644,27 +792,25 @@ export default function CustomLeadsPage() {
                     <Folder className="w-5 h-5" />
                   </div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
-                    No custom leads in {selectedCluster === 'all' ? 'your workspace' : `cluster "${selectedCluster}"`} yet
+                    No custom leads in cluster "{selectedCluster}" yet
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto mb-4">
-                    {selectedCluster === 'all'
-                      ? 'Add your first custom lead to organize decision makers into custom clusters.'
-                      : `You can add targeted B2B decision makers directly into cluster "${selectedCluster}".`}
+                    You can add targeted B2B decision makers directly into cluster "{selectedCluster}".
                   </p>
                   <button
                     type="button"
                     onClick={() => {
-                      dispatch(setAddLeadModalOpen({
-                        open: true,
-                        cluster: selectedCluster !== 'all' ? selectedCluster : 'General'
-                      }));
+                      dispatch(
+                        setAddLeadModalOpen({
+                          open: true,
+                          cluster: selectedCluster
+                        })
+                      );
                     }}
                     className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-xl shadow-xs transition-colors cursor-pointer"
                   >
                     <Plus className="w-4 h-4" />
-                    <span>
-                      {selectedCluster !== 'all' ? `+ Add First Lead to "${selectedCluster}"` : '+ Create Custom Lead'}
-                    </span>
+                    <span>+ Add First Lead to "{selectedCluster}"</span>
                   </button>
                 </div>
               ) : (
@@ -1042,6 +1188,55 @@ export default function CustomLeadsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Free Tier Cluster Limit Reached */}
+      {isClusterLimitModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div
+            className="fixed inset-0"
+            onClick={() => setIsClusterLimitModalOpen(false)}
+          />
+
+          <div className="relative z-10 w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden p-6 text-center text-slate-900 dark:text-slate-100 transition-colors">
+            <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto mb-3.5">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+
+            <h3 className="text-base font-bold text-slate-900 dark:text-white font-display">
+              Free Plan Cluster Limit Reached (5/5)
+            </h3>
+
+            <p className="text-xs text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
+              Free Starter accounts can create up to <strong>5 active lead clusters</strong>. You currently have 5 clusters.
+            </p>
+
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+              To create a new cluster, you can <strong>delete an existing cluster</strong> to free up a slot (allowing you to create up to 5 again), or <strong>upgrade your plan</strong> for unlimited clusters.
+            </p>
+
+            <div className="mt-6 flex items-center justify-center gap-3">
+              <button
+                type="button"
+                autoFocus
+                onClick={() => setIsClusterLimitModalOpen(false)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+              >
+                Cancel / Keep Existing
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsClusterLimitModalOpen(false);
+                  dispatch(openUpgradeModal('starter'));
+                }}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 transition-all shadow-md active:scale-95 cursor-pointer"
+              >
+                Upgrade to Growth ($10/mo)
+              </button>
+            </div>
           </div>
         </div>
       )}

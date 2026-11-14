@@ -705,7 +705,7 @@ async function startServer() {
     }
   });
 
-  // --- USER-PRIVATE CUSTOM LEADS (Stored Isolated in Database 4 - Never touching Core 10.3M Leads) ---
+  // --- USER-PRIVATE CUSTOM LEADS (Stored Isolated in Database 4 - Always in a Dedicated Cluster) ---
   app.get('/api/leads/custom', requireJwtMiddleware, async (req: any, res) => {
     try {
       const userId = req.user?.id;
@@ -714,47 +714,25 @@ async function startServer() {
       }
 
       const q = String(req.query.q || '').trim();
-      const clusterFilter = String(req.query.cluster || '').trim();
+      const requestedCluster = String(req.query.cluster || '').trim();
       const ds = await (await import('./server/dataSource.ts')).getDataSource();
 
-      let whereClause = 'WHERE user_id = ?';
-      const sqlParams: any[] = [userId];
-
-      if (clusterFilter && clusterFilter !== 'all') {
-        whereClause += ' AND cluster_name = ?';
-        sqlParams.push(clusterFilter);
-      }
-
-      if (q) {
-        whereClause += ' AND (company_name LIKE ? OR contact_name LIKE ? OR domain LIKE ? OR contact_email LIKE ? OR cluster_name LIKE ?)';
-        sqlParams.push(`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`);
-      }
-
-      const countRows: any = await ds.query(
-        `SELECT COUNT(*) as total FROM custom_leads ${whereClause}`,
-        sqlParams
-      );
-      const total = Number(countRows[0]?.total || 0);
-
-      const rawRows: any = await ds.query(
-        `SELECT * FROM custom_leads ${whereClause} ORDER BY created_at DESC`,
-        sqlParams
-      );
-
-      // Fetch user's registered clusters and compute counts
+      // 1. Fetch user's registered clusters and compute counts
       const clusterRows: any = await ds.query(
         `SELECT id, name, description, created_at FROM custom_clusters WHERE user_id = ? ORDER BY created_at ASC`,
         [userId]
       );
 
       const countByCluster: any = await ds.query(
-        `SELECT cluster_name, COUNT(*) as cnt FROM custom_leads WHERE user_id = ? GROUP BY cluster_name`,
+        `SELECT cluster_name, COUNT(*) as cnt FROM custom_leads WHERE user_id = ? AND cluster_name IS NOT NULL AND cluster_name != '' GROUP BY cluster_name`,
         [userId]
       );
 
       const countMap: Record<string, number> = {};
       (countByCluster || []).forEach((r: any) => {
-        countMap[r.cluster_name || 'General'] = Number(r.cnt) || 0;
+        if (r.cluster_name) {
+          countMap[r.cluster_name] = Number(r.cnt) || 0;
+        }
       });
 
       const seenClusterNames = new Set<string>();
@@ -783,20 +761,42 @@ async function startServer() {
         }
       });
 
-      // Fallback: ensure default 'General' cluster exists
-      if (clusters.length === 0) {
-        clusters.push({
-          id: `cls_default_${Date.now()}`,
-          name: 'General',
-          description: 'Primary custom target cluster',
-          leadCount: 0,
-          createdAt: new Date().toISOString()
-        });
+      // Determine active cluster: leads must always belong to a specific cluster
+      let activeCluster = requestedCluster && requestedCluster !== 'all' ? requestedCluster : null;
+      if (!activeCluster && clusters.length > 0) {
+        activeCluster = clusters[0].name;
       }
+
+      let whereClause = 'WHERE user_id = ?';
+      const sqlParams: any[] = [userId];
+
+      if (activeCluster) {
+        whereClause += ' AND cluster_name = ?';
+        sqlParams.push(activeCluster);
+      } else {
+        // No clusters exist yet, return 0 leads
+        whereClause += ' AND 1 = 0';
+      }
+
+      if (q) {
+        whereClause += ' AND (company_name LIKE ? OR contact_name LIKE ? OR domain LIKE ? OR contact_email LIKE ?)';
+        sqlParams.push(`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`);
+      }
+
+      const countRows: any = await ds.query(
+        `SELECT COUNT(*) as total FROM custom_leads ${whereClause}`,
+        sqlParams
+      );
+      const total = Number(countRows[0]?.total || 0);
+
+      const rawRows: any = await ds.query(
+        `SELECT * FROM custom_leads ${whereClause} ORDER BY created_at DESC`,
+        sqlParams
+      );
 
       const leads = (rawRows || []).map((row: any) => ({
         id: row.id,
-        clusterName: row.cluster_name || 'General',
+        clusterName: row.cluster_name,
         companyName: row.company_name,
         domain: row.domain,
         industry: row.industry,
@@ -827,7 +827,7 @@ async function startServer() {
         leads,
         total,
         clusters,
-        activeCluster: clusterFilter || 'all',
+        activeCluster,
         owner: {
           id: req.user.id,
           name: req.user.name,
@@ -840,7 +840,7 @@ async function startServer() {
     }
   });
 
-  // Create a new Custom Cluster / Group
+  // Create a new Custom Cluster / Group (Strict 5-cluster limit for Free Users)
   app.post('/api/leads/custom/clusters', requireJwtMiddleware, async (req: any, res) => {
     try {
       const userId = req.user?.id;
@@ -851,6 +851,25 @@ async function startServer() {
       if (!name) return res.status(400).json({ error: 'Cluster name is required' });
 
       const ds = await (await import('./server/dataSource.ts')).getDataSource();
+
+      // Free plan cluster limits: max 5 active clusters at a time
+      const userPlan = (req.user?.planId || req.user?.plan || 'free').toLowerCase();
+      const userRole = (req.user?.role || '').toLowerCase();
+      const isPaidOrSuperadmin = userRole === 'superadmin' || userPlan.includes('growth') || userPlan.includes('scale') || userPlan.includes('unlimited') || userPlan.includes('pro') || userPlan.includes('starter');
+
+      if (!isPaidOrSuperadmin) {
+        const countRes: any = await ds.query(
+          'SELECT COUNT(*) as count FROM custom_clusters WHERE user_id = ?',
+          [userId]
+        );
+        const existingCount = Number(countRes[0]?.count || 0);
+        if (existingCount >= 5) {
+          return res.status(403).json({
+            error: 'Free accounts are limited to 5 clusters at a time. Delete an existing cluster or upgrade your plan to create more.'
+          });
+        }
+      }
+
       const clusterId = `cls_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
       await ds.query(
@@ -917,7 +936,10 @@ async function startServer() {
         return (s || fallback).slice(0, maxLen);
       };
 
-      const clusterName = safeTrim(body.clusterName || body.cluster || 'General', 128, 'General');
+      const clusterName = safeTrim(body.clusterName || body.cluster, 128, '');
+      if (!clusterName) {
+        return res.status(400).json({ error: 'A valid cluster name is required. Every custom lead must belong to a cluster.' });
+      }
 
       const techStackJson = JSON.stringify(
         Array.isArray(body.techStack)
