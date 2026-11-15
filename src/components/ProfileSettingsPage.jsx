@@ -158,7 +158,7 @@ export default function ProfileSettingsPage({ onBack }) {
         })
       ).unwrap();
 
-      setGeneralSuccess('Profile details and photo saved successfully in Database 4.');
+      setGeneralSuccess('Profile details and photo saved successfully.');
     } catch (err) {
       setGeneralError(typeof err === 'string' ? err : err?.message || 'Failed to update profile.');
     } finally {
@@ -223,7 +223,7 @@ export default function ProfileSettingsPage({ onBack }) {
               <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white font-display tracking-tight flex items-center gap-2.5">
                 <span>Account Profile & Workspace Settings</span>
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 dark:bg-orange-950 text-orange-800 dark:text-orange-300 border border-orange-200 dark:border-orange-800">
-                  DB4 Isolated
+                  Private Workspace
                 </span>
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
@@ -374,14 +374,14 @@ export default function ProfileSettingsPage({ onBack }) {
               </button>
             </div>
 
-            {/* Database 4 Isolation Audit Card */}
+            {/* Account Isolation Audit Card */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs p-5 space-y-2.5 text-xs transition-colors">
               <div className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
-                <Database className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span>Database 4 Isolation Guarantee</span>
+                <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span>Account Isolation & Security</span>
               </div>
               <p className="text-slate-500 dark:text-slate-400 leading-relaxed text-[11px]">
-                Your profile, bcrypt password hash, credits quota, and reveal logs reside strictly on dedicated <strong>Database 4 (<code className="text-slate-700 dark:text-slate-300 font-mono">u340392193_leadsarrow4</code>)</strong>. No customer data is shared or mixed.
+                Your profile, bcrypt password hash, credits quota, and saved lists reside strictly in your private, encrypted account workspace. No customer data is shared or mixed.
               </p>
             </div>
           </div>
@@ -395,7 +395,7 @@ export default function ProfileSettingsPage({ onBack }) {
                   <User className="w-4 h-4 text-orange-600 dark:text-orange-400" />
                   <span>Profile Information</span>
                 </div>
-                <span className="text-[11px] text-slate-400 dark:text-slate-500">Database 4 Synced</span>
+                <span className="text-[11px] text-slate-400 dark:text-slate-500">Privately Secured</span>
               </div>
 
               <form onSubmit={handleSaveGeneral} className="p-6 space-y-5">
@@ -429,7 +429,7 @@ export default function ProfileSettingsPage({ onBack }) {
                   <div className="flex-1 space-y-1">
                     <div className="text-xs font-bold text-slate-800 dark:text-slate-200">Account Avatar</div>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                      Supports JPG, PNG, WebP up to 2.5MB. Stored directly in your Database 4 profile.
+                      Supports JPG, PNG, WebP up to 2.5MB. Stored directly in your private account profile.
                     </p>
                     <div className="flex items-center gap-2 pt-1">
                       <button
@@ -674,7 +674,7 @@ export default function ProfileSettingsPage({ onBack }) {
                 <div className="p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-600 dark:text-slate-400 flex items-start gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                   <span>
-                    Your password will be encrypted with 10 salt rounds of bcrypt before being written to Database 4.
+                    Your password will be encrypted with 10 salt rounds of bcrypt before being securely saved.
                   </span>
                 </div>
 

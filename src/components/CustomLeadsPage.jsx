@@ -607,9 +607,10 @@ export default function CustomLeadsPage() {
           </div>
 
           {/* Clean Minimal Controls */}
-          <div className="flex flex-wrap items-center gap-2.5">
-            <div className="px-3 py-1.5 rounded-xl bg-orange-50 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-800/60 text-xs">
-              <span className="text-orange-700 dark:text-orange-400">Total Leads: </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-orange-50 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-800/60 text-xs">
+              <span className="text-orange-700 dark:text-orange-400 hidden sm:inline">Total Leads: </span>
+              <span className="text-orange-700 dark:text-orange-400 sm:hidden">Leads: </span>
               <span className="font-bold text-orange-600 dark:text-orange-400 font-mono">
                 {totalAllClusterLeads}
               </span>
@@ -618,7 +619,7 @@ export default function CustomLeadsPage() {
             <button
               type="button"
               onClick={handleOpenCreateCluster}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-950/40 border border-orange-300 dark:border-orange-800 hover:bg-orange-100 dark:hover:bg-orange-900/40 rounded-xl transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs font-semibold text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-950/40 border border-orange-300 dark:border-orange-800 hover:bg-orange-100 dark:hover:bg-orange-900/40 rounded-xl transition-colors cursor-pointer"
             >
               <FolderPlus className="w-3.5 h-3.5" />
               <span>+ New Cluster</span>
@@ -642,10 +643,11 @@ export default function CustomLeadsPage() {
                   })
                 );
               }}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-xl transition-colors cursor-pointer shadow-xs active:scale-95"
+              className="inline-flex items-center gap-1 sm:gap-1.5 px-3 sm:px-3.5 py-1 sm:py-1.5 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-xl transition-colors cursor-pointer shadow-xs active:scale-95"
             >
-              <Plus className="w-4 h-4" />
-              <span>Add Custom Lead</span>
+              <Plus className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Add Custom Lead</span>
+              <span className="sm:hidden">+ Lead</span>
             </button>
           </div>
         </div>
@@ -663,7 +665,7 @@ export default function CustomLeadsPage() {
               Sign In to Access Your Private Leads
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-6">
-              Custom leads and clusters are strictly isolated to your individual profile in Database 4. Please sign in or create an account to view and create your private custom lead clusters.
+              Custom leads and clusters are strictly isolated to your individual private workspace. Please sign in or create an account to view and create your private custom lead clusters.
             </p>
             <button
               type="button"
@@ -677,18 +679,20 @@ export default function CustomLeadsPage() {
           <>
             {/* 1. CLUSTERS / GROUPS COMPONENTS SECTION */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                     <Layers className="w-4 h-4 text-orange-600 dark:text-orange-400" />
                     <span>Lead Clusters & Target Groups</span>
                   </h2>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Segment custom leads into dedicated clusters. Every custom lead belongs to a cluster. Free plan limit: 5 active clusters.
+                    {isFreeUser
+                      ? 'Free plan: Up to 5 clusters total · 1,000 leads per cluster.'
+                      : 'Plan allowance: Up to 50 clusters daily · 1,000 lifetime · 5,000 leads per cluster.'}
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 self-end sm:self-auto">
                   <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                     <span className="font-semibold text-slate-700 dark:text-slate-300">
                       {validClusters.length} {validClusters.length === 1 ? 'Cluster' : 'Clusters'}
@@ -722,23 +726,23 @@ export default function CustomLeadsPage() {
               </div>
 
               {/* Cluster Components Row: First Card (+ Create New Cluster) is Pinned / Non-scrollable */}
-              <div className="flex items-stretch gap-3.5">
-                {/* PINNED FIRST CARD: + Create New Cluster */}
+              <div className="flex items-stretch gap-3">
+                {/* PINNED FIRST CARD: + Create New Cluster (Compact on mobile) */}
                 <div
                   onClick={handleOpenCreateCluster}
-                  className={`shrink-0 w-64 p-4 rounded-xl border-2 border-dashed transition-all cursor-pointer flex flex-col justify-between group min-h-[155px] ${
+                  className={`shrink-0 w-44 sm:w-60 p-2.5 sm:p-4 rounded-xl border-2 border-dashed transition-all cursor-pointer flex flex-col justify-between group min-h-[120px] sm:min-h-[148px] ${
                     isFreeUser && validClusters.length >= 5
                       ? 'border-amber-400 dark:border-amber-700 bg-amber-50/40 dark:bg-amber-950/20 hover:border-amber-500'
                       : 'border-slate-300 dark:border-slate-700 hover:border-orange-500 dark:hover:border-orange-500 bg-white dark:bg-slate-900 hover:bg-orange-50/20 dark:hover:bg-orange-950/20 shadow-xs'
                   }`}
                 >
                   <div className="flex items-start justify-between">
-                    <div className="w-9 h-9 rounded-lg bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
-                      <FolderPlus className="w-4 h-4" />
+                    <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold group-hover:scale-105 transition-transform shrink-0">
+                      <FolderPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </div>
                     {isFreeUser ? (
                       <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono ${
+                        className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold font-mono ${
                           validClusters.length >= 5
                             ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
                             : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
@@ -747,34 +751,34 @@ export default function CustomLeadsPage() {
                         {validClusters.length} / 5 Used
                       </span>
                     ) : (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold font-mono bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                      <span className="px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold font-mono bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
                         {validClusters.length} Clusters
                       </span>
                     )}
                   </div>
 
-                  <div className="my-2 text-left">
-                    <h3 className="font-bold text-xs text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
-                      + Create New Cluster
+                  <div className="my-1.5 sm:my-2 text-left">
+                    <h3 className="font-bold text-xs sm:text-xs text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
+                      + Create Cluster
                     </h3>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
-                      Group custom leads by campaign or niche
+                    <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight line-clamp-1 sm:line-clamp-2">
+                      Group leads by campaign or niche
                     </p>
                   </div>
 
-                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px]">
+                  <div className="pt-1.5 sm:pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[10px] sm:text-[11px]">
                     {isFreeUser && validClusters.length >= 5 ? (
-                      <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                      <span className="text-[9px] sm:text-[10px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
                         <AlertCircle className="w-3 h-3" />
-                        <span>Limit reached · Upgrade</span>
+                        <span>Limit reached</span>
                       </span>
                     ) : (
-                      <span className="text-[10px] font-semibold text-orange-600 dark:text-orange-400">
-                        + Click to add cluster
+                      <span className="text-[9px] sm:text-[10px] font-semibold text-orange-600 dark:text-orange-400">
+                        + Add cluster
                       </span>
                     )}
-                    <span className="text-[10px] text-slate-400">
-                      Private DB4
+                    <span className="text-[9px] sm:text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                      Private
                     </span>
                   </div>
                 </div>
@@ -783,7 +787,7 @@ export default function CustomLeadsPage() {
                 <div className="relative flex-1 min-w-0 flex items-stretch">
                   <div
                     ref={clustersScrollRef}
-                    className="flex items-stretch gap-3.5 overflow-x-auto scroll-smooth py-2 px-1 cluster-horizontal-scrollbar flex-1"
+                    className="flex items-stretch gap-3 overflow-x-auto scroll-smooth py-1 px-0.5 cluster-horizontal-scrollbar flex-1"
                   >
                     {displayedClusters.map((cluster) => {
                       const isSelected = selectedCluster === cluster.name;
@@ -791,18 +795,18 @@ export default function CustomLeadsPage() {
                         <div
                           key={cluster.id || cluster.name}
                           onClick={() => setSelectedCluster(cluster.name)}
-                          className={`shrink-0 w-64 p-4 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
+                          className={`shrink-0 w-44 sm:w-60 p-2.5 sm:p-4 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between min-h-[120px] sm:min-h-[148px] ${
                             isSelected
                               ? 'border-orange-500 bg-orange-50/40 dark:bg-orange-950/30 shadow-md ring-2 ring-orange-400/20'
                               : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700'
                           }`}
                         >
                           <div className="flex items-start justify-between">
-                            <div className="w-9 h-9 rounded-lg bg-orange-100/70 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold">
-                              <Folder className="w-4 h-4" />
+                            <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg bg-orange-100/70 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold shrink-0">
+                              <Folder className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             </div>
                             <div className="flex items-center gap-1">
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold font-mono bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300">
+                              <span className="px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold font-mono bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300">
                                 {cluster.leadCount || 0} leads
                               </span>
                               <button
@@ -814,7 +818,7 @@ export default function CustomLeadsPage() {
                                 title={`Rename cluster "${cluster.name}"`}
                                 className="p-1 text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/50 rounded transition-colors cursor-pointer"
                               >
-                                <Pencil className="w-3.5 h-3.5" />
+                                <Pencil className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                               </button>
                               <button
                                 type="button"
@@ -825,12 +829,12 @@ export default function CustomLeadsPage() {
                                 title={`Delete cluster "${cluster.name}"`}
                                 className="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded transition-colors cursor-pointer"
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                               </button>
                             </div>
                           </div>
 
-                          <div className="mt-2 text-left">
+                          <div className="my-1 sm:my-2 text-left">
                             <h3 className="font-bold text-xs text-slate-900 dark:text-white truncate" title={cluster.name}>
                               {cluster.name}
                             </h3>
@@ -843,7 +847,7 @@ export default function CustomLeadsPage() {
                               )}
                           </div>
 
-                          <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px]">
+                          <div className="pt-1.5 sm:pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[10px] sm:text-[11px]">
                             <span className={`font-semibold ${isSelected ? 'text-orange-600 dark:text-orange-400' : 'text-slate-500'}`}>
                               {isSelected ? '● Active' : 'Click to view'}
                             </span>
@@ -867,13 +871,13 @@ export default function CustomLeadsPage() {
                     {hasMoreClusters && (
                       <div
                         onClick={() => setClusterDisplayLimit((prev) => prev + 5)}
-                        className="shrink-0 w-64 p-4 rounded-xl bg-gradient-to-b from-orange-500/[0.08] via-amber-500/[0.04] to-white dark:to-slate-900 border border-orange-400/40 dark:border-orange-500/30 hover:border-orange-500 dark:hover:border-orange-400 shadow-xs hover:shadow-lg hover:shadow-orange-500/10 transition-all duration-200 cursor-pointer flex flex-col justify-between items-center text-center group min-h-[155px]"
+                        className="shrink-0 w-44 sm:w-60 p-2.5 sm:p-4 rounded-xl bg-gradient-to-b from-orange-500/[0.08] via-amber-500/[0.04] to-white dark:to-slate-900 border border-orange-400/40 dark:border-orange-500/30 hover:border-orange-500 dark:hover:border-orange-400 shadow-xs hover:shadow-lg hover:shadow-orange-500/10 transition-all duration-200 cursor-pointer flex flex-col justify-between items-center text-center group min-h-[120px] sm:min-h-[148px]"
                       >
                         {/* Top: Pill Badge */}
                         <div className="w-full flex items-center justify-between">
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-100/90 dark:bg-orange-950/80 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800/60">
+                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-orange-100/90 dark:bg-orange-950/80 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800/60">
                             <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
-                            <span>{remainingClustersCount} Remaining</span>
+                            <span>{remainingClustersCount} Left</span>
                           </span>
 
                           <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">
@@ -881,25 +885,25 @@ export default function CustomLeadsPage() {
                           </span>
                         </div>
 
-                        {/* Center: Modern Action Button */}
-                        <div className="w-full my-1.5">
+                        {/* Center: Action Button */}
+                        <div className="w-full my-1">
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               setClusterDisplayLimit((prev) => prev + 5);
                             }}
-                            className="w-full py-2.5 px-3.5 rounded-xl bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-xs shadow-md shadow-orange-500/20 group-hover:shadow-orange-500/35 group-hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                            className="w-full py-2 px-2.5 rounded-xl bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-xs shadow-md shadow-orange-500/20 group-hover:shadow-orange-500/35 group-hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                           >
                             <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                            <span>Load Next 5 Clusters</span>
+                            <span>Next 5</span>
                             <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform stroke-[2.5]" />
                           </button>
                         </div>
 
                         {/* Bottom: Subtitle text */}
-                        <div className="w-full pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-center text-[10px] text-slate-500 dark:text-slate-400">
-                          <span>Reveals next {Math.min(5, remainingClustersCount)} clusters in row</span>
+                        <div className="w-full pt-1.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-center text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400">
+                          <span>Reveals next {Math.min(5, remainingClustersCount)} clusters</span>
                         </div>
                       </div>
                     )}
@@ -957,7 +961,7 @@ export default function CustomLeadsPage() {
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder={selectedCluster ? `Search within cluster "${selectedCluster}"...` : 'Search custom leads...'}
+                      placeholder="Search leads in cluster..."
                       className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:bg-white dark:focus:bg-slate-800 focus:border-orange-600"
                     />
                   </div>
@@ -977,7 +981,7 @@ export default function CustomLeadsPage() {
                     type="button"
                     onClick={handleOpenExportConfirm}
                     disabled={selectedClusterLeads.length === 0}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer shadow-2xs ${
+                    className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer shadow-2xs ${
                       selectedClusterLeads.length > 0
                         ? 'bg-orange-600 hover:bg-orange-700 text-white font-bold shadow-xs active:scale-95'
                         : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 opacity-60 cursor-not-allowed'
@@ -991,8 +995,8 @@ export default function CustomLeadsPage() {
                     <Download className="w-3.5 h-3.5" />
                     <span>
                       {selectedClusterLeads.length > 0
-                        ? `Export Selected (${selectedClusterLeads.length})`
-                        : 'Export Selected CSV (0)'}
+                        ? `Export (${selectedClusterLeads.length})`
+                        : 'Export CSV (0)'}
                     </span>
                   </button>
 
@@ -1010,12 +1014,13 @@ export default function CustomLeadsPage() {
                         })
                       );
                     }}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors cursor-pointer shadow-xs active:scale-95"
+                    className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors cursor-pointer shadow-xs active:scale-95"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    <span>
-                      {selectedCluster ? `+ Add to ${selectedCluster}` : '+ Add Custom Lead'}
+                    <span className="hidden sm:inline">
+                      {selectedCluster ? `+ Add to ${selectedCluster}` : '+ Add Lead'}
                     </span>
+                    <span className="sm:hidden">+ Add</span>
                   </button>
                 </div>
               </div>
@@ -1344,8 +1349,8 @@ export default function CustomLeadsPage() {
                       </label>
                       <span>·</span>
                       <div className="inline-flex items-center gap-1 text-[11px] text-slate-400">
-                        <Database className="w-3 h-3 text-emerald-500" />
-                        <span>Isolated DB4 Storage</span>
+                        <ShieldCheck className="w-3 h-3 text-emerald-500" />
+                        <span>Private Workspace</span>
                       </div>
                     </div>
 
@@ -1431,11 +1436,11 @@ export default function CustomLeadsPage() {
         onConfirm={handleConfirmDelete}
         loading={isDeleting}
         title="Delete Custom Lead?"
-        message="Are you sure you want to permanently delete this custom lead from your private workspace? This record will be erased from Database 4."
+        message="Are you sure you want to permanently delete this custom lead from your private workspace?"
         itemName={deletingTarget?.name}
         confirmText="Yes, Delete Lead"
         cancelText="Cancel"
-        dangerNote="This lead will be permanently deleted from the database and cannot be recovered."
+        dangerNote="This lead will be permanently deleted and cannot be recovered."
       />
 
       {/* Confirmation Modal for Deleting Cluster */}
@@ -1445,7 +1450,7 @@ export default function CustomLeadsPage() {
         onConfirm={handleConfirmDeleteCluster}
         loading={isDeletingCluster}
         title={`Delete Cluster "${deleteClusterTarget?.name}"?`}
-        message={`Are you sure you want to delete cluster "${deleteClusterTarget?.name}"? All custom leads inside this cluster will also be deleted from Database 4.`}
+        message={`Are you sure you want to delete cluster "${deleteClusterTarget?.name}"? All custom leads inside this cluster will also be permanently deleted.`}
         itemName={deleteClusterTarget?.name}
         confirmText="Yes, Delete Cluster"
         cancelText="Cancel"
@@ -1520,8 +1525,13 @@ export default function CustomLeadsPage() {
                 />
               </div>
 
-              <div className="p-3 rounded-lg bg-orange-50/60 dark:bg-orange-950/30 border border-orange-200/60 dark:border-orange-800/40 text-[11px] text-orange-900 dark:text-orange-300">
-                Clusters group your custom leads so they stay separated and organized by accounts, niches, or outreach campaigns.
+              <div className="p-3 rounded-lg bg-orange-50/60 dark:bg-orange-950/30 border border-orange-200/60 dark:border-orange-800/40 text-[11px] text-orange-900 dark:text-orange-300 space-y-1">
+                <div>Clusters group your custom leads so they stay separated and organized by accounts, niches, or outreach campaigns.</div>
+                <div className="font-semibold text-orange-700 dark:text-orange-400">
+                  {isFreeUser
+                    ? '• Free plan: Up to 5 clusters lifetime · Up to 1,000 leads per cluster.'
+                    : '• Plan allowance: Up to 50 clusters daily (1,000 lifetime) · Up to 5,000 leads per cluster.'}
+                </div>
               </div>
 
               <div className="pt-2 flex items-center justify-end gap-2">

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { openAuthModal, openSignOutModal, openUpgradeModal, openProfileModal } from '../store/authSlice.js';
 import { setOnlyCustom, resetAllFilters } from '../store/filtersSlice.js';
@@ -27,6 +27,22 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
   const { theme, toggleTheme, isDark } = useTheme();
   const [avatarError, setAvatarError] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const profileDropdownRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(e.target)) {
+        setIsProfileDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, []);
 
   const handleNavClick = (viewKey) => {
     if (viewKey === 'finder') {
@@ -227,11 +243,11 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
               )}
 
               {/* Profile Dropdown Button */}
-              <div className="relative group shrink-0">
+              <div className="relative group shrink-0" ref={profileDropdownRef}>
                 <button
                   type="button"
-                  onClick={() => dispatch(openProfileModal())}
-                  title={`Profile: ${user.name || user.email} (${userPlanName})`}
+                  onClick={() => setIsProfileDropdownOpen((prev) => !prev)}
+                  title={`Profile & Account: ${user.name || user.email} (${userPlanName})`}
                   className="flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors cursor-pointer shrink-0"
                 >
                   {(user.photoUrl || user.photoURL || user.photo_url) && !avatarError ? (
@@ -250,8 +266,14 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
                   <UserIcon className="w-3 h-3 text-slate-400 hidden sm:inline" />
                 </button>
 
-                {/* Hover Dropdown Menu showing Plan and Sign Out */}
-                <div className="absolute right-0 top-full pt-1.5 opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto transition-all duration-150 z-50">
+                {/* Dropdown Menu showing Plan and Sign Out (Works on both hover and click/touch!) */}
+                <div
+                  className={`absolute right-0 top-full pt-1.5 transition-all duration-150 z-50 ${
+                    isProfileDropdownOpen
+                      ? 'opacity-100 visible pointer-events-auto'
+                      : 'opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto'
+                  }`}
+                >
                   <div className="w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl p-2.5 space-y-2 text-slate-900 dark:text-slate-100">
                     {/* User info & Plan */}
                     <div className="px-2 py-1.5 bg-slate-50 dark:bg-slate-800/60 rounded-lg border border-slate-100 dark:border-slate-800 space-y-1">
@@ -288,11 +310,14 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
                       )}
                     </div>
 
-                    {/* Actions inside hover dropdown */}
+                    {/* Actions inside dropdown */}
                     <div className="space-y-0.5">
                       <button
                         type="button"
-                        onClick={() => dispatch(openProfileModal())}
+                        onClick={() => {
+                          dispatch(openProfileModal());
+                          setIsProfileDropdownOpen(false);
+                        }}
                         className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer text-left"
                       >
                         <UserIcon className="w-3.5 h-3.5 text-slate-400" />
@@ -301,7 +326,10 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
 
                       <button
                         type="button"
-                        onClick={() => dispatch(openSignOutModal())}
+                        onClick={() => {
+                          dispatch(openSignOutModal());
+                          setIsProfileDropdownOpen(false);
+                        }}
                         className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer text-left"
                       >
                         <LogOut className="w-3.5 h-3.5" />

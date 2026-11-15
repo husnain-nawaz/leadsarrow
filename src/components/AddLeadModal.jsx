@@ -93,7 +93,7 @@ export default function AddLeadModal() {
                 Create Private Custom Lead
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Saved privately to your profile only in Database 4 (never alters core database)
+                Saved privately to your personal workspace (isolated & secure)
               </p>
             </div>
           </div>

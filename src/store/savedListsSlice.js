@@ -43,6 +43,16 @@ export const createSavedList = createAsyncThunk(
         });
         return response.list;
       } catch (serverErr) {
+        if (
+          serverErr?.status === 403 ||
+          (serverErr?.message && (
+            serverErr.message.toLowerCase().includes('limit') ||
+            serverErr.message.toLowerCase().includes('free accounts') ||
+            serverErr.message.toLowerCase().includes('maximum')
+          ))
+        ) {
+          return rejectWithValue(serverErr.message || 'List limit reached for your plan.');
+        }
         if (firestoreList) {
           return firestoreList;
         }

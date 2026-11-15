@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   Sparkles,
@@ -44,6 +44,22 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
 
   const { isDark, toggleTheme } = useTheme();
   const [avatarError, setAvatarError] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const profileDropdownRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(e.target)) {
+        setIsProfileDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, []);
 
   const isUnlimited = user?.planId === 'unlimited' || user?.plan?.toLowerCase().includes('unlimited');
   const userPlanName = user?.plan || 'Free Starter';
@@ -105,7 +121,7 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
     },
     {
       q: 'Is customer profile data isolated and secure?',
-      a: 'Yes. All non-lead application records, passwords (hashed with bcrypt), profiles, and custom lists reside strictly on a dedicated Database 4 storage node with complete account-level isolation.'
+      a: 'Yes. All user accounts, passwords (salted and hashed with bcrypt), personal settings, and custom lists reside strictly in dedicated encrypted storage with complete account-level isolation.'
     }
   ];
 
@@ -115,8 +131,8 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
       <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[450px] ${isDark ? 'bg-gradient-to-tr from-orange-600/20 via-amber-500/15 to-transparent blur-[120px]' : 'bg-gradient-to-tr from-orange-400/20 via-amber-300/15 to-transparent blur-[100px]'} pointer-events-none -z-10`} />
 
       {/* Top Announcement Banner */}
-      <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600 text-white text-xs py-2 px-4 text-center font-medium flex items-center justify-center gap-2 shadow-sm">
-        <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+      <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600 text-white text-xs py-2 px-3 sm:px-4 text-center font-medium flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 shadow-sm">
+        <Sparkles className="w-3.5 h-3.5 animate-pulse shrink-0" />
         {user ? (
           <>
             {user.isDeactivated ? (
@@ -125,16 +141,21 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
               </span>
             ) : (
               <span>
-                Signed in as <strong>{user.name}</strong> ({user.plan || 'Free Starter'} · {user.planId === 'unlimited' ? 'Unlimited Credits' : `${user.creditsRemaining ?? 100} credits available today`})
+                <span className="hidden sm:inline">
+                  Signed in as <strong>{user.name}</strong> ({user.plan || 'Free Starter'} · {user.planId === 'unlimited' ? 'Unlimited Credits' : `${user.creditsRemaining ?? 100} credits available today`})
+                </span>
+                <span className="sm:hidden">
+                  Signed in as <strong>{user.name}</strong>
+                </span>
               </span>
             )}
             {onReturnDashboard && (
               <button
                 type="button"
                 onClick={onReturnDashboard}
-                className="underline font-bold hover:text-orange-100 ml-1.5 cursor-pointer"
+                className="underline font-bold hover:text-orange-100 ml-1 cursor-pointer shrink-0"
               >
-                {user.isDeactivated ? 'View Account Status & Reason →' : 'Go to Workspace Dashboard →'}
+                {user.isDeactivated ? 'View Status →' : 'Dashboard →'}
               </button>
             )}
           </>
@@ -186,13 +207,13 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
 
             {user ? (
               <>
-                {/* Profile Button with Hover Dropdown (Identical to Dashboard) */}
-                <div className="relative group shrink-0">
+                {/* Profile Button with Dropdown (Hover on Desktop, Tap/Click on Mobile) */}
+                <div className="relative group shrink-0" ref={profileDropdownRef}>
                   <button
                     type="button"
-                    onClick={() => dispatch(openProfileModal())}
+                    onClick={() => setIsProfileDropdownOpen((prev) => !prev)}
                     title={`Profile: ${user.name || user.email} (${userPlanName})`}
-                    className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer shrink-0 ${
+                    className={`flex items-center gap-1.5 px-2 sm:px-2.5 py-1 sm:py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer shrink-0 ${
                       isDark
                         ? 'text-slate-200 bg-slate-800/90 border-slate-700 hover:border-slate-600 hover:bg-slate-800'
                         : 'text-slate-700 bg-white border-slate-200 hover:bg-slate-50'
@@ -214,8 +235,14 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
                     <UserIcon className="w-3.5 h-3.5 text-slate-400" />
                   </button>
 
-                  {/* Hover Dropdown Menu showing Plan and Sign Out */}
-                  <div className="absolute right-0 top-full pt-1.5 opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto transition-all duration-150 z-50">
+                  {/* Dropdown Menu showing Plan and Sign Out */}
+                  <div
+                    className={`absolute right-0 top-full pt-1.5 transition-all duration-150 z-50 ${
+                      isProfileDropdownOpen
+                        ? 'opacity-100 visible pointer-events-auto'
+                        : 'opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto'
+                    }`}
+                  >
                     <div className="w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl p-2.5 space-y-2 text-slate-900 dark:text-slate-100 text-left">
                       {/* User info & Plan */}
                       <div className="px-2 py-1.5 bg-slate-50 dark:bg-slate-800/60 rounded-lg border border-slate-100 dark:border-slate-800 space-y-1">
@@ -241,11 +268,14 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
                         )}
                       </div>
 
-                      {/* Actions inside hover dropdown */}
+                      {/* Actions inside dropdown */}
                       <div className="space-y-0.5">
                         <button
                           type="button"
-                          onClick={() => dispatch(openProfileModal())}
+                          onClick={() => {
+                            dispatch(openProfileModal());
+                            setIsProfileDropdownOpen(false);
+                          }}
                           className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer text-left"
                         >
                           <UserIcon className="w-3.5 h-3.5 text-slate-400" />
@@ -254,7 +284,10 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
 
                         <button
                           type="button"
-                          onClick={() => dispatch(openSignOutModal())}
+                          onClick={() => {
+                            dispatch(openSignOutModal());
+                            setIsProfileDropdownOpen(false);
+                          }}
                           className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer text-left"
                         >
                           <LogOut className="w-3.5 h-3.5" />
@@ -265,14 +298,14 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
                   </div>
                 </div>
 
-                {/* Dashboard or Account Status Button */}
+                {/* Dashboard or Account Status Button (Responsive padding) */}
                 <button
                   type="button"
                   onClick={onReturnDashboard}
-                  className="px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-500 rounded-lg shadow-sm shadow-orange-600/30 transition-all cursor-pointer flex items-center gap-1.5"
+                  className="px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-500 rounded-lg shadow-sm shadow-orange-600/30 transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
                 >
                   <LayoutDashboard className="w-3.5 h-3.5" />
-                  <span>{user.isDeactivated ? 'Account Status' : 'Dashboard'}</span>
+                  <span>{user.isDeactivated ? 'Status' : 'Dashboard'}</span>
                 </button>
               </>
             ) : (

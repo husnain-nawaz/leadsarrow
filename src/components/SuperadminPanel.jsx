@@ -863,43 +863,45 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 flex flex-col font-sans selection:bg-orange-600 selection:text-white transition-colors">
-      {/* Superadmin Top Bar */}
-      <header className="border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md px-6 py-4 sticky top-0 z-30 flex items-center justify-between gap-4 transition-colors">
-        <div className="flex items-center gap-4">
-          <div className="w-9 h-9 rounded-xl bg-orange-600 flex items-center justify-center text-white font-bold shadow-md shadow-orange-600/30">
-            <Shield className="w-5 h-5" />
+      {/* Superadmin Top Bar (Fully Responsive on Mobile) */}
+      <header className="border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-30 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 transition-colors">
+        <div className="flex items-center gap-2.5 sm:gap-4 min-w-0">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-orange-600 flex items-center justify-center text-white font-bold shadow-md shadow-orange-600/30 shrink-0">
+            <Shield className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-base font-bold text-slate-900 dark:text-white font-display">
-                LeadsArrow Superadmin Mission Control
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white font-display truncate">
+                Superadmin Mission Control
               </h1>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-orange-500/20 text-orange-400 border border-orange-500/30">
-                Superadmin Mode
+              <span className="px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide bg-orange-500/20 text-orange-400 border border-orange-500/30 shrink-0">
+                Superadmin
               </span>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Manage user logins, subscriptions, payments & multi-channel data ingestion
+            <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">
+              Manage logins, subscriptions, payments & data ingestion
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
           <button
             type="button"
             onClick={loadAdminData}
             disabled={loadingUsers}
-            className="px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+            title="Refresh superadmin metrics and users"
+            className="px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loadingUsers ? 'animate-spin' : ''}`} />
-            <span>Refresh</span>
+            <span className="hidden sm:inline">Refresh</span>
           </button>
           <button
             type="button"
             onClick={onBack}
-            className="px-4 py-1.5 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-sm transition-colors cursor-pointer"
+            className="px-3 sm:px-4 py-1.5 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-sm transition-colors cursor-pointer flex items-center gap-1.5"
           >
-            ← Back to Leads Dashboard
+            <span className="hidden sm:inline">← Back to Leads Dashboard</span>
+            <span className="sm:hidden">Dashboard</span>
           </button>
         </div>
       </header>

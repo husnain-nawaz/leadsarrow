@@ -349,7 +349,7 @@ export default function AddLeadsToSavedListModal({
               }`}
             >
               <Layers className="w-3.5 h-3.5" />
-              <span>My Custom Leads (DB4)</span>
+              <span>My Custom Leads</span>
             </button>
           </div>
 

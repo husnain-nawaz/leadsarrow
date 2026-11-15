@@ -15,9 +15,10 @@ import {
   KeyRound,
   ExternalLink,
   Clock,
-  Sparkles
+  Sparkles,
+  LogOut
 } from 'lucide-react';
-import { closeProfileModal, updateCurrentUserProfile } from '../store/authSlice.js';
+import { closeProfileModal, openSignOutModal, updateCurrentUserProfile } from '../store/authSlice.js';
 import { PRESET_AVATARS } from '../data/avatars.js';
 
 export default function ProfileModal({ onOpenFullProfile }) {
@@ -157,7 +158,7 @@ export default function ProfileModal({ onOpenFullProfile }) {
         setPhotoUrl(savedPhoto);
         setPhotoPreview(savedPhoto);
       }
-      setFormSuccess('Profile details and photo successfully saved to Database 4.');
+      setFormSuccess('Profile details and photo successfully saved.');
     } catch (err) {
       setFormError(typeof err === 'string' ? err : err?.message || 'Failed to update profile.');
     } finally {
@@ -463,7 +464,7 @@ export default function ProfileModal({ onOpenFullProfile }) {
                   />
                 </div>
                 <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
-                  Account ID: <span className="font-mono text-slate-600 dark:text-slate-400">{user.id}</span> (Database 4 Isolated)
+                  Account ID: <span className="font-mono text-slate-600 dark:text-slate-400">{user.id}</span> (Private & Isolated)
                 </p>
               </div>
 
@@ -535,7 +536,7 @@ export default function ProfileModal({ onOpenFullProfile }) {
           {activeTab === 'security' && (
             <form id="profile-security-form" onSubmit={handleSavePassword} className="space-y-3">
               <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                Change your login password. Passwords are encrypted with bcrypt before saving to your profile in Database 4.
+                Change your login password. Passwords are salted and encrypted with bcrypt.
               </div>
 
               {/* Current Password */}
@@ -594,7 +595,7 @@ export default function ProfileModal({ onOpenFullProfile }) {
               <div className="p-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl text-xs text-amber-900 dark:text-amber-300 flex items-start gap-2">
                 <ShieldCheck className="w-4 h-4 text-amber-700 dark:text-amber-400 shrink-0 mt-0.5" />
                 <span className="text-[11px]">
-                  Passwords are salted and hashed with bcrypt. Saved strictly into your isolated Database 4 account.
+                  Passwords are salted and hashed with bcrypt. Saved strictly into your private workspace account.
                 </span>
               </div>
             </form>
@@ -602,17 +603,31 @@ export default function ProfileModal({ onOpenFullProfile }) {
         </div>
 
         {/* Fixed Footer Actions (Always visible, never cut off) */}
-        <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80 flex items-center justify-between gap-2 shrink-0">
-          {onOpenFullProfile ? (
+        <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80 flex flex-wrap items-center justify-between gap-2 shrink-0">
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={handleNavigateToFullPage}
-              className="text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 flex items-center gap-1 cursor-pointer"
+              onClick={() => {
+                dispatch(closeProfileModal());
+                dispatch(openSignOutModal());
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
             >
-              <span>Open Full Settings Page</span>
-              <ExternalLink className="w-3 h-3" />
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Sign Out</span>
             </button>
-          ) : <div />}
+
+            {onOpenFullProfile && (
+              <button
+                type="button"
+                onClick={handleNavigateToFullPage}
+                className="text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 flex items-center gap-1 cursor-pointer hidden sm:inline-flex"
+              >
+                <span>Full Settings</span>
+                <ExternalLink className="w-3 h-3" />
+              </button>
+            )}
+          </div>
 
           <div className="flex items-center gap-2">
             <button

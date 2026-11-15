@@ -2991,7 +2991,26 @@ async function startServer() {
         const existingCount = Number(countRes[0]?.count || 0);
         if (existingCount >= 5) {
           return res.status(403).json({
-            error: "Free accounts are limited to 5 clusters at a time. Delete an existing cluster or upgrade your plan to create more."
+            error: "Free accounts are limited to 5 clusters total. Delete an existing cluster or upgrade your plan to create more."
+          });
+        }
+      } else {
+        const lifetimeRes = await ds.query(
+          "SELECT COUNT(*) as count FROM custom_clusters WHERE user_id = ?",
+          [userId]
+        );
+        if (Number(lifetimeRes[0]?.count || 0) >= 1e3) {
+          return res.status(403).json({
+            error: "Lifetime limit reached: You have reached the maximum limit of 1,000 clusters for this account."
+          });
+        }
+        const dailyRes = await ds.query(
+          "SELECT COUNT(*) as count FROM custom_clusters WHERE user_id = ? AND created_at >= CURDATE()",
+          [userId]
+        );
+        if (Number(dailyRes[0]?.count || 0) >= 50) {
+          return res.status(403).json({
+            error: "Daily limit reached: You can create up to 50 clusters per day on your plan. This resets daily at midnight."
           });
         }
       }
@@ -3126,6 +3145,20 @@ async function startServer() {
             error: `Duplicate lead prevented: "${body.contactName}" at "${body.companyName}" already exists in your cluster "${existingByName[0].cluster_name}".`
           });
         }
+      }
+      const userPlan = (req.user?.planId || req.user?.plan || "free").toLowerCase();
+      const userRole = (req.user?.role || "").toLowerCase();
+      const isPaidOrSuperadmin = userRole === "superadmin" || userPlan.includes("growth") || userPlan.includes("scale") || userPlan.includes("unlimited") || userPlan.includes("pro") || userPlan.includes("starter");
+      const clusterLeadCountRes = await ds.query(
+        "SELECT COUNT(*) as count FROM custom_leads WHERE (user_id = ? OR user_id = ?) AND cluster_name = ?",
+        [userParam, emailParam, clusterName]
+      );
+      const currentClusterCount = Number(clusterLeadCountRes[0]?.count || 0);
+      const maxLeadsPerCluster = isPaidOrSuperadmin ? 5e3 : 1e3;
+      if (currentClusterCount >= maxLeadsPerCluster) {
+        return res.status(403).json({
+          error: isPaidOrSuperadmin ? `Cluster limit reached: Each cluster can hold a maximum of 5,000 custom leads.` : `Free plan limit: A cluster can contain a maximum of 1,000 custom leads. Upgrade to a paid plan to store up to 5,000 leads per cluster.`
+        });
       }
       const techStackJson = JSON.stringify(
         Array.isArray(body.techStack) ? body.techStack : String(body.techStack || "AWS, Salesforce").split(/[,;|]/).map((s) => s.trim()).filter(Boolean)
@@ -3263,6 +3296,20 @@ async function startServer() {
         }
       }
       const clusterName = safeTrim(body.clusterName || body.cluster, 128, existing[0].cluster_name || "General");
+      const userPlan = (req.user?.planId || req.user?.plan || "free").toLowerCase();
+      const userRole = (req.user?.role || "").toLowerCase();
+      const isPaidOrSuperadmin = userRole === "superadmin" || userPlan.includes("growth") || userPlan.includes("scale") || userPlan.includes("unlimited") || userPlan.includes("pro") || userPlan.includes("starter");
+      const clusterLeadCountRes = await ds.query(
+        "SELECT COUNT(*) as count FROM custom_leads WHERE (user_id = ? OR user_id = ?) AND cluster_name = ?",
+        [userParam, emailParam, clusterName]
+      );
+      const currentClusterCount = Number(clusterLeadCountRes[0]?.count || 0);
+      const maxLeadsPerCluster = isPaidOrSuperadmin ? 5e3 : 1e3;
+      if (currentClusterCount >= maxLeadsPerCluster) {
+        return res.status(403).json({
+          error: isPaidOrSuperadmin ? `Cluster limit reached: Each cluster can hold a maximum of 5,000 custom leads.` : `Free plan limit: A cluster can contain a maximum of 1,000 custom leads. Upgrade to a paid plan to store up to 5,000 leads per cluster.`
+        });
+      }
       const techStackJson = JSON.stringify(
         Array.isArray(body.techStack) ? body.techStack : String(body.techStack || "AWS, Salesforce").split(/[,;|]/).map((s) => s.trim()).filter(Boolean)
       );
@@ -3390,7 +3437,7 @@ async function startServer() {
       res.status(500).json({ error: err.message || "Failed to fetch saved lists" });
     }
   });
-  app.post("/api/lists", async (req, res) => {
+  app.post("/api/lists", optionalAuthMiddleware, async (req, res) => {
     try {
       const body = req.body || {};
       const name = String(body.name || "").trim();
@@ -3402,6 +3449,51 @@ async function startServer() {
       const leadIds = Array.isArray(body.leadIds) ? body.leadIds : [];
       const listId = body.id && /^[a-zA-Z0-9_\-]+$/.test(body.id) ? body.id : `list_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
       const userId = req.user?.id || req.user?.email ? String(req.user.id || req.user.email) : null;
+      const userPlan = (req.user?.planId || req.user?.plan || "free").toLowerCase();
+      const userRole = (req.user?.role || "").toLowerCase();
+      const isPaidOrSuperadmin = userRole === "superadmin" || userPlan.includes("growth") || userPlan.includes("scale") || userPlan.includes("unlimited") || userPlan.includes("pro") || userPlan.includes("starter");
+      if (userId) {
+        if (!isPaidOrSuperadmin) {
+          const countRes = await ds.query(
+            "SELECT COUNT(*) as count FROM saved_lists WHERE user_id = ?",
+            [userId]
+          );
+          if (Number(countRes[0]?.count || 0) >= 5) {
+            return res.status(403).json({
+              error: "Free accounts are limited to 5 saved lists total. Delete an existing list or upgrade to a paid plan to create more."
+            });
+          }
+          if (leadIds.length > 1e3) {
+            return res.status(403).json({
+              error: `Free plan limit: A saved list cannot exceed 1,000 leads (selected ${leadIds.length}). Upgrade to a paid plan for up to 5,000 leads per list.`
+            });
+          }
+        } else {
+          const lifetimeRes = await ds.query(
+            "SELECT COUNT(*) as count FROM saved_lists WHERE user_id = ?",
+            [userId]
+          );
+          if (Number(lifetimeRes[0]?.count || 0) >= 1e3) {
+            return res.status(403).json({
+              error: "Lifetime limit reached: You have reached the maximum limit of 1,000 saved lists for your account."
+            });
+          }
+          const dailyRes = await ds.query(
+            "SELECT COUNT(*) as count FROM saved_lists WHERE user_id = ? AND created_at >= CURDATE()",
+            [userId]
+          );
+          if (Number(dailyRes[0]?.count || 0) >= 50) {
+            return res.status(403).json({
+              error: "Daily limit reached: You can create up to 50 saved lists per day on your plan. This resets daily at midnight."
+            });
+          }
+          if (leadIds.length > 5e3) {
+            return res.status(403).json({
+              error: `List capacity reached: A saved list cannot exceed 5,000 leads (selected ${leadIds.length}).`
+            });
+          }
+        }
+      }
       const newList = listRepo.create({
         id: listId,
         userId,
@@ -3430,7 +3522,7 @@ async function startServer() {
       res.status(500).json({ error: err.message || "Failed to save list" });
     }
   });
-  app.post("/api/lists/:id/leads", async (req, res) => {
+  app.post("/api/lists/:id/leads", optionalAuthMiddleware, async (req, res) => {
     try {
       const listId = req.params.id;
       const body = req.body || {};
@@ -3463,6 +3555,15 @@ async function startServer() {
       const mergedSet = /* @__PURE__ */ new Set([...existingIds, ...newLeadIds]);
       const mergedArray = Array.from(mergedSet);
       const addedCount = mergedArray.length - existingIds.length;
+      const userPlan = (req.user?.planId || req.user?.plan || "free").toLowerCase();
+      const userRole = (req.user?.role || "").toLowerCase();
+      const isPaidOrSuperadmin = userRole === "superadmin" || userPlan.includes("growth") || userPlan.includes("scale") || userPlan.includes("unlimited") || userPlan.includes("pro") || userPlan.includes("starter");
+      const maxLeadsAllowed = isPaidOrSuperadmin ? 5e3 : 1e3;
+      if (mergedArray.length > maxLeadsAllowed) {
+        return res.status(403).json({
+          error: isPaidOrSuperadmin ? `List capacity reached: Adding ${newLeadIds.length} leads would exceed the maximum limit of 5,000 leads per list (currently ${existingIds.length}).` : `Free plan limit: Adding ${newLeadIds.length} leads would exceed the 1,000 leads limit for this list (currently ${existingIds.length}). Upgrade to a paid plan for up to 5,000 leads per list.`
+        });
+      }
       list.leadIds = mergedArray;
       list.leadCount = mergedArray.length;
       const saved = await listRepo.save(list);

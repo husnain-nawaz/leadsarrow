@@ -104,7 +104,7 @@ export default function LeadDetailDrawer() {
               {Boolean(activeLead.isCustom || String(activeLead.id || '').startsWith('custom_') || activeLead.source === 'manual_custom_lead' || activeLead.clusterName) ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-[10px] font-extrabold uppercase tracking-wide shadow-2xs">
                   <Layers className="w-3 h-3 text-amber-600 dark:text-amber-400" />
-                  <span>Custom Lead{activeLead.clusterName ? ` · Cluster: ${activeLead.clusterName}` : ' · DB4'}</span>
+                  <span>Custom Lead{activeLead.clusterName ? ` · Cluster: ${activeLead.clusterName}` : ' · Private Workspace'}</span>
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-bold uppercase tracking-wide">

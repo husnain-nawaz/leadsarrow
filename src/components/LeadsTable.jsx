@@ -717,8 +717,8 @@ export default function LeadsTable() {
         cancelText="Cancel"
         dangerNote={
           deleteTarget?.isCore
-            ? "This lead will be permanently deleted from Database 2. All accounts on LeadsArrow will no longer see this lead."
-            : "This lead will be permanently erased from Database 4."
+            ? "This lead will be permanently deleted from the database. All accounts on LeadsArrow will no longer see this lead."
+            : "This lead will be permanently erased from your private workspace."
         }
       />
     </div>

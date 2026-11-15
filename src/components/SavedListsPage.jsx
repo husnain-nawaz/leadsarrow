@@ -189,6 +189,28 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
   const addMenuRef = useRef(null);
 
+  // Mobile Horizontal Lists strip state
+  const [mobileListLimit, setMobileListLimit] = useState(5);
+  const mobileListsScrollRef = useRef(null);
+
+  const handleMobileScrollLists = (dir) => {
+    const el = mobileListsScrollRef.current;
+    if (!el) return;
+    const distance = 200 * 2;
+    el.scrollBy({ left: dir === 'left' ? -distance : distance, behavior: 'smooth' });
+  };
+
+  const userPlan = (user?.planId || user?.plan || 'free').toLowerCase();
+  const userRole = (user?.role || '').toLowerCase();
+  const isPaidOrSuperadmin =
+    userRole === 'superadmin' ||
+    userPlan.includes('growth') ||
+    userPlan.includes('scale') ||
+    userPlan.includes('unlimited') ||
+    userPlan.includes('pro') ||
+    userPlan.includes('starter');
+  const isFreeUser = !isPaidOrSuperadmin;
+
   // Close Add Leads dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -451,6 +473,13 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
     const start = (listPage - 1) * listPageSize;
     return filteredLists.slice(start, start + listPageSize);
   }, [filteredLists, listPage, listPageSize]);
+
+  // Mobile horizontal slice of lists (defaults to 5, expands in increments of 5)
+  const mobileDisplayedLists = useMemo(() => {
+    return filteredLists.slice(0, mobileListLimit);
+  }, [filteredLists, mobileListLimit]);
+  const hasMoreMobileLists = filteredLists.length > mobileListLimit;
+  const remainingMobileLists = Math.max(0, filteredLists.length - mobileListLimit);
 
   const handleListPageSizeChange = (newSize) => {
     setListPageSize(newSize);
@@ -800,6 +829,13 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
           type: 'success'
         })
       );
+    } else if (createSavedList.rejected.match(action)) {
+      dispatch(
+        showToast({
+          message: action.payload || action.error?.message || 'Failed to create list',
+          type: 'error'
+        })
+      );
     }
   };
 
@@ -962,7 +998,9 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Curated B2B account segments, target lists, and saved leads ready for review and multi-channel outreach.
+                {isFreeUser
+                  ? 'Free plan allowance: Up to 5 saved lists · Up to 1,000 leads per list.'
+                  : 'Plan allowance: Up to 50 lists daily · 1,000 lifetime · Up to 5,000 leads per list.'}
               </p>
             </div>
           </div>
@@ -1002,8 +1040,11 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
             onSubmit={handleCreateList}
             className="mt-4 p-4 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl space-y-3 animate-in fade-in slide-in-from-top-2 duration-150"
           >
-            <div className="text-xs font-bold text-slate-900 dark:text-white">
-              Create New Empty Target List
+            <div className="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white">
+              <span>Create New Empty Target List</span>
+              <span className="text-[11px] font-normal text-slate-500 dark:text-slate-400">
+                {isFreeUser ? 'Free: 5 lists max (1,000 leads/ea)' : 'Paid: 50 lists/day (5,000 leads/ea)'}
+              </span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <input
@@ -1043,10 +1084,152 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
 
       {/* Master-Detail Explorer Workspace */}
       <div className="flex-1 flex flex-col lg:flex-row min-w-0">
-        {/* Left Pane: Saved Lists Selector (Resizable width) */}
+        {/* Mobile Horizontal Saved Lists Carousel (< lg screens only) */}
+        <div className="lg:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-3 space-y-2.5">
+          <div className="flex items-center justify-between gap-2">
+            <div className="relative flex-1">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={listSearchQuery}
+                onChange={(e) => {
+                  setListSearchQuery(e.target.value);
+                  setMobileListLimit(5);
+                }}
+                placeholder="Search saved lists..."
+                className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-orange-600"
+              />
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 font-mono">
+                {filteredLists.length} Lists
+              </span>
+              <div className="flex items-center gap-0.5 border-l border-slate-200 dark:border-slate-700 pl-1.5">
+                <button
+                  type="button"
+                  onClick={() => handleMobileScrollLists('left')}
+                  className="p-1 rounded-md text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  title="Scroll left"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleMobileScrollLists('right')}
+                  className="p-1 rounded-md text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  title="Scroll right"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Horizontal scroll strip */}
+          <div
+            ref={mobileListsScrollRef}
+            className="flex items-stretch gap-2.5 overflow-x-auto scroll-smooth py-1 px-0.5 cluster-horizontal-scrollbar"
+          >
+            {mobileDisplayedLists.length === 0 ? (
+              <div className="p-3 text-xs text-slate-400 dark:text-slate-500">
+                No saved lists found.
+              </div>
+            ) : (
+              mobileDisplayedLists.map((list) => {
+                const isSelected = list.id === selectedListId;
+                const leadCount = getListCount(list);
+                return (
+                  <div
+                    key={list.id}
+                    onClick={() => setSelectedListId(list.id)}
+                    className={`shrink-0 min-w-[150px] max-w-[200px] p-2.5 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
+                      isSelected
+                        ? 'border-orange-500 bg-orange-50/50 dark:bg-orange-950/40 text-orange-950 dark:text-orange-200 shadow-2xs font-semibold'
+                        : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-1.5 mb-1.5">
+                      <Bookmark
+                        className={`w-3.5 h-3.5 shrink-0 ${
+                          isSelected
+                            ? 'text-orange-600 dark:text-orange-400 fill-orange-500/20'
+                            : 'text-slate-400'
+                        }`}
+                      />
+                      <span
+                        className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono font-bold shrink-0 ${
+                          isSelected
+                            ? 'bg-orange-200/70 dark:bg-orange-950 text-orange-800 dark:text-orange-300'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                        }`}
+                      >
+                        {leadCount} leads
+                      </span>
+                    </div>
+
+                    <div className="text-xs font-bold truncate mb-1" title={list.name}>
+                      {list.name}
+                    </div>
+
+                    <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px]">
+                      <span className={isSelected ? 'text-orange-600 dark:text-orange-400 font-bold' : 'text-slate-400'}>
+                        {isSelected ? '● Active' : 'Select'}
+                      </span>
+                      {isSelected && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setRenamingListTarget(list);
+                            }}
+                            title="Rename list"
+                            className="p-0.5 text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 rounded transition-colors"
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteListClick(list.id, list.name);
+                            }}
+                            title="Delete list"
+                            className="p-0.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded transition-colors"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+
+            {/* Load Next 5 Lists Action Card on Mobile */}
+            {hasMoreMobileLists && (
+              <div
+                onClick={() => setMobileListLimit((prev) => prev + 5)}
+                className="shrink-0 min-w-[130px] p-2.5 rounded-xl border-2 border-dashed border-orange-400/50 dark:border-orange-500/40 bg-orange-50/30 dark:bg-orange-950/20 hover:border-orange-500 cursor-pointer flex flex-col items-center justify-center text-center gap-1 transition-all"
+              >
+                <div className="text-xs font-bold text-orange-600 dark:text-orange-400 flex items-center gap-1">
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Next 5 Lists</span>
+                </div>
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                  +{Math.min(5, remainingMobileLists)} of {remainingMobileLists} left
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Left Pane: Saved Lists Selector (Desktop only, Resizable width) */}
         <aside
           style={{ width: typeof window !== 'undefined' && window.innerWidth >= 1024 ? `${sidebarWidth}px` : undefined }}
-          className="w-full lg:w-auto bg-white dark:bg-slate-900/90 border-r border-slate-200 dark:border-slate-800 flex flex-col shrink-0 relative group/sidebar select-none"
+          className="hidden lg:flex w-auto bg-white dark:bg-slate-900/90 border-r border-slate-200 dark:border-slate-800 flex-col shrink-0 relative group/sidebar select-none"
         >
           <div className="p-4 border-b border-slate-100 dark:border-slate-800">
             <div className="relative">
