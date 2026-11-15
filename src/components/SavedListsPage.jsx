@@ -1210,7 +1210,7 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
                             <Search className="w-4 h-4 text-orange-500 shrink-0" />
                             <div>
                               <div className="font-semibold">From Lead Finder</div>
-                              <div className="text-[10px] text-slate-400">Search & filter 414k+ core leads</div>
+                              <div className="text-[10px] text-slate-400">Search & filter millions of core leads</div>
                             </div>
                           </button>
 
