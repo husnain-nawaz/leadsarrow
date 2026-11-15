@@ -33,7 +33,8 @@ import {
   WifiOff,
   AlertTriangle,
   Pencil,
-  ChevronDown
+  ChevronDown,
+  Globe
 } from 'lucide-react';
 import {
   fetchSavedLists,
@@ -977,7 +978,9 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
             ) : (
               paginatedLists.map((list) => {
                 const isSelected = list.id === selectedListId;
-                const leadCount = list.leadCount || (list.leadIds ? list.leadIds.length : 0);
+                const leadCount = (selectedList && selectedList.id === list.id && listLeads.length > 0)
+                  ? listLeads.length
+                  : (list.leadCount || (list.leadIds ? list.leadIds.length : 0));
                 const hasCustomDesc =
                   list.description &&
                   list.description.toLowerCase() !== 'curated b2b target account segment' &&
@@ -1156,7 +1159,7 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
                         <span className="px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800 shrink-0">
-                          {selectedList.leadCount || (selectedList.leadIds ? selectedList.leadIds.length : 0)} Leads
+                          {listLeads.length > 0 ? listLeads.length : (selectedList.leadCount || (selectedList.leadIds ? selectedList.leadIds.length : 0))} Leads
                         </span>
                         {selectedList.createdAt && (
                           <span className="text-[11px] text-slate-400 hidden sm:inline shrink-0">
@@ -1659,10 +1662,27 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
 
                               {/* Company & Sector */}
                               <td className="py-2.5 px-3 align-middle">
-                                <div className="flex items-center gap-1.5 min-w-0">
+                                <div className="flex items-center gap-2 min-w-0 flex-wrap">
                                   <span className="font-semibold text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors truncate">
                                     {lead.companyName}
                                   </span>
+                                  {Boolean(lead.isCustom || String(lead.id || '').startsWith('custom_') || lead.source === 'manual_custom_lead' || lead.clusterName) ? (
+                                    <span
+                                      title={`Custom lead created by your profile${lead.clusterName ? ` (Cluster: ${lead.clusterName})` : ''}`}
+                                      className="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wide bg-amber-50 dark:bg-amber-950/70 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-700/80 shrink-0 inline-flex items-center gap-1 shadow-2xs"
+                                    >
+                                      <Layers className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400" />
+                                      <span>Custom Lead</span>
+                                    </span>
+                                  ) : (
+                                    <span
+                                      title="Verified B2B lead from 10.3M+ Core Global Database"
+                                      className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700/80 shrink-0 inline-flex items-center gap-1"
+                                    >
+                                      <Globe className="w-2.5 h-2.5 text-slate-400" />
+                                      <span>Core DB</span>
+                                    </span>
+                                  )}
                                   {lead.domain && (
                                     <a
                                       href={lead.domain.startsWith('http') ? lead.domain : `https://${lead.domain}`}

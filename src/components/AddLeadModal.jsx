@@ -286,6 +286,35 @@ export default function AddLeadModal() {
                 className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:bg-white dark:focus:bg-slate-800 focus:border-orange-600"
               />
             </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="font-semibold text-slate-700 dark:text-slate-300">
+                  Buying Intent Score (0-100)
+                </label>
+                <span className={`text-[11px] font-mono font-bold px-1.5 py-0.5 rounded ${
+                  (Number(form.buyingIntentScore) || 88) >= 85
+                    ? 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400'
+                    : (Number(form.buyingIntentScore) || 88) >= 70
+                    ? 'bg-orange-100 dark:bg-orange-950/70 text-orange-600 dark:text-orange-400'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                }`}>
+                  {Number(form.buyingIntentScore) || 88} / 100
+                </span>
+              </div>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={form.buyingIntentScore ?? 88}
+                onChange={(e) => {
+                  const val = e.target.value === '' ? '' : Math.max(0, Math.min(100, Number(e.target.value)));
+                  handleChange('buyingIntentScore', val);
+                }}
+                placeholder="e.g. 88"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:bg-white dark:focus:bg-slate-800 focus:border-orange-600 font-mono"
+              />
+            </div>
           </div>
 
           <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2.5">

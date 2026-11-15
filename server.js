@@ -1260,30 +1260,85 @@ async function insertSingleLead(lead) {
 }
 async function fetchLeadsByIds(ids, userId) {
   if (!Array.isArray(ids) || ids.length === 0) return [];
-  const results = [];
-  try {
-    const ds = await getLeadsReadDataSource();
-    const leadRepo = ds.getRepository(Lead);
-    const coreEntities = await leadRepo.createQueryBuilder("lead").where("lead.id IN (:...ids)", { ids }).getMany();
-    if (coreEntities && coreEntities.length > 0) {
-      results.push(...coreEntities.map(mapEntityToLead));
+  const cleanIds = Array.from(new Set(ids.map((id) => String(id).trim()).filter(Boolean)));
+  if (cleanIds.length === 0) return [];
+  const foundMap = /* @__PURE__ */ new Map();
+  let remainingIds = [...cleanIds];
+  const queryDsForIds = async (ds) => {
+    if (!ds || !remainingIds.length) return;
+    try {
+      const repo = ds.getRepository(Lead);
+      const CHUNK_SIZE = 500;
+      for (let i = 0; i < remainingIds.length; i += CHUNK_SIZE) {
+        const chunk = remainingIds.slice(i, i + CHUNK_SIZE);
+        const entities = await repo.createQueryBuilder("lead").where("lead.id IN (:...chunk)", { chunk }).getMany();
+        if (entities && entities.length > 0) {
+          for (const ent of entities) {
+            const mapped = mapEntityToLead(ent);
+            mapped.isCustom = 0;
+            mapped.isCore = 1;
+            mapped.source = "core";
+            foundMap.set(mapped.id, mapped);
+          }
+        }
+      }
+      remainingIds = cleanIds.filter((id) => !foundMap.has(id));
+    } catch (err) {
+      console.warn("Error reading from datasource shard in fetchLeadsByIds:", err.message);
     }
-  } catch (err) {
-    console.warn("Error reading from core cluster in fetchLeadsByIds:", err.message);
+  };
+  try {
+    const ds2 = await getSecondaryDataSource();
+    await queryDsForIds(ds2);
+  } catch (_) {
   }
-  const foundIds = new Set(results.map((r) => r.id));
-  const missingIds = ids.filter((id) => !foundIds.has(id));
-  if (missingIds.length > 0 && userId) {
+  if (remainingIds.length > 0) {
+    try {
+      const ds3 = await getTertiaryDataSource();
+      await queryDsForIds(ds3);
+    } catch (_) {
+    }
+  }
+  if (remainingIds.length > 0) {
+    try {
+      const ds1 = await getPrimaryDataSource();
+      await queryDsForIds(ds1);
+    } catch (_) {
+    }
+  }
+  if (remainingIds.length > 0) {
     try {
       const ds4 = await getDataSource();
-      const customRows = await ds4.query(
-        `SELECT * FROM custom_leads WHERE id IN (${missingIds.map(() => "?").join(",")}) AND user_id = ?`,
-        [...missingIds, userId]
-      );
-      if (customRows && customRows.length > 0) {
-        results.push(...customRows.map(mapCustomRowToLead));
+      const CHUNK_SIZE = 500;
+      for (let i = 0; i < remainingIds.length; i += CHUNK_SIZE) {
+        const chunk = remainingIds.slice(i, i + CHUNK_SIZE);
+        const placeholders = chunk.map(() => "?").join(",");
+        const params = [...chunk];
+        let queryStr = `SELECT * FROM custom_leads WHERE id IN (${placeholders})`;
+        if (userId) {
+          queryStr += ` AND (user_id = ? OR user_id = 'usr_superadmin' OR user_id IS NULL OR user_id = '')`;
+          params.push(userId);
+        }
+        const customRows = await ds4.query(queryStr, params);
+        if (customRows && customRows.length > 0) {
+          for (const row of customRows) {
+            const mapped = mapCustomRowToLead(row);
+            mapped.isCustom = 1;
+            mapped.isCore = 0;
+            mapped.source = "manual_custom_lead";
+            foundMap.set(mapped.id, mapped);
+          }
+        }
       }
-    } catch (_) {
+      remainingIds = cleanIds.filter((id) => !foundMap.has(id));
+    } catch (err) {
+      console.warn("Error reading custom_leads from DB4 in fetchLeadsByIds:", err.message);
+    }
+  }
+  const results = [];
+  for (const id of cleanIds) {
+    if (foundMap.has(id)) {
+      results.push(foundMap.get(id));
     }
   }
   return results;
@@ -1365,29 +1420,33 @@ var init_leadsData = __esm({
   }
 });
 
-// server.ts
-init_dataSource();
-init_leadsData();
-import "reflect-metadata";
-import express from "express";
-import { createServer as createViteServer } from "vite";
-import path from "path";
-
 // server/auth.ts
-init_dataSource();
-init_User();
-init_UserPurchase();
-init_UserLogin();
-init_Lead();
+var auth_exports = {};
+__export(auth_exports, {
+  PLAN_LIMITS: () => PLAN_LIMITS,
+  checkAndReplenishDailyCredits: () => checkAndReplenishDailyCredits,
+  decrementUserCreditsInDb: () => decrementUserCreditsInDb,
+  ensureSuperAdminSeed: () => ensureSuperAdminSeed,
+  getAdminStats: () => getAdminStats,
+  getAllUsersForAdmin: () => getAllUsersForAdmin,
+  getUserWithHistory: () => getUserWithHistory,
+  issueJwtToken: () => issueJwtToken,
+  loginJwtUser: () => loginJwtUser,
+  loginOrSyncGoogleUser: () => loginOrSyncGoogleUser,
+  optionalAuthMiddleware: () => optionalAuthMiddleware,
+  recordLoginSession: () => recordLoginSession,
+  registerJwtUser: () => registerJwtUser,
+  requireJwtMiddleware: () => requireJwtMiddleware,
+  requireSuperAdminMiddleware: () => requireSuperAdminMiddleware,
+  runGlobalDailyCreditReplenishmentSweep: () => runGlobalDailyCreditReplenishmentSweep,
+  sanitizeUser: () => sanitizeUser,
+  updateSelfProfile: () => updateSelfProfile,
+  updateUserByAdmin: () => updateUserByAdmin,
+  upgradeUserPlan: () => upgradeUserPlan,
+  verifyJwtTokenAsync: () => verifyJwtTokenAsync
+});
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-var JWT_SECRET = process.env.JWT_SECRET || "leadsarrow-b2b-enterprise-jwt-secret-key-2026";
-var PLAN_LIMITS = {
-  free: { name: "Free Starter", limit: 100, price: 0, status: "free" },
-  starter: { name: "Growth Starter", limit: 2e3, price: 10, status: "paid" },
-  pro: { name: "Scale Pro", limit: 1e4, price: 39, status: "paid" },
-  unlimited: { name: "Enterprise Unlimited", limit: 999999, price: 79, status: "paid" }
-};
 async function checkAndReplenishDailyCredits(user) {
   if (!user) return user;
   const now = Date.now();
@@ -2054,11 +2113,6 @@ async function updateUserByAdmin(userId, updates = {}) {
   }
   return await getUserWithHistory(user.id);
 }
-var cachedClusterVolume = {
-  timestamp: 0,
-  count: 10363428
-};
-var FIVE_MIN_MS = 5 * 60 * 1e3;
 async function getAdminStats() {
   const ds = await getDataSource();
   const userRepo = ds.getRepository(User);
@@ -2132,8 +2186,37 @@ async function getAdminStats() {
     }
   };
 }
+var JWT_SECRET, PLAN_LIMITS, cachedClusterVolume, FIVE_MIN_MS;
+var init_auth = __esm({
+  "server/auth.ts"() {
+    init_dataSource();
+    init_User();
+    init_UserPurchase();
+    init_UserLogin();
+    init_Lead();
+    JWT_SECRET = process.env.JWT_SECRET || "leadsarrow-b2b-enterprise-jwt-secret-key-2026";
+    PLAN_LIMITS = {
+      free: { name: "Free Starter", limit: 100, price: 0, status: "free" },
+      starter: { name: "Growth Starter", limit: 2e3, price: 10, status: "paid" },
+      pro: { name: "Scale Pro", limit: 1e4, price: 39, status: "paid" },
+      unlimited: { name: "Enterprise Unlimited", limit: 999999, price: 79, status: "paid" }
+    };
+    cachedClusterVolume = {
+      timestamp: 0,
+      count: 10363428
+    };
+    FIVE_MIN_MS = 5 * 60 * 1e3;
+  }
+});
 
 // server.ts
+init_dataSource();
+init_leadsData();
+init_auth();
+import "reflect-metadata";
+import express from "express";
+import { createServer as createViteServer } from "vite";
+import path from "path";
 async function startServer() {
   const app = express();
   const PORT = 3e3;
@@ -2690,7 +2773,15 @@ async function startServer() {
   app.post("/api/leads/by-ids", async (req, res) => {
     try {
       const { ids } = req.body || {};
-      const userId = req.user?.id ? String(req.user.id) : null;
+      let userId = req.user?.id ? String(req.user.id) : null;
+      if (!userId && req.headers.authorization?.startsWith("Bearer ")) {
+        const token = req.headers.authorization.slice(7);
+        try {
+          const u = await (await Promise.resolve().then(() => (init_auth(), auth_exports))).verifyJwtTokenAsync(token);
+          if (u) userId = String(u.id);
+        } catch (_) {
+        }
+      }
       const leads = await fetchLeadsByIds(ids || [], userId);
       res.json({ leads });
     } catch (err) {
@@ -2943,9 +3034,39 @@ async function startServer() {
       if (!clusterName) {
         return res.status(400).json({ error: "A valid cluster name is required. Every custom lead must belong to a cluster." });
       }
+      const userParam = String(userId);
+      const emailParam = req.user?.email ? String(req.user.email) : userParam;
+      const targetEmail = safeTrim(body.contactEmail, 255, "").toLowerCase();
+      const targetCompany = safeTrim(body.companyName, 255, "").toLowerCase();
+      const targetContact = safeTrim(body.contactName, 255, "").toLowerCase();
+      if (targetEmail) {
+        const existingByEmail = await ds.query(
+          `SELECT id, company_name, contact_name, cluster_name FROM custom_leads 
+           WHERE (user_id = ? OR user_id = ?) AND LOWER(contact_email) = ? LIMIT 1`,
+          [userParam, emailParam, targetEmail]
+        );
+        if (existingByEmail && existingByEmail.length > 0) {
+          return res.status(409).json({
+            error: `Duplicate lead prevented: A custom lead with email "${targetEmail}" (${existingByEmail[0].company_name || "Business"}) already exists in your cluster "${existingByEmail[0].cluster_name}".`
+          });
+        }
+      }
+      if (targetCompany && targetContact) {
+        const existingByName = await ds.query(
+          `SELECT id, cluster_name FROM custom_leads 
+           WHERE (user_id = ? OR user_id = ?) AND LOWER(company_name) = ? AND LOWER(contact_name) = ? LIMIT 1`,
+          [userParam, emailParam, targetCompany, targetContact]
+        );
+        if (existingByName && existingByName.length > 0) {
+          return res.status(409).json({
+            error: `Duplicate lead prevented: "${body.contactName}" at "${body.companyName}" already exists in your cluster "${existingByName[0].cluster_name}".`
+          });
+        }
+      }
       const techStackJson = JSON.stringify(
         Array.isArray(body.techStack) ? body.techStack : String(body.techStack || "AWS, Salesforce").split(/[,;|]/).map((s) => s.trim()).filter(Boolean)
       );
+      const intentScore = body.buyingIntentScore !== void 0 && body.buyingIntentScore !== null && !isNaN(Number(body.buyingIntentScore)) ? Math.max(0, Math.min(100, Math.round(Number(body.buyingIntentScore)))) : 88;
       await ds.query(
         `INSERT INTO custom_leads (
           id, user_id, cluster_name, company_name, domain, industry, employee_range, employee_count,
@@ -2977,7 +3098,7 @@ async function startServer() {
           safeTrim(body.verificationStatus, 50, "Verified"),
           safeTrim(body.fundingStage, 100, "Series B"),
           techStackJson,
-          Number(body.buyingIntentScore) || 88,
+          intentScore,
           Number(body.foundedYear) || 2021,
           body.hasDirectPhone !== void 0 ? body.hasDirectPhone ? 1 : 0 : 1,
           "manual_custom_lead"
@@ -3063,6 +3184,19 @@ async function startServer() {
       );
       if (!existing || existing.length === 0) {
         return res.status(404).json({ error: "Custom lead not found or not owned by your profile." });
+      }
+      const targetEmail = safeTrim(body.contactEmail, 255, "").toLowerCase();
+      if (targetEmail) {
+        const existingOther = await ds.query(
+          `SELECT id, company_name, cluster_name FROM custom_leads 
+           WHERE (user_id = ? OR user_id = ?) AND LOWER(contact_email) = ? AND id != ? LIMIT 1`,
+          [userParam, emailParam, targetEmail, targetId]
+        );
+        if (existingOther && existingOther.length > 0) {
+          return res.status(409).json({
+            error: `Duplicate email: Another custom lead with email "${targetEmail}" already exists in your cluster "${existingOther[0].cluster_name}".`
+          });
+        }
       }
       const clusterName = safeTrim(body.clusterName || body.cluster, 128, existing[0].cluster_name || "General");
       const techStackJson = JSON.stringify(

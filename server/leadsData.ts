@@ -885,36 +885,98 @@ export async function insertSingleLead(lead: any) {
 
 export async function fetchLeadsByIds(ids: string[], userId?: string | null) {
   if (!Array.isArray(ids) || ids.length === 0) return [];
-  const results: any[] = [];
+  
+  const cleanIds = Array.from(new Set(ids.map((id) => String(id).trim()).filter(Boolean)));
+  if (cleanIds.length === 0) return [];
 
-  // 1. Check Core Database Cluster (DB3, DB2, DB1)
-  try {
-    const ds = await getLeadsReadDataSource();
-    const leadRepo = ds.getRepository(Lead);
-    const coreEntities = await leadRepo.createQueryBuilder('lead')
-      .where('lead.id IN (:...ids)', { ids })
-      .getMany();
-    if (coreEntities && coreEntities.length > 0) {
-      results.push(...coreEntities.map(mapEntityToLead));
+  const foundMap = new Map<string, any>();
+  let remainingIds = [...cleanIds];
+
+  const queryDsForIds = async (ds: any) => {
+    if (!ds || !remainingIds.length) return;
+    try {
+      const repo = ds.getRepository(Lead);
+      const CHUNK_SIZE = 500;
+      for (let i = 0; i < remainingIds.length; i += CHUNK_SIZE) {
+        const chunk = remainingIds.slice(i, i + CHUNK_SIZE);
+        const entities = await repo.createQueryBuilder('lead')
+          .where('lead.id IN (:...chunk)', { chunk })
+          .getMany();
+        if (entities && entities.length > 0) {
+          for (const ent of entities) {
+            const mapped = mapEntityToLead(ent);
+            mapped.isCustom = 0;
+            mapped.isCore = 1;
+            mapped.source = 'core';
+            foundMap.set(mapped.id, mapped);
+          }
+        }
+      }
+      remainingIds = cleanIds.filter((id) => !foundMap.has(id));
+    } catch (err: any) {
+      console.warn('Error reading from datasource shard in fetchLeadsByIds:', err.message);
     }
-  } catch (err: any) {
-    console.warn('Error reading from core cluster in fetchLeadsByIds:', err.message);
+  };
+
+  // 1. Check DB2 (Largest shard: 4.37M leads)
+  try {
+    const ds2 = await getSecondaryDataSource();
+    await queryDsForIds(ds2);
+  } catch (_) {}
+
+  // 2. Check DB3 (4.15M leads) for remaining IDs
+  if (remainingIds.length > 0) {
+    try {
+      const ds3 = await getTertiaryDataSource();
+      await queryDsForIds(ds3);
+    } catch (_) {}
   }
 
-  // 2. Check Database 4 custom_leads ONLY for the authenticated profile's own leads
-  const foundIds = new Set(results.map((r) => r.id));
-  const missingIds = ids.filter((id) => !foundIds.has(id));
-  if (missingIds.length > 0 && userId) {
+  // 3. Check DB1 (1.84M leads) for remaining IDs
+  if (remainingIds.length > 0) {
+    try {
+      const ds1 = await getPrimaryDataSource();
+      await queryDsForIds(ds1);
+    } catch (_) {}
+  }
+
+  // 4. Check DB4 (custom_leads table) for remaining custom IDs
+  if (remainingIds.length > 0) {
     try {
       const ds4 = await getDataSource();
-      const customRows: any = await ds4.query(
-        `SELECT * FROM custom_leads WHERE id IN (${missingIds.map(() => '?').join(',')}) AND user_id = ?`,
-        [...missingIds, userId]
-      );
-      if (customRows && customRows.length > 0) {
-        results.push(...customRows.map(mapCustomRowToLead));
+      const CHUNK_SIZE = 500;
+      for (let i = 0; i < remainingIds.length; i += CHUNK_SIZE) {
+        const chunk = remainingIds.slice(i, i + CHUNK_SIZE);
+        const placeholders = chunk.map(() => '?').join(',');
+        const params: any[] = [...chunk];
+        let queryStr = `SELECT * FROM custom_leads WHERE id IN (${placeholders})`;
+        if (userId) {
+          queryStr += ` AND (user_id = ? OR user_id = 'usr_superadmin' OR user_id IS NULL OR user_id = '')`;
+          params.push(userId);
+        }
+        const customRows: any = await ds4.query(queryStr, params);
+        if (customRows && customRows.length > 0) {
+          for (const row of customRows) {
+            const mapped = mapCustomRowToLead(row);
+            mapped.isCustom = 1;
+            mapped.isCore = 0;
+            mapped.source = 'manual_custom_lead';
+            foundMap.set(mapped.id, mapped);
+          }
+        }
       }
-    } catch (_) {}
+      remainingIds = cleanIds.filter((id) => !foundMap.has(id));
+    } catch (err: any) {
+      console.warn('Error reading custom_leads from DB4 in fetchLeadsByIds:', err.message);
+    }
+  }
+
+  // Preserve the caller's requested ID ordering
+  const results: any[] = [];
+  for (const id of cleanIds) {
+    if (foundMap.has(id)) {
+      results.push(foundMap.get(id));
+    }
   }
 
   return results;

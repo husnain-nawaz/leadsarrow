@@ -696,7 +696,14 @@ async function startServer() {
   app.post('/api/leads/by-ids', async (req: any, res) => {
     try {
       const { ids } = req.body || {};
-      const userId = req.user?.id ? String(req.user.id) : null;
+      let userId = req.user?.id ? String(req.user.id) : null;
+      if (!userId && req.headers.authorization?.startsWith('Bearer ')) {
+        const token = req.headers.authorization.slice(7);
+        try {
+          const u = await (await import('./server/auth.ts')).verifyJwtTokenAsync(token);
+          if (u) userId = String(u.id);
+        } catch (_) {}
+      }
       const leads = await fetchLeadsByIds(ids || [], userId);
       res.json({ leads });
     } catch (err: any) {
@@ -1006,11 +1013,48 @@ async function startServer() {
         return res.status(400).json({ error: 'A valid cluster name is required. Every custom lead must belong to a cluster.' });
       }
 
+      // Duplicate prevention: A user cannot add duplicate custom leads
+      const userParam = String(userId);
+      const emailParam = req.user?.email ? String(req.user.email) : userParam;
+      const targetEmail = safeTrim(body.contactEmail, 255, '').toLowerCase();
+      const targetCompany = safeTrim(body.companyName, 255, '').toLowerCase();
+      const targetContact = safeTrim(body.contactName, 255, '').toLowerCase();
+
+      if (targetEmail) {
+        const existingByEmail: any = await ds.query(
+          `SELECT id, company_name, contact_name, cluster_name FROM custom_leads 
+           WHERE (user_id = ? OR user_id = ?) AND LOWER(contact_email) = ? LIMIT 1`,
+          [userParam, emailParam, targetEmail]
+        );
+        if (existingByEmail && existingByEmail.length > 0) {
+          return res.status(409).json({
+            error: `Duplicate lead prevented: A custom lead with email "${targetEmail}" (${existingByEmail[0].company_name || 'Business'}) already exists in your cluster "${existingByEmail[0].cluster_name}".`
+          });
+        }
+      }
+
+      if (targetCompany && targetContact) {
+        const existingByName: any = await ds.query(
+          `SELECT id, cluster_name FROM custom_leads 
+           WHERE (user_id = ? OR user_id = ?) AND LOWER(company_name) = ? AND LOWER(contact_name) = ? LIMIT 1`,
+          [userParam, emailParam, targetCompany, targetContact]
+        );
+        if (existingByName && existingByName.length > 0) {
+          return res.status(409).json({
+            error: `Duplicate lead prevented: "${body.contactName}" at "${body.companyName}" already exists in your cluster "${existingByName[0].cluster_name}".`
+          });
+        }
+      }
+
       const techStackJson = JSON.stringify(
         Array.isArray(body.techStack)
           ? body.techStack
           : String(body.techStack || 'AWS, Salesforce').split(/[,;|]/).map((s: string) => s.trim()).filter(Boolean)
       );
+
+      const intentScore = body.buyingIntentScore !== undefined && body.buyingIntentScore !== null && !isNaN(Number(body.buyingIntentScore))
+        ? Math.max(0, Math.min(100, Math.round(Number(body.buyingIntentScore))))
+        : 88;
 
       // Isolated write into Database 4 custom_leads table only - core leads are 100% untouched
       await ds.query(
@@ -1044,7 +1088,7 @@ async function startServer() {
           safeTrim(body.verificationStatus, 50, 'Verified'),
           safeTrim(body.fundingStage, 100, 'Series B'),
           techStackJson,
-          Number(body.buyingIntentScore) || 88,
+          intentScore,
           Number(body.foundedYear) || 2021,
           body.hasDirectPhone !== undefined ? (body.hasDirectPhone ? 1 : 0) : 1,
           'manual_custom_lead'
@@ -1147,6 +1191,20 @@ async function startServer() {
 
       if (!existing || existing.length === 0) {
         return res.status(404).json({ error: 'Custom lead not found or not owned by your profile.' });
+      }
+
+      const targetEmail = safeTrim(body.contactEmail, 255, '').toLowerCase();
+      if (targetEmail) {
+        const existingOther: any = await ds.query(
+          `SELECT id, company_name, cluster_name FROM custom_leads 
+           WHERE (user_id = ? OR user_id = ?) AND LOWER(contact_email) = ? AND id != ? LIMIT 1`,
+          [userParam, emailParam, targetEmail, targetId]
+        );
+        if (existingOther && existingOther.length > 0) {
+          return res.status(409).json({
+            error: `Duplicate email: Another custom lead with email "${targetEmail}" already exists in your cluster "${existingOther[0].cluster_name}".`
+          });
+        }
       }
 
       const clusterName = safeTrim(body.clusterName || body.cluster, 128, existing[0].cluster_name || 'General');

@@ -14,7 +14,8 @@ import {
   SearchX,
   FilterX,
   CheckCircle2,
-  X
+  X,
+  Layers
 } from 'lucide-react';
 import {
   toggleSelectLead,
@@ -389,10 +390,19 @@ export default function LeadsTable() {
 
                     {/* Company & Unboxed Metadata */}
                     <td className="py-2.5 px-3 align-middle">
-                      <div className="flex items-center gap-1.5 min-w-0">
+                      <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                         <span className="font-semibold text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors truncate">
                           {lead.companyName}
                         </span>
+                        {Boolean(lead.isCustom || String(lead.id || '').startsWith('custom_') || lead.source === 'manual_custom_lead') && (
+                          <span
+                            title="Custom Lead created by your profile"
+                            className="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wide bg-amber-50 dark:bg-amber-950/70 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-700/80 shrink-0 inline-flex items-center gap-1 shadow-2xs"
+                          >
+                            <Layers className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400" />
+                            <span>Custom Lead</span>
+                          </span>
+                        )}
                         <a
                           href={`https://${lead.domain}`}
                           target="_blank"
