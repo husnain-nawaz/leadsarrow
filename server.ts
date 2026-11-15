@@ -768,16 +768,18 @@ async function startServer() {
       // Sort clusters strictly newest first (createdAt DESC) so newest cluster is always index 0
       clusters.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-      // Determine active cluster: leads must always belong to a specific cluster
+      // Determine active cluster: leads can be filtered by specific cluster or 'all'
       let activeCluster = requestedCluster && requestedCluster !== 'all' ? requestedCluster : null;
-      if (!activeCluster && clusters.length > 0) {
+      if (!requestedCluster && clusters.length > 0) {
         activeCluster = clusters[0].name;
       }
 
       let whereClause = 'WHERE user_id = ?';
       const sqlParams: any[] = [userId];
 
-      if (activeCluster) {
+      if (requestedCluster === 'all') {
+        // All custom leads across all clusters
+      } else if (activeCluster) {
         whereClause += ' AND cluster_name = ?';
         sqlParams.push(activeCluster);
       } else {

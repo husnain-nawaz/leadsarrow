@@ -2666,12 +2666,13 @@ async function startServer() {
       });
       clusters.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       let activeCluster = requestedCluster && requestedCluster !== "all" ? requestedCluster : null;
-      if (!activeCluster && clusters.length > 0) {
+      if (!requestedCluster && clusters.length > 0) {
         activeCluster = clusters[0].name;
       }
       let whereClause = "WHERE user_id = ?";
       const sqlParams = [userId];
-      if (activeCluster) {
+      if (requestedCluster === "all") {
+      } else if (activeCluster) {
         whereClause += " AND cluster_name = ?";
         sqlParams.push(activeCluster);
       } else {
