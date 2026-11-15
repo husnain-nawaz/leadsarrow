@@ -146,10 +146,10 @@ export async function getLeadsWriteDataSource(): Promise<DataSource> {
 }
 
 export async function getLeadsReadDataSource(): Promise<DataSource> {
-  const ds3 = await getTertiaryDataSource();
-  if (ds3 && ds3.isInitialized) return ds3;
   const ds2 = await getSecondaryDataSource();
   if (ds2 && ds2.isInitialized) return ds2;
+  const ds3 = await getTertiaryDataSource();
+  if (ds3 && ds3.isInitialized) return ds3;
   const ds1 = await getPrimaryDataSource();
   if (ds1 && ds1.isInitialized) return ds1;
   const ds4 = await getDataSource();

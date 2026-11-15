@@ -429,10 +429,10 @@ async function getLeadsWriteDataSource() {
   throw new Error("Database 4 write cluster node is not available.");
 }
 async function getLeadsReadDataSource() {
-  const ds3 = await getTertiaryDataSource();
-  if (ds3 && ds3.isInitialized) return ds3;
   const ds2 = await getSecondaryDataSource();
   if (ds2 && ds2.isInitialized) return ds2;
+  const ds3 = await getTertiaryDataSource();
+  if (ds3 && ds3.isInitialized) return ds3;
   const ds1 = await getPrimaryDataSource();
   if (ds1 && ds1.isInitialized) return ds1;
   const ds4 = await getDataSource();
@@ -894,7 +894,21 @@ async function queryLeadsDatabase(params = {}, userId) {
     hasWhere = true;
   }
   if (senArr.length > 0) {
-    qb.andWhere("lead.seniority IN (:...seniorities)", { seniorities: senArr });
+    const expandedSeniorities = /* @__PURE__ */ new Set();
+    for (const s of senArr) {
+      expandedSeniorities.add(s);
+      if (s === "C-Level / Founder" || s === "C-Level") {
+        expandedSeniorities.add("C-Level / Founder");
+        expandedSeniorities.add("C-Level");
+        expandedSeniorities.add("Founder");
+        expandedSeniorities.add("Owner");
+      }
+      if (s === "VP" || s === "Vice President") {
+        expandedSeniorities.add("VP");
+        expandedSeniorities.add("Vice President");
+      }
+    }
+    qb.andWhere("lead.seniority IN (:...seniorities)", { seniorities: Array.from(expandedSeniorities) });
     hasWhere = true;
   }
   if (deptArr.length > 0) {
@@ -1270,7 +1284,7 @@ var init_leadsData = __esm({
         "> $1B"
       ],
       countries: ["USA", "Canada"],
-      seniorities: ["C-Level / Founder", "Director", "Senior Manager", "VP"],
+      seniorities: ["C-Level / Founder", "VP", "Director", "Senior Manager", "Manager"],
       departments: [
         "Executive Leadership",
         "Marketing & Growth",
@@ -1282,8 +1296,7 @@ var init_leadsData = __esm({
         "Product Management"
       ],
       techStackOptions: [],
-      fundingStages: ["Series B", "Public / IPO", "Series C+"],
-      verificationStatuses: ["Verified"]
+      fundingStages: ["Series B", "Public / IPO", "Series C+"]
     };
     cachedGlobals = {
       timestamp: 0,

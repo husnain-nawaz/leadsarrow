@@ -86,9 +86,10 @@ const TAXONOMY_SECTIONS = [
     label: 'Decision-Maker Seniority',
     options: [
       'C-Level / Founder',
+      'VP',
       'Director',
       'Senior Manager',
-      'VP'
+      'Manager'
     ]
   },
   {
@@ -113,11 +114,6 @@ const TAXONOMY_SECTIONS = [
       'Public / IPO',
       'Series C+'
     ]
-  },
-  {
-    id: 'verificationStatuses',
-    label: 'Email Deliverability Status',
-    options: ['Verified']
   }
 ];
 
@@ -149,8 +145,7 @@ export default function FilterSidebar() {
     countries: true,
     seniorities: true,
     departments: false,
-    fundingStages: false,
-    verificationStatuses: false
+    fundingStages: false
   });
 
   const [facetSearch, setFacetSearch] = useState({});
@@ -355,8 +350,10 @@ export default function FilterSidebar() {
                             className="w-3.5 h-3.5 rounded border-slate-300 text-orange-600 focus:ring-orange-500 shrink-0"
                           />
                           <span
-                            className={`truncate ${
-                              isChecked ? 'font-semibold text-slate-900' : ''
+                            className={`truncate transition-colors ${
+                              isChecked
+                                ? 'font-bold text-orange-600 dark:text-orange-400'
+                                : 'text-slate-700 dark:text-slate-300'
                             }`}
                           >
                             {option}

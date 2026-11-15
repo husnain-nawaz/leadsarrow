@@ -53,7 +53,7 @@ export const FILTER_TAXONOMY = {
     '> $1B'
   ],
   countries: ['USA', 'Canada'],
-  seniorities: ['C-Level / Founder', 'Director', 'Senior Manager', 'VP'],
+  seniorities: ['C-Level / Founder', 'VP', 'Director', 'Senior Manager', 'Manager'],
   departments: [
     'Executive Leadership',
     'Marketing & Growth',
@@ -65,8 +65,7 @@ export const FILTER_TAXONOMY = {
     'Product Management'
   ],
   techStackOptions: [],
-  fundingStages: ['Series B', 'Public / IPO', 'Series C+'],
-  verificationStatuses: ['Verified']
+  fundingStages: ['Series B', 'Public / IPO', 'Series C+']
 };
 
 function parseArrayParam(param: any): string[] {
@@ -444,7 +443,21 @@ export async function queryLeadsDatabase(params: any = {}, userId?: string | nul
   }
 
   if (senArr.length > 0) {
-    qb.andWhere('lead.seniority IN (:...seniorities)', { seniorities: senArr });
+    const expandedSeniorities = new Set<string>();
+    for (const s of senArr) {
+      expandedSeniorities.add(s);
+      if (s === 'C-Level / Founder' || s === 'C-Level') {
+        expandedSeniorities.add('C-Level / Founder');
+        expandedSeniorities.add('C-Level');
+        expandedSeniorities.add('Founder');
+        expandedSeniorities.add('Owner');
+      }
+      if (s === 'VP' || s === 'Vice President') {
+        expandedSeniorities.add('VP');
+        expandedSeniorities.add('Vice President');
+      }
+    }
+    qb.andWhere('lead.seniority IN (:...seniorities)', { seniorities: Array.from(expandedSeniorities) });
     hasWhere = true;
   }
 
