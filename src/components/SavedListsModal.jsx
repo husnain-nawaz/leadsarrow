@@ -61,8 +61,6 @@ export default function SavedListsModal({ setActiveView, onSelectFullPageList })
     }
   }, [isSavedListsModalOpen, dispatch]);
 
-  if (!isSavedListsModalOpen) return null;
-
   // Robustly combine server lists and user Firestore lists, strictly prioritizing authoritative MySQL server lists
   const mergedLists = useMemo(() => {
     const map = new Map();
@@ -122,6 +120,8 @@ export default function SavedListsModal({ setActiveView, onSelectFullPageList })
 
     return Array.from(map.values());
   }, [lists, firestoreLists]);
+
+  if (!isSavedListsModalOpen) return null;
 
   const handleCreateList = (e) => {
     e.preventDefault();
