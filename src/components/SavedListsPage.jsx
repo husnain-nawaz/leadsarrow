@@ -56,6 +56,7 @@ import ConfirmExportModal from './ConfirmExportModal.jsx';
 import AddLeadsToSavedListModal from './AddLeadsToSavedListModal.jsx';
 import RenameListModal from './RenameListModal.jsx';
 import TopLoadingBar from './TopLoadingBar.jsx';
+import { auth, saveLeadListToFirestore } from '../firebase.js';
 
 function maskEmail(email) {
   const [userPart, domainPart] = String(email || '').split('@');
@@ -77,7 +78,7 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
   const { user } = useSelector((state) => state.auth);
   const { selectedLeadIds = [], revealedLeadIds = [] } = useSelector((state) => state.leads);
 
-  // Robustly combine server lists and user Firestore lists, strictly prioritizing authoritative MySQL server lists
+  // Authoritative MySQL server lists combined with any offline-created Firestore lists
   const mergedLists = useMemo(() => {
     const map = new Map();
 
@@ -95,14 +96,15 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
         map.set(sl.id, {
           ...sl,
           leadIds: resolvedLeadIds,
-          leadCount: sl.leadCount !== undefined && sl.leadCount !== null ? sl.leadCount : resolvedLeadIds.length
+          leadCount: sl.leadCount !== undefined && sl.leadCount !== null ? Number(sl.leadCount) : resolvedLeadIds.length
         });
       }
     });
 
-    // 2. Augment with Firestore lists without overwriting complete server leadIds
+    // 2. Only include Firestore lists that do not already exist in authoritative MySQL
     (firestoreLists || []).forEach((fl) => {
-      if (!fl?.id) return;
+      if (!fl?.id || map.has(fl.id)) return; // Strictly maintain authoritative MySQL server data
+
       const rawFsIds = fl.leadIds || fl.lead_ids || (fl.leadIdsCsv ? fl.leadIdsCsv.split(',').map((s) => s.trim()).filter(Boolean) : []);
       const resolvedFsIds = Array.isArray(rawFsIds)
         ? rawFsIds
@@ -112,30 +114,33 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
               })()
             : []);
 
-      if (map.has(fl.id)) {
-        const existing = map.get(fl.id);
-        const mergedIds = (existing.leadIds && existing.leadIds.length > 0)
-          ? (resolvedFsIds.length > existing.leadIds.length
-              ? Array.from(new Set([...existing.leadIds, ...resolvedFsIds]))
-              : existing.leadIds)
-          : resolvedFsIds;
-        map.set(fl.id, {
-          ...fl,
-          ...existing,
-          leadIds: mergedIds,
-          leadCount: Math.max(existing.leadCount || 0, fl.leadCount || 0, mergedIds.length)
-        });
-      } else {
-        map.set(fl.id, {
-          ...fl,
-          leadIds: resolvedFsIds,
-          leadCount: fl.leadCount !== undefined && fl.leadCount !== null ? fl.leadCount : resolvedFsIds.length
-        });
-      }
+      map.set(fl.id, {
+        ...fl,
+        leadIds: resolvedFsIds,
+        leadCount: fl.leadCount !== undefined && fl.leadCount !== null ? Number(fl.leadCount) : resolvedFsIds.length
+      });
     });
 
     return Array.from(map.values());
   }, [lists, firestoreLists]);
+
+  // Sync clean authoritative MySQL list metadata to Firestore in the background
+  useEffect(() => {
+    if (auth.currentUser && lists?.length > 0) {
+      lists.forEach((l) => {
+        if (l?.id && Array.isArray(l.leadIds)) {
+          saveLeadListToFirestore({
+            id: l.id,
+            name: l.name,
+            description: l.description,
+            leadIds: l.leadIds,
+            leadCount: l.leadCount ?? l.leadIds.length,
+            filterSummary: l.filterSummary
+          }).catch(() => {});
+        }
+      });
+    }
+  }, [lists]);
 
   const [selectedListId, setSelectedListId] = useState(() => {
     if (initialSelectedListId) return initialSelectedListId;
@@ -288,6 +293,20 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
   // In-memory cache for loaded list leads to enable 0ms instant, flicker-free switching between lists
   const leadsCacheRef = useRef({});
 
+  // Stable cache of verified resolved lead counts by list ID to guarantee rock-solid non-flickering numbers
+  const [resolvedCounts, setResolvedCounts] = useState({});
+
+  const getListCount = useCallback(
+    (list) => {
+      if (!list) return 0;
+      if (resolvedCounts[list.id] !== undefined) return resolvedCounts[list.id];
+      if (Array.isArray(list.leadIds)) return list.leadIds.length;
+      if (list.leadCount !== undefined && list.leadCount !== null) return Number(list.leadCount);
+      return 0;
+    },
+    [resolvedCounts]
+  );
+
   // Fetch full leads details whenever selected list changes
   const loadLeadsForSelectedList = useCallback(async (list, forceRefresh = false) => {
     if (!list) {
@@ -338,6 +357,7 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
     // Return cached leads instantly with zero layout jump if available
     if (!forceRefresh && leadsCacheRef.current[cacheKey]) {
       setListLeads(leadsCacheRef.current[cacheKey]);
+      setResolvedCounts((prev) => ({ ...prev, [list.id]: leadsCacheRef.current[cacheKey].length }));
       setLeadsLoading(false);
       setNetworkNotice(null);
       setIsSlowConnection(false);
@@ -365,6 +385,7 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
       const fetched = response.leads || [];
       leadsCacheRef.current[cacheKey] = fetched;
       setListLeads(fetched);
+      setResolvedCounts((prev) => ({ ...prev, [list.id]: fetched.length }));
     } catch (err) {
       if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
       setIsSlowConnection(false);
@@ -569,11 +590,8 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
   // Accurate, stable lead count from authoritative list metadata and leads
   const selectedListLeadsCount = useMemo(() => {
     if (!selectedList) return 0;
-    if (listLeads.length > 0) return listLeads.length;
-    if (selectedList.leadCount !== undefined && selectedList.leadCount !== null) return selectedList.leadCount;
-    if (Array.isArray(selectedList.leadIds)) return selectedList.leadIds.length;
-    return 0;
-  }, [selectedList, listLeads]);
+    return getListCount(selectedList);
+  }, [selectedList, getListCount]);
 
   // Executive KPI metrics matching Lead Finder Analytics Bar
   const listMetrics = useMemo(() => {
@@ -718,7 +736,11 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
           leadId: deleteSingleLeadTarget.leadId
         })
       ).unwrap();
-      setListLeads((prev) => prev.filter((l) => l.id !== deleteSingleLeadTarget.leadId));
+      setListLeads((prev) => {
+        const next = prev.filter((l) => l.id !== deleteSingleLeadTarget.leadId);
+        setResolvedCounts((rc) => ({ ...rc, [deleteSingleLeadTarget.listId]: next.length }));
+        return next;
+      });
       dispatch(
         showToast({
           message: `Removed "${deleteSingleLeadTarget.leadName}" from "${deleteSingleLeadTarget.listName}".`,
@@ -882,7 +904,11 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
         })
       ).unwrap();
       const removeSet = new Set(selectedInListIds);
-      setListLeads((prev) => prev.filter((l) => !removeSet.has(l.id)));
+      setListLeads((prev) => {
+        const next = prev.filter((l) => !removeSet.has(l.id));
+        setResolvedCounts((rc) => ({ ...rc, [selectedList.id]: next.length }));
+        return next;
+      });
       dispatch(
         showToast({
           message: `Removed ${selectedInListIds.length} lead(s) from "${selectedList.name}".`,
@@ -904,8 +930,8 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
   };
 
   const totalLeadsCount = useMemo(() => {
-    return mergedLists.reduce((acc, l) => acc + (l.leadCount || (l.leadIds ? l.leadIds.length : 0)), 0);
-  }, [mergedLists]);
+    return mergedLists.reduce((acc, l) => acc + getListCount(l), 0);
+  }, [mergedLists, getListCount]);
 
   return (
     <div className="flex-1 flex flex-col min-w-0 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 min-h-screen">
@@ -1043,9 +1069,7 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
             ) : (
               paginatedLists.map((list) => {
                 const isSelected = list.id === selectedListId;
-                const leadCount = (selectedList && selectedList.id === list.id && listLeads.length > 0)
-                  ? listLeads.length
-                  : (list.leadCount || (list.leadIds ? list.leadIds.length : 0));
+                const leadCount = getListCount(list);
                 const hasCustomDesc =
                   list.description &&
                   list.description.toLowerCase() !== 'curated b2b target account segment' &&
