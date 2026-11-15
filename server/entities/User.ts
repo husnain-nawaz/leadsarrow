@@ -23,6 +23,9 @@ export class User {
   @Column({ name: 'is_deactivated', type: 'tinyint', default: 0 })
   isDeactivated: number;
 
+  @Column({ name: 'deactivation_reason', type: 'text', nullable: true })
+  deactivationReason: string | null;
+
   @Column({ type: 'varchar', length: 255, default: 'Growth Workspace' })
   company: string;
 

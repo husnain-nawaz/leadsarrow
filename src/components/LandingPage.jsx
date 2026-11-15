@@ -119,16 +119,22 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
         <Sparkles className="w-3.5 h-3.5 animate-pulse" />
         {user ? (
           <>
-            <span>
-              Signed in as <strong>{user.name}</strong> ({user.plan || 'Free Starter'} · {user.planId === 'unlimited' ? 'Unlimited Credits' : `${user.creditsRemaining ?? 100} credits available today`})
-            </span>
+            {user.isDeactivated ? (
+              <span className="text-amber-200 font-medium">
+                Workspace access is currently suspended. {user.deactivationReason ? `(Reason: ${user.deactivationReason})` : ''}
+              </span>
+            ) : (
+              <span>
+                Signed in as <strong>{user.name}</strong> ({user.plan || 'Free Starter'} · {user.planId === 'unlimited' ? 'Unlimited Credits' : `${user.creditsRemaining ?? 100} credits available today`})
+              </span>
+            )}
             {onReturnDashboard && (
               <button
                 type="button"
                 onClick={onReturnDashboard}
                 className="underline font-bold hover:text-orange-100 ml-1.5 cursor-pointer"
               >
-                Go to Workspace Dashboard →
+                {user.isDeactivated ? 'View Account Status & Reason →' : 'Go to Workspace Dashboard →'}
               </button>
             )}
           </>
@@ -259,14 +265,14 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
                   </div>
                 </div>
 
-                {/* Dashboard Button */}
+                {/* Dashboard or Account Status Button */}
                 <button
                   type="button"
                   onClick={onReturnDashboard}
                   className="px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-500 rounded-lg shadow-sm shadow-orange-600/30 transition-all cursor-pointer flex items-center gap-1.5"
                 >
                   <LayoutDashboard className="w-3.5 h-3.5" />
-                  <span>Dashboard</span>
+                  <span>{user.isDeactivated ? 'Account Status' : 'Dashboard'}</span>
                 </button>
               </>
             ) : (

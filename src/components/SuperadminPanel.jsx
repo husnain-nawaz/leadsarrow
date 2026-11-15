@@ -30,6 +30,7 @@ import {
   UserX,
   UserCheck,
   AlertTriangle,
+  AlertOctagon,
   X,
   ArrowUpDown,
   ArrowUp,
@@ -52,6 +53,14 @@ import { fetchSavedLists } from '../store/savedListsSlice.js';
 import { FILTER_TAXONOMY } from '../data/taxonomy.js';
 import * as XLSX from 'xlsx';
 
+const DEACTIVATION_PRESETS = [
+  'Subscription payment overdue / payment method update required.',
+  'Automated scraping / bot rate-limit violation.',
+  'Account access suspended pending security & compliance review.',
+  'Account deactivated at user request.',
+  'Free trial period has ended.'
+];
+
 export default function SuperadminPanel({ onBack }) {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
@@ -72,6 +81,11 @@ export default function SuperadminPanel({ onBack }) {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [editFormData, setEditFormData] = useState({ planId: 'free', creditsRemaining: 100, paymentStatus: 'free' });
   const [successBanner, setSuccessBanner] = useState(null);
+
+  // Manual deactivation modal state
+  const [deactivatingTarget, setDeactivatingTarget] = useState(null);
+  const [deactivationReasonInput, setDeactivationReasonInput] = useState('');
+  const [isDeactivatingSubmitting, setIsDeactivatingSubmitting] = useState(false);
 
   // Table selection, sorting & export confirmation
   const [selectedUserIds, setSelectedUserIds] = useState([]);
@@ -239,17 +253,46 @@ export default function SuperadminPanel({ onBack }) {
   };
 
   const handleToggleDeactivate = async (u) => {
-    const actionWord = u.isDeactivated ? 'reactivate' : 'deactivate';
-    if (!window.confirm(`Are you sure you want to ${actionWord} ${u.name}'s account (${u.email})?`)) {
-      return;
-    }
-    try {
-      await handleQuickUpdateUser(u.id, { isDeactivated: !u.isDeactivated });
-      if (selectedCustomer && selectedCustomer.id === u.id) {
-        setSelectedCustomer((prev) => ({ ...prev, isDeactivated: !u.isDeactivated }));
+    if (u.isDeactivated) {
+      if (!window.confirm(`Reactivate ${u.name}'s account (${u.email})?\n\nThis will immediately remove the restriction and restore full workspace and dashboard access.`)) {
+        return;
       }
+      try {
+        await handleQuickUpdateUser(u.id, { isDeactivated: false, deactivationReason: null });
+        if (selectedCustomer && selectedCustomer.id === u.id) {
+          setSelectedCustomer((prev) => ({ ...prev, isDeactivated: false, deactivationReason: null }));
+        }
+      } catch (err) {
+        alert(err.message || 'Operation failed');
+      }
+    } else {
+      setDeactivatingTarget(u);
+      setDeactivationReasonInput(u.deactivationReason || DEACTIVATION_PRESETS[0]);
+    }
+  };
+
+  const handleConfirmDeactivation = async () => {
+    if (!deactivatingTarget) return;
+    setIsDeactivatingSubmitting(true);
+    try {
+      const reason = deactivationReasonInput.trim() || 'Workspace access suspended by system administrator.';
+      await handleQuickUpdateUser(deactivatingTarget.id, {
+        isDeactivated: true,
+        deactivationReason: reason
+      });
+      if (selectedCustomer && selectedCustomer.id === deactivatingTarget.id) {
+        setSelectedCustomer((prev) => ({
+          ...prev,
+          isDeactivated: true,
+          deactivationReason: reason
+        }));
+      }
+      setDeactivatingTarget(null);
+      setDeactivationReasonInput('');
     } catch (err) {
-      alert(err.message || 'Operation failed');
+      alert(err.message || 'Failed to deactivate account');
+    } finally {
+      setIsDeactivatingSubmitting(false);
     }
   };
 
@@ -1303,7 +1346,10 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                                   </span>
                                 )}
                                 {u.isDeactivated && (
-                                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-rose-100 dark:bg-rose-600/30 text-rose-700 dark:text-rose-300 font-bold border border-rose-300 dark:border-rose-500/40">
+                                  <span
+                                    title={u.deactivationReason ? `Reason: ${u.deactivationReason}` : 'Account Deactivated'}
+                                    className="text-[9px] px-1.5 py-0.2 rounded bg-rose-100 dark:bg-rose-600/30 text-rose-700 dark:text-rose-300 font-bold border border-rose-300 dark:border-rose-500/40 cursor-help"
+                                  >
                                     DEACTIVATED
                                   </span>
                                 )}
@@ -1315,6 +1361,12 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                                   {u.authProvider || 'jwt'}
                                 </span>
                               </div>
+                              {u.isDeactivated && u.deactivationReason && (
+                                <div className="text-[10px] text-rose-600 dark:text-rose-400 italic truncate max-w-[240px] mt-0.5 flex items-center gap-1" title={u.deactivationReason}>
+                                  <AlertOctagon className="w-2.5 h-2.5 shrink-0" />
+                                  <span>Reason: {u.deactivationReason}</span>
+                                </div>
+                              )}
                             </td>
 
                             {/* Plan Tier */}
@@ -1515,6 +1567,18 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                       <X className="w-5 h-5" />
                     </button>
                   </div>
+
+                  {selectedCustomer.isDeactivated && (
+                    <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-xs text-rose-800 dark:text-rose-300">
+                      <div className="font-bold flex items-center gap-1.5 text-rose-600 dark:text-rose-400">
+                        <AlertOctagon className="w-4 h-4" />
+                        <span>Account Access Suspended / Deactivated</span>
+                      </div>
+                      <div className="mt-1 text-slate-700 dark:text-slate-300">
+                        <strong className="text-slate-900 dark:text-white">Reason:</strong> {selectedCustomer.deactivationReason || 'No specific reason documented.'}
+                      </div>
+                    </div>
+                  )}
 
                   {/* 4 Financial & Account KPI Summary Cards */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
@@ -1927,6 +1991,112 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                     >
                       <Download className="w-3.5 h-3.5" />
                       <span>Download {exportFormat.toUpperCase()}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Deactivate User with Manual Reason Modal */}
+            {deactivatingTarget && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 dark:bg-slate-950/80 backdrop-blur-xs animate-in fade-in duration-150">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl text-slate-900 dark:text-slate-100 transition-colors animate-in zoom-in-95 duration-150">
+                  <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400">
+                        <UserX className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white font-display">
+                          Deactivate User Account
+                        </h3>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          {deactivatingTarget.name} ({deactivatingTarget.email})
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDeactivatingTarget(null);
+                        setDeactivationReasonInput('');
+                      }}
+                      className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1 rounded-md"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 text-xs text-rose-700 dark:text-rose-300">
+                    Deactivating this account will immediately revoke access to the Lead Finder, database records, custom clusters, and lead export tools. The reason you enter below will be displayed directly to the user on their Account Deactivated status screen.
+                  </div>
+
+                  <div className="space-y-3 text-xs">
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">
+                        Quick Preset Reasons
+                      </label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {DEACTIVATION_PRESETS.map((preset) => (
+                          <button
+                            key={preset}
+                            type="button"
+                            onClick={() => setDeactivationReasonInput(preset)}
+                            className={`px-2.5 py-1 rounded-lg text-[11px] transition-colors cursor-pointer border ${
+                              deactivationReasonInput === preset
+                                ? 'bg-rose-600 text-white border-rose-600 font-semibold shadow-2xs'
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-rose-400'
+                            }`}
+                          >
+                            {preset}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
+                        Manual Reason / Instructions for User <span className="text-rose-500">*</span>
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={deactivationReasonInput}
+                        onChange={(e) => setDeactivationReasonInput(e.target.value)}
+                        placeholder="e.g. Your subscription payment failed on Nov 15. Please update your billing method or contact support@leadsarrow.io."
+                        className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-rose-500 text-xs resize-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDeactivatingTarget(null);
+                        setDeactivationReasonInput('');
+                      }}
+                      disabled={isDeactivatingSubmitting}
+                      className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleConfirmDeactivation}
+                      disabled={isDeactivatingSubmitting}
+                      className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:scale-95 rounded-xl shadow-sm transition-all cursor-pointer flex items-center gap-1.5"
+                    >
+                      {isDeactivatingSubmitting ? (
+                        <>
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          <span>Deactivating...</span>
+                        </>
+                      ) : (
+                        <>
+                          <UserX className="w-3.5 h-3.5" />
+                          <span>Confirm & Deactivate Account</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>

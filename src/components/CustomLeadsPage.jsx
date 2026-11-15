@@ -25,13 +25,15 @@ import {
   FolderPlus,
   CheckCircle2,
   X,
-  Pencil
+  Pencil,
+  Eye
 } from 'lucide-react';
 import {
   setAddLeadModalOpen,
   toggleSelectLead,
   selectAllCurrentPageLeads,
-  clearSelectedLeads
+  clearSelectedLeads,
+  setActiveLead
 } from '../store/leadsSlice.js';
 import { showToast } from '../store/toastSlice.js';
 import TopLoadingBar from './TopLoadingBar.jsx';
@@ -1162,7 +1164,8 @@ export default function CustomLeadsPage() {
                         {paginatedLeads.map((lead) => (
                           <tr
                             key={lead.id}
-                            className={`transition-colors ${
+                            onClick={() => dispatch(setActiveLead(lead))}
+                            className={`transition-colors cursor-pointer ${
                               selectedLeadIds.includes(lead.id)
                                 ? 'bg-orange-50/50 dark:bg-orange-950/25'
                                 : 'hover:bg-slate-50/60 dark:hover:bg-slate-800/40'
@@ -1187,6 +1190,7 @@ export default function CustomLeadsPage() {
                                     href={`https://${lead.domain.replace(/^https?:\/\//, '')}`}
                                     target="_blank"
                                     rel="noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
                                     className="text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 inline-flex items-center"
                                     title="Visit domain"
                                   >
@@ -1208,7 +1212,10 @@ export default function CustomLeadsPage() {
                             <td className="py-3.5 px-4 min-w-[130px]">
                               <button
                                 type="button"
-                                onClick={() => setSelectedCluster(lead.clusterName || 'General')}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedCluster(lead.clusterName || 'General');
+                                }}
                                 title={`Filter by cluster "${lead.clusterName || 'General'}"`}
                                 className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-100/80 dark:bg-orange-950/70 text-orange-800 dark:text-orange-300 border border-orange-200 dark:border-orange-800/70 hover:bg-orange-200 transition-colors cursor-pointer"
                               >
@@ -1273,8 +1280,16 @@ export default function CustomLeadsPage() {
                             </td>
 
                             {/* Column 9: Actions */}
-                            <td className="py-3.5 px-4 text-right">
+                            <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
                               <div className="flex items-center justify-end gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => dispatch(setActiveLead(lead))}
+                                  title={`View lead dossier for "${lead.companyName || ''}"`}
+                                  className="p-1.5 text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/40 rounded-md transition-colors cursor-pointer"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </button>
                                 <button
                                   type="button"
                                   onClick={() => setEditingLeadTarget(lead)}

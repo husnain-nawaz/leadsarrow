@@ -46,6 +46,9 @@ export default function LeadDetailDrawer() {
   // Contact details are revealed ONLY if explicitly unlocked with credit, or if it is user's custom lead
   const isRevealed = Boolean(
     activeLead.isCustom ||
+    String(activeLead.id || '').startsWith('custom_') ||
+    activeLead.source === 'manual_custom_lead' ||
+    activeLead.clusterName ||
     activeLead.isRevealed ||
     revealedLeadIds.includes(activeLead.id)
   );

@@ -320,21 +320,7 @@ function MainApp() {
     );
   }
 
-  // If account is deactivated, block dashboard access and show clear notice with support/contact options
-  if (user?.isDeactivated) {
-    return (
-      <div className="min-h-screen">
-        <GlobalToast />
-        <AccountDeactivatedScreen
-          user={user}
-          onSignOut={() => dispatch(logoutUser())}
-          onRefresh={() => dispatch(refreshCurrentUserProfile())}
-        />
-      </div>
-    );
-  }
-
-  // If user is logged in, but clicked "View Landing Page", allow toggle
+  // If user clicked "View Landing Page", allow browsing public landing page
   if (showLandingForLoggedIn) {
     return (
       <div className="relative min-h-screen">
@@ -347,6 +333,21 @@ function MainApp() {
         <PlanUpgradeModal />
         <ProfileModal onOpenFullProfile={handleOpenProfileDirectly} />
         <SignOutModal />
+      </div>
+    );
+  }
+
+  // If account is deactivated, block dashboard access and show clear notice with support/contact options
+  if (user?.isDeactivated) {
+    return (
+      <div className="min-h-screen">
+        <GlobalToast />
+        <AccountDeactivatedScreen
+          user={user}
+          onSignOut={() => dispatch(logoutUser())}
+          onRefresh={() => dispatch(refreshCurrentUserProfile())}
+          onGoToLanding={() => setShowLandingForLoggedIn(true)}
+        />
       </div>
     );
   }

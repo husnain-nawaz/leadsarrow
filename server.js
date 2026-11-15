@@ -167,6 +167,9 @@ var init_User = __esm({
       Column2({ name: "is_deactivated", type: "tinyint", default: 0 })
     ], User.prototype, "isDeactivated", 2);
     __decorateClass([
+      Column2({ name: "deactivation_reason", type: "text", nullable: true })
+    ], User.prototype, "deactivationReason", 2);
+    __decorateClass([
       Column2({ type: "varchar", length: 255, default: "Growth Workspace" })
     ], User.prototype, "company", 2);
     __decorateClass([
@@ -1606,6 +1609,7 @@ function sanitizeUser(u, purchases = [], logins = []) {
     purchaseHistory: purchases,
     loginHistory: logins,
     isDeactivated: Boolean(u.is_deactivated || u.isDeactivated),
+    deactivationReason: u.deactivation_reason || u.deactivationReason || null,
     lastLoginAt: u.lastLoginAt ? new Date(u.lastLoginAt).toISOString() : (/* @__PURE__ */ new Date()).toISOString(),
     createdAt: u.createdAt ? new Date(u.createdAt).toISOString() : (/* @__PURE__ */ new Date()).toISOString(),
     photoURL: u.photo_url || u.photoUrl || null,
@@ -2107,6 +2111,9 @@ async function updateUserByAdmin(userId, updates = {}) {
   }
   if (updates.isDeactivated !== void 0) {
     updatePayload.isDeactivated = updates.isDeactivated ? 1 : 0;
+  }
+  if (updates.deactivationReason !== void 0) {
+    updatePayload.deactivationReason = updates.deactivationReason || null;
   }
   if (Object.keys(updatePayload).length > 0) {
     await userRepo.update(user.id, updatePayload);

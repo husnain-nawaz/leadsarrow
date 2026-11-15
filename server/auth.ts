@@ -197,6 +197,7 @@ export function sanitizeUser(u: any, purchases: any[] = [], logins: any[] = []) 
     purchaseHistory: purchases,
     loginHistory: logins,
     isDeactivated: Boolean(u.is_deactivated || u.isDeactivated),
+    deactivationReason: u.deactivation_reason || u.deactivationReason || null,
     lastLoginAt: u.lastLoginAt ? new Date(u.lastLoginAt).toISOString() : new Date().toISOString(),
     createdAt: u.createdAt ? new Date(u.createdAt).toISOString() : new Date().toISOString(),
     photoURL: u.photo_url || u.photoUrl || null,
@@ -802,6 +803,10 @@ export async function updateUserByAdmin(userId: string, updates: any = {}) {
 
   if (updates.isDeactivated !== undefined) {
     updatePayload.isDeactivated = updates.isDeactivated ? 1 : 0;
+  }
+
+  if (updates.deactivationReason !== undefined) {
+    updatePayload.deactivationReason = updates.deactivationReason || null;
   }
 
   if (Object.keys(updatePayload).length > 0) {
