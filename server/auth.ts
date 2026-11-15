@@ -78,6 +78,15 @@ export async function runGlobalDailyCreditReplenishmentSweep() {
         AND is_deactivated = 0;
     `);
 
+    // 3. Guarantee credits_remaining NEVER exceeds daily_credits_limit for non-unlimited plans
+    await ds.query(`
+      UPDATE users 
+      SET credits_remaining = daily_credits_limit 
+      WHERE credits_remaining > daily_credits_limit 
+        AND (plan_id IS NULL OR plan_id != 'unlimited') 
+        AND is_super_admin = 0;
+    `);
+
     if (result && result.affectedRows > 0) {
       console.log(`[Daily Credit Sweep] Successfully replenished 24h daily credits for ${result.affectedRows} users.`);
     }
@@ -173,7 +182,9 @@ export function sanitizeUser(u: any, purchases: any[] = [], logins: any[] = []) 
     company: u.company || 'Growth Workspace',
     plan: u.plan || 'Free Starter',
     planId: u.plan_id || u.planId || 'free',
-    creditsRemaining: u.credits_remaining ?? u.creditsRemaining ?? 100,
+    creditsRemaining: (isSuper || (u.plan_id || u.planId) === 'unlimited')
+      ? Number(u.credits_remaining ?? u.creditsRemaining ?? 100)
+      : Math.min(Number(u.credits_remaining ?? u.creditsRemaining ?? 100), Number(u.daily_credits_limit ?? u.dailyCreditsLimit ?? 100)),
     dailyCreditsLimit: u.daily_credits_limit ?? u.dailyCreditsLimit ?? 100,
     creditsUsedToday: u.credits_used_today ?? u.creditsUsedToday ?? 0,
     totalCreditsUsed: u.total_credits_used ?? u.totalCreditsUsed ?? 0,
@@ -441,11 +452,8 @@ export async function upgradeUserPlan(userIdOrEmail: string, targetPlanId: strin
   const spec = planSpecs[targetPlanId] || planSpecs.free;
   const newTotalPaid = Number(user.totalPaid || 0) + spec.price;
 
-  // When upgrading plan, carry over previous unused credits on top of the new plan allowance!
-  const previousRemaining = Math.max(0, Number(user.creditsRemaining ?? user.credits_remaining ?? 0));
-  const newCreditsRemaining = targetPlanId === 'unlimited'
-    ? 999999
-    : Math.max(spec.credits, spec.credits + previousRemaining);
+  // When upgrading plan, grant the full daily credits limit of the new plan (never exceeding daily limit)
+  const newCreditsRemaining = spec.credits;
 
   await userRepo.update(user.id, {
     plan: spec.name,
@@ -751,13 +759,10 @@ export async function updateUserByAdmin(userId: string, updates: any = {}) {
     updatePayload.paymentStatus = spec.status;
     updatePayload.amountPaid = spec.price;
 
-    const previousRemaining = Math.max(0, Number(user.creditsRemaining ?? user.credits_remaining ?? 0));
     const isPlanUpgrade = updates.planId !== user.planId;
 
     if (isPlanUpgrade) {
-      updatePayload.creditsRemaining = updates.planId === 'unlimited'
-        ? 999999
-        : Math.max(spec.credits, spec.credits + previousRemaining);
+      updatePayload.creditsRemaining = spec.credits;
     } else if (updates.creditsRemaining === undefined) {
       updatePayload.creditsRemaining = spec.credits;
     }
@@ -765,9 +770,13 @@ export async function updateUserByAdmin(userId: string, updates: any = {}) {
     updatePayload.lastCreditResetAt = new Date();
   }
 
-  // Only override creditsRemaining if explicitly provided AND either plan did not change or value exceeds plan default
-  if (updates.creditsRemaining !== undefined && (!updates.planId || updates.planId === user.planId || Number(updates.creditsRemaining) > (updatePayload.creditsRemaining || 0))) {
-    updatePayload.creditsRemaining = Number(updates.creditsRemaining);
+  // Only override creditsRemaining if explicitly provided, and cap at dailyCreditsLimit unless unlimited
+  if (updates.creditsRemaining !== undefined && (!updates.planId || updates.planId === user.planId)) {
+    const targetLimit = updatePayload.dailyCreditsLimit || user.dailyCreditsLimit || 100;
+    const isUnlim = (updatePayload.planId || user.planId) === 'unlimited';
+    updatePayload.creditsRemaining = isUnlim
+      ? Number(updates.creditsRemaining)
+      : Math.min(Number(updates.creditsRemaining), targetLimit);
     updatePayload.lastCreditResetAt = new Date();
   }
 

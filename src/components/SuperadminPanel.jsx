@@ -1420,12 +1420,10 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                             unlimited: 999999
                           };
                           const newLimit = planSpecs[newPlan] || 100;
-                          const currentRemaining = selectedCustomer?.creditsRemaining ?? 100;
-                          const newCredits = newPlan === 'unlimited' ? 999999 : Math.max(newLimit, newLimit + currentRemaining);
                           setEditFormData({
                             ...editFormData,
                             planId: newPlan,
-                            creditsRemaining: newCredits,
+                            creditsRemaining: newLimit,
                             paymentStatus: newPlan === 'free' ? 'free' : 'paid'
                           });
                         }}
