@@ -324,174 +324,243 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
         </div>
       </div>
 
-      {/* Mobile Navigation Drawer / Menu (Accessible on any mobile screen) */}
+      {/* Mobile Navigation Sidebar Drawer (Slides in from the left on small screens) */}
       {isMobileMenuOpen && (
-        <>
+        <div className="fixed inset-0 z-50 lg:hidden">
+          {/* Backdrop overlay */}
           <div
-            className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-xs lg:hidden animate-in fade-in duration-150"
+            className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200"
             onClick={() => setIsMobileMenuOpen(false)}
           />
 
-          <div className="relative z-50 px-4 py-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shadow-2xl lg:hidden animate-in slide-in-from-top-2 duration-150 space-y-3">
-            <div className="space-y-1">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-2 py-1">
-                Workspace Navigation
+          {/* Sidebar Drawer Panel */}
+          <aside className="fixed inset-y-0 left-0 z-50 w-72 sm:w-80 max-w-[85vw] bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col justify-between overflow-y-auto animate-in slide-in-from-left duration-200 text-slate-900 dark:text-slate-100">
+            {/* Sidebar Top: Wordmark & Close Button */}
+            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 bg-slate-50/70 dark:bg-slate-850/60">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-orange-600"></span>
+                <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white font-display">
+                  <span className="text-orange-600">Leads</span>Arrow
+                </span>
               </div>
-
-              {/* Lead Finder */}
               <button
                 type="button"
-                onClick={() => {
-                  handleNavClick('finder');
-                  setIsMobileMenuOpen(false);
-                }}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  activeView === 'finder'
-                    ? 'bg-orange-50 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 font-bold border border-orange-200/60 dark:border-orange-800/60'
-                    : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
+                onClick={() => setIsMobileMenuOpen(false)}
+                aria-label="Close navigation sidebar"
+                className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
               >
-                <div className="flex items-center gap-2.5">
-                  <Search className="w-4 h-4 text-orange-600" />
-                  <span>Lead Finder</span>
-                </div>
-                {activeView === 'finder' && (
-                  <span className="w-2 h-2 rounded-full bg-orange-600"></span>
-                )}
+                <X className="w-4 h-4" />
               </button>
+            </div>
 
-              {/* Saved Lists */}
-              <button
-                type="button"
-                onClick={() => {
-                  handleNavClick('lists');
-                  setIsMobileMenuOpen(false);
-                }}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  activeView === 'lists'
-                    ? 'bg-orange-50 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 font-bold border border-orange-200/60 dark:border-orange-800/60'
-                    : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <Bookmark className="w-4 h-4 text-orange-600" />
-                  <span>Saved Lists</span>
+            {/* Sidebar Middle: Navigation Links */}
+            <div className="p-4 space-y-4 flex-1 overflow-y-auto">
+              <div className="space-y-1">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-3 py-1">
+                  Workspace Navigation
                 </div>
-                {activeView === 'lists' && (
-                  <span className="w-2 h-2 rounded-full bg-orange-600"></span>
-                )}
-              </button>
 
-              {/* Custom Leads */}
-              <button
-                type="button"
-                onClick={() => {
-                  handleNavClick('custom');
-                  setIsMobileMenuOpen(false);
-                }}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  activeView === 'custom'
-                    ? 'bg-orange-50 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 font-bold border border-orange-200/60 dark:border-orange-800/60'
-                    : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <Sparkles className="w-4 h-4 text-orange-600" />
-                  <span>Custom Leads</span>
-                </div>
-                {activeView === 'custom' && (
-                  <span className="w-2 h-2 rounded-full bg-orange-600"></span>
-                )}
-              </button>
-
-              {/* Superadmin if applicable */}
-              {isSuperAdmin && (
+                {/* Lead Finder */}
                 <button
                   type="button"
                   onClick={() => {
-                    handleNavClick('superadmin');
+                    handleNavClick('finder');
                     setIsMobileMenuOpen(false);
                   }}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                    activeView === 'superadmin'
-                      ? 'bg-orange-50 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 font-bold border border-orange-200/60 dark:border-orange-800/60'
-                      : 'text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/30'
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                    activeView === 'finder'
+                      ? 'bg-orange-50 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 font-bold border border-orange-200/60 dark:border-orange-800/60 shadow-2xs'
+                      : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80'
                   }`}
                 >
-                  <div className="flex items-center gap-2.5">
-                    <Shield className="w-4 h-4 text-orange-600" />
-                    <span>Superadmin Control</span>
+                  <div className="flex items-center gap-3">
+                    <Search className={`w-4 h-4 ${activeView === 'finder' ? 'text-orange-600 dark:text-orange-400' : 'text-slate-400 dark:text-slate-500'}`} />
+                    <span>Lead Finder</span>
                   </div>
-                  {activeView === 'superadmin' && (
+                  {activeView === 'finder' && (
                     <span className="w-2 h-2 rounded-full bg-orange-600"></span>
                   )}
                 </button>
-              )}
 
-              {/* Landing Page */}
-              {onToggleLanding && (
+                {/* Saved Lists */}
                 <button
                   type="button"
                   onClick={() => {
-                    onToggleLanding();
+                    handleNavClick('lists');
                     setIsMobileMenuOpen(false);
                   }}
-                  className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                    activeView === 'lists'
+                      ? 'bg-orange-50 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 font-bold border border-orange-200/60 dark:border-orange-800/60 shadow-2xs'
+                      : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80'
+                  }`}
                 >
-                  <div className="flex items-center gap-2.5">
-                    <Globe className="w-4 h-4 text-orange-600" />
-                    <span>Public Landing Page</span>
+                  <div className="flex items-center gap-3">
+                    <Bookmark className={`w-4 h-4 ${activeView === 'lists' ? 'text-orange-600 dark:text-orange-400' : 'text-slate-400 dark:text-slate-500'}`} />
+                    <span>Saved Lists</span>
                   </div>
-                  <span className="text-[10px] text-slate-400">View</span>
+                  {activeView === 'lists' && (
+                    <span className="w-2 h-2 rounded-full bg-orange-600"></span>
+                  )}
                 </button>
-              )}
+
+                {/* Custom Leads */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleNavClick('custom');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                    activeView === 'custom'
+                      ? 'bg-orange-50 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 font-bold border border-orange-200/60 dark:border-orange-800/60 shadow-2xs'
+                      : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Sparkles className={`w-4 h-4 ${activeView === 'custom' ? 'text-orange-600 dark:text-orange-400' : 'text-slate-400 dark:text-slate-500'}`} />
+                    <span>Custom Leads</span>
+                  </div>
+                  {activeView === 'custom' && (
+                    <span className="w-2 h-2 rounded-full bg-orange-600"></span>
+                  )}
+                </button>
+
+                {/* Superadmin if applicable */}
+                {isSuperAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleNavClick('superadmin');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                      activeView === 'superadmin'
+                        ? 'bg-orange-50 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 font-bold border border-orange-200/60 dark:border-orange-800/60 shadow-2xs'
+                        : 'text-orange-600 dark:text-orange-400 hover:bg-orange-50/60 dark:hover:bg-orange-950/30'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Shield className="w-4 h-4 text-orange-600" />
+                      <span>Superadmin Control</span>
+                    </div>
+                    {activeView === 'superadmin' && (
+                      <span className="w-2 h-2 rounded-full bg-orange-600"></span>
+                    )}
+                  </button>
+                )}
+
+                {/* Public Landing Page */}
+                {onToggleLanding && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onToggleLanding();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-all cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Globe className="w-4 h-4 text-orange-600" />
+                      <span>Public Landing Page</span>
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-medium">View</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Theme Settings row inside sidebar */}
+              <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-3 py-1">
+                  Appearance
+                </div>
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    {isDark ? (
+                      <Sun className="w-4 h-4 text-amber-400" />
+                    ) : (
+                      <Moon className="w-4 h-4 text-slate-600" />
+                    )}
+                    <span>Theme</span>
+                  </div>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                    {isDark ? 'Dark Mode' : 'Light Mode'}
+                  </span>
+                </button>
+              </div>
             </div>
 
-            {/* Mobile Account Details & Shortcuts */}
-            {user && (
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
-                <div className="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-800">
-                  <div className="min-w-0 flex-1 mr-2">
-                    <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                      {user.name || 'User'}
+            {/* Sidebar Bottom: Account Details & Actions */}
+            <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-850/60 shrink-0 space-y-3">
+              {user ? (
+                <>
+                  <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1.5 shadow-2xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                        {user.name || 'User'}
+                      </div>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-orange-100 dark:bg-orange-950 text-orange-600 dark:text-orange-400 shrink-0">
+                        {userPlanName}
+                      </span>
                     </div>
                     <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate font-mono">
                       {user.email}
                     </div>
-                  </div>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-orange-100 dark:bg-orange-950 text-orange-600 dark:text-orange-400 shrink-0">
-                    {userPlanName}
-                  </span>
-                </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      dispatch(openProfileModal());
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-                  >
-                    <UserIcon className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Profile</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      dispatch(openSignOutModal());
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/60 transition-colors cursor-pointer"
-                  >
-                    <LogOut className="w-3.5 h-3.5" />
-                    <span>Sign Out</span>
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </>
+                    {!isUnlimited && (
+                      <div className="pt-1.5 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400">
+                        <span>Daily Credits:</span>
+                        <span className="font-mono font-semibold text-slate-800 dark:text-slate-200">
+                          {user.creditsRemaining ?? 100} / {user.dailyCreditsLimit || 100}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        dispatch(openProfileModal());
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                    >
+                      <UserIcon className="w-3.5 h-3.5 text-slate-400" />
+                      <span>Profile</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        dispatch(openSignOutModal());
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border border-red-200/60 dark:border-red-900/40 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/60 transition-colors cursor-pointer"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    dispatch(openAuthModal('login'));
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="w-full py-2.5 px-4 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-xl shadow-xs transition-colors cursor-pointer text-center"
+                >
+                  Sign In / Google Auth
+                </button>
+              )}
+            </div>
+          </aside>
+        </div>
       )}
     </header>
   );
