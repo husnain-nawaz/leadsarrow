@@ -24,7 +24,8 @@ import {
   Layers,
   FolderPlus,
   CheckCircle2,
-  X
+  X,
+  Pencil
 } from 'lucide-react';
 import {
   setAddLeadModalOpen,
@@ -41,6 +42,8 @@ import {
 } from '../services/api.js';
 import ConfirmDeleteModal from './ConfirmDeleteModal.jsx';
 import ConfirmExportModal from './ConfirmExportModal.jsx';
+import EditCustomLeadModal from './EditCustomLeadModal.jsx';
+import RenameClusterModal from './RenameClusterModal.jsx';
 
 export default function CustomLeadsPage() {
   const dispatch = useDispatch();
@@ -94,6 +97,10 @@ export default function CustomLeadsPage() {
 
   const [deleteClusterTarget, setDeleteClusterTarget] = useState(null);
   const [isDeletingCluster, setIsDeletingCluster] = useState(false);
+
+  // Edit and Rename targets for custom profile items
+  const [editingLeadTarget, setEditingLeadTarget] = useState(null);
+  const [renamingClusterTarget, setRenamingClusterTarget] = useState(null);
 
   const [isCreateClusterModalOpen, setIsCreateClusterModalOpen] = useState(false);
   const [newClusterName, setNewClusterName] = useState('');
@@ -359,6 +366,44 @@ export default function CustomLeadsPage() {
     } finally {
       setIsDeletingCluster(false);
     }
+  };
+
+  // Handle renaming of a cluster
+  const handleClusterRenamed = (oldName, newName, newDesc) => {
+    clusterLeadsCacheRef.current = {};
+    setClusters((prev) =>
+      prev.map((c) =>
+        c.name === oldName
+          ? { ...c, name: newName, description: newDesc || c.description }
+          : c
+      )
+    );
+    setLeads((prev) =>
+      prev.map((l) =>
+        (l.clusterName === oldName || l.cluster_name === oldName)
+          ? { ...l, clusterName: newName, cluster_name: newName }
+          : l
+      )
+    );
+    if (selectedCluster === oldName) {
+      setSelectedCluster(newName);
+    }
+    setFeedbackMessage(`Cluster "${oldName}" renamed to "${newName}" successfully!`);
+    setTimeout(() => setFeedbackMessage(null), 4000);
+  };
+
+  // Handle lead saved/updated
+  const handleLeadSaved = (updatedLead) => {
+    clusterLeadsCacheRef.current = {};
+    setLeads((prev) =>
+      prev.map((l) => (String(l.id) === String(updatedLead.id) ? { ...l, ...updatedLead } : l))
+    );
+    // If reassigned to another cluster, refresh current view
+    if (updatedLead.clusterName && selectedCluster && updatedLead.clusterName !== selectedCluster) {
+      loadCustomLeads(selectedCluster, true);
+    }
+    setFeedbackMessage(`Lead "${updatedLead.companyName || 'Lead'}" updated successfully!`);
+    setTimeout(() => setFeedbackMessage(null), 4000);
   };
 
   // Valid non-empty clusters
@@ -714,10 +759,21 @@ export default function CustomLeadsPage() {
                             <div className="w-9 h-9 rounded-lg bg-orange-100/70 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold">
                               <Folder className="w-4 h-4" />
                             </div>
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1">
                               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold font-mono bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300">
                                 {cluster.leadCount || 0} leads
                               </span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setRenamingClusterTarget(cluster);
+                                }}
+                                title={`Rename cluster "${cluster.name}"`}
+                                className="p-1 text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/50 rounded transition-colors cursor-pointer"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
                               <button
                                 type="button"
                                 onClick={(e) => {
@@ -832,6 +888,19 @@ export default function CustomLeadsPage() {
                     <span>
                       Cluster: {selectedCluster || 'No Cluster Selected'}
                     </span>
+                    {selectedCluster && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const clsObj = clusters.find((c) => c.name === selectedCluster) || { name: selectedCluster };
+                          setRenamingClusterTarget(clsObj);
+                        }}
+                        title={`Rename cluster "${selectedCluster}"`}
+                        className="p-0.5 text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-200 transition-colors cursor-pointer"
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                    )}
                     <span className="font-mono text-[10px] ml-1 opacity-75">
                       ({leads.length} leads)
                     </span>
@@ -1167,14 +1236,24 @@ export default function CustomLeadsPage() {
 
                             {/* Column 9: Actions */}
                             <td className="py-3.5 px-4 text-right">
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteClick(lead.id, lead.companyName)}
-                                title="Delete from custom leads"
-                                className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-md transition-colors cursor-pointer"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                              <div className="flex items-center justify-end gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingLeadTarget(lead)}
+                                  title={`Edit lead "${lead.companyName || ''}"`}
+                                  className="p-1.5 text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/40 rounded-md transition-colors cursor-pointer"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteClick(lead.id, lead.companyName)}
+                                  title="Delete from custom leads"
+                                  className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-md transition-colors cursor-pointer"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -1462,6 +1541,23 @@ export default function CustomLeadsPage() {
           </div>
         </div>
       )}
+
+      {/* Rename Cluster Modal */}
+      <RenameClusterModal
+        isOpen={Boolean(renamingClusterTarget)}
+        cluster={renamingClusterTarget}
+        onClose={() => setRenamingClusterTarget(null)}
+        onRenamed={handleClusterRenamed}
+      />
+
+      {/* Edit Custom Lead Modal */}
+      <EditCustomLeadModal
+        isOpen={Boolean(editingLeadTarget)}
+        lead={editingLeadTarget}
+        clusters={validClusters}
+        onClose={() => setEditingLeadTarget(null)}
+        onSave={handleLeadSaved}
+      />
 
       {/* Floating Modern Toast (Position Fixed - Never Causes Layout Shift) */}
       {feedbackMessage && (

@@ -31,12 +31,14 @@ import {
   X,
   Wifi,
   WifiOff,
-  AlertTriangle
+  AlertTriangle,
+  Pencil
 } from 'lucide-react';
 import {
   fetchSavedLists,
   removeSavedList,
   createSavedList,
+  renameSavedList,
   appendLeadsToSavedList,
   removeLeadFromSavedList,
   removeBatchLeadsFromSavedList,
@@ -48,6 +50,7 @@ import { fetchLeadsByIdsApi, fetchSavedListsFromServerApi } from '../services/ap
 import ConfirmDeleteModal from './ConfirmDeleteModal.jsx';
 import ConfirmExportModal from './ConfirmExportModal.jsx';
 import AddLeadsToSavedListModal from './AddLeadsToSavedListModal.jsx';
+import RenameListModal from './RenameListModal.jsx';
 
 export default function SavedListsPage({ setActiveView, initialSelectedListId }) {
   const dispatch = useDispatch();
@@ -155,6 +158,7 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
   const [isAppendingSelected, setIsAppendingSelected] = useState(false);
   const [deleteListTarget, setDeleteListTarget] = useState(null);
   const [isDeletingList, setIsDeletingList] = useState(false);
+  const [renamingListTarget, setRenamingListTarget] = useState(null);
   const [deleteSingleLeadTarget, setDeleteSingleLeadTarget] = useState(null);
   const [isRemovingSingleLead, setIsRemovingSingleLead] = useState(false);
   const [bulkDeleteTarget, setBulkDeleteTarget] = useState(null);
@@ -495,6 +499,22 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
 
   const handleDeleteListClick = (listId, name) => {
     setDeleteListTarget({ id: listId, name });
+  };
+
+  const handleSaveRenameList = async (listId, newName, newDesc) => {
+    try {
+      await dispatch(
+        renameSavedList({
+          listId,
+          name: newName,
+          description: newDesc
+        })
+      ).unwrap();
+      setFeedback(`List renamed to "${newName}" successfully!`);
+      setTimeout(() => setFeedback(null), 3500);
+    } catch (err) {
+      alert(err.message || 'Failed to rename saved list');
+    }
   };
 
   const handleConfirmDeleteList = async () => {
@@ -898,17 +918,30 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
                       </div>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteListClick(list.id, list.name);
-                      }}
-                      title="Delete list"
-                      className="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-md transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 cursor-pointer shrink-0"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 shrink-0">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setRenamingListTarget(list);
+                        }}
+                        title="Rename list & edit description"
+                        className="p-1 text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 rounded-md transition-colors cursor-pointer"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteListClick(list.id, list.name);
+                        }}
+                        title="Delete list"
+                        className="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-md transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 );
               })
@@ -1003,6 +1036,14 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
                       <h2 className="text-lg font-bold text-slate-900 dark:text-white font-display">
                         {selectedList.name}
                       </h2>
+                      <button
+                        type="button"
+                        onClick={() => setRenamingListTarget(selectedList)}
+                        title="Rename list & edit description"
+                        className="p-1 text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/40 rounded-md transition-colors cursor-pointer"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
                       <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
                         {selectedList.leadCount || (selectedList.leadIds ? selectedList.leadIds.length : 0)} Leads
                       </span>
@@ -1103,6 +1144,14 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
                       </button>
                     )}
 
+                    <button
+                      type="button"
+                      onClick={() => setRenamingListTarget(selectedList)}
+                      className="p-2 text-slate-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950/40 border border-slate-200 dark:border-slate-700 rounded-lg transition-colors cursor-pointer"
+                      title="Rename this saved list"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
                     <button
                       type="button"
                       onClick={() => handleDeleteListClick(selectedList.id, selectedList.name)}
@@ -1808,6 +1857,14 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
         targetName={exportConfirmTarget?.targetName || ''}
         creditCost={0}
         confirmText="Yes, Download CSV"
+      />
+
+      {/* Rename Saved List Modal */}
+      <RenameListModal
+        isOpen={Boolean(renamingListTarget)}
+        list={renamingListTarget}
+        onClose={() => setRenamingListTarget(null)}
+        onSave={handleSaveRenameList}
       />
 
       {/* Floating Modern Toast (Position Fixed - Never Causes Layout Shift) */}

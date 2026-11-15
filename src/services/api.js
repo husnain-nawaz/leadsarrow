@@ -206,9 +206,23 @@ export async function deleteCustomClusterOnServerApi(clusterName) {
   });
 }
 
+export async function updateCustomClusterOnServerApi(oldName, payload) {
+  return apiRequest(`/api/leads/custom/clusters/${encodeURIComponent(oldName)}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload)
+  });
+}
+
 export async function createCustomLeadOnServerApi(payload) {
   return apiRequest('/api/leads/custom', {
     method: 'POST',
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function updateCustomLeadOnServerApi(id, payload) {
+  return apiRequest(`/api/leads/custom/${encodeURIComponent(id)}`, {
+    method: 'PUT',
     body: JSON.stringify(payload)
   });
 }
@@ -232,6 +246,13 @@ export async function fetchSavedListsFromServerApi() {
 export async function createSavedListOnServerApi(payload) {
   return apiRequest('/api/lists', {
     method: 'POST',
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function updateSavedListOnServerApi(id, payload) {
+  return apiRequest(`/api/lists/${encodeURIComponent(id)}`, {
+    method: 'PUT',
     body: JSON.stringify(payload)
   });
 }

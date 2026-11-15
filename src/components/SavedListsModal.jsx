@@ -10,18 +10,21 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
-  UserPlus
+  UserPlus,
+  Pencil
 } from 'lucide-react';
 import {
   setSavedListsModalOpen,
   createSavedList,
   removeSavedList,
+  renameSavedList,
   fetchSavedLists,
   appendLeadsToSavedList
 } from '../store/savedListsSlice.js';
 import { setSavedListFilter } from '../store/filtersSlice.js';
 import ConfirmDeleteModal from './ConfirmDeleteModal.jsx';
 import AddLeadsToSavedListModal from './AddLeadsToSavedListModal.jsx';
+import RenameListModal from './RenameListModal.jsx';
 
 export default function SavedListsModal({ setActiveView, onSelectFullPageList }) {
   const dispatch = useDispatch();
@@ -40,6 +43,22 @@ export default function SavedListsModal({ setActiveView, onSelectFullPageList })
   const [addLeadsModalTarget, setAddLeadsModalTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [renamingTarget, setRenamingTarget] = useState(null);
+
+  const handleSaveRename = async (listId, newName, newDesc) => {
+    try {
+      await dispatch(
+        renameSavedList({
+          listId,
+          name: newName,
+          description: newDesc
+        })
+      ).unwrap();
+      dispatch(fetchSavedLists());
+    } catch (err) {
+      alert(err.message || 'Failed to rename saved list');
+    }
+  };
 
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
@@ -442,6 +461,14 @@ export default function SavedListsModal({ setActiveView, onSelectFullPageList })
                       </button>
                       <button
                         type="button"
+                        onClick={() => setRenamingTarget(list)}
+                        className="p-1.5 text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 rounded-lg transition-colors cursor-pointer"
+                        title="Rename saved list"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => setDeleteTarget({ id: list.id, name: list.name })}
                         className="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg transition-colors cursor-pointer"
                         title="Delete saved list"
@@ -499,6 +526,14 @@ export default function SavedListsModal({ setActiveView, onSelectFullPageList })
         onSuccess={() => {
           dispatch(fetchSavedLists());
         }}
+      />
+
+      {/* Rename Saved List Modal */}
+      <RenameListModal
+        isOpen={Boolean(renamingTarget)}
+        list={renamingTarget}
+        onClose={() => setRenamingTarget(null)}
+        onSave={handleSaveRename}
       />
     </div>
   );

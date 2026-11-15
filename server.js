@@ -2783,6 +2783,52 @@ async function startServer() {
       res.status(500).json({ error: err.message || "Could not delete cluster" });
     }
   });
+  app.put("/api/leads/custom/clusters/:name", requireJwtMiddleware, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: "Authentication required" });
+      const oldName = decodeURIComponent(req.params.name).trim();
+      const newName = String(req.body?.name || "").trim();
+      const description = String(req.body?.description || "").trim();
+      if (!newName) {
+        return res.status(400).json({ error: "New cluster name is required" });
+      }
+      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
+      const checkRows = await ds.query(
+        "SELECT id, name FROM custom_clusters WHERE user_id = ? AND name = ?",
+        [userId, oldName]
+      );
+      if (checkRows && checkRows.length > 0) {
+        await ds.query(
+          "UPDATE custom_clusters SET name = ?, description = ? WHERE user_id = ? AND name = ?",
+          [newName, description || `${newName} lead cluster`, userId, oldName]
+        );
+      } else {
+        const clusterId = `cls_${Buffer.from(userId + "_" + newName).toString("base64").replace(/[^a-zA-Z0-9]/g, "").slice(0, 32)}`;
+        await ds.query(
+          "INSERT INTO custom_clusters (id, user_id, name, description, created_at) VALUES (?, ?, ?, ?, NOW())",
+          [clusterId, userId, newName, description || `${newName} lead cluster`]
+        ).catch(() => {
+        });
+      }
+      await ds.query(
+        "UPDATE custom_leads SET cluster_name = ? WHERE user_id = ? AND cluster_name = ?",
+        [newName, userId, oldName]
+      );
+      res.json({
+        success: true,
+        oldName,
+        cluster: {
+          name: newName,
+          description: description || `${newName} lead cluster`
+        },
+        message: `Cluster renamed from "${oldName}" to "${newName}".`
+      });
+    } catch (err) {
+      console.error("Failed to rename custom cluster:", err);
+      res.status(500).json({ error: err.message || "Could not rename cluster" });
+    }
+  });
   app.post("/api/leads/custom", requireJwtMiddleware, async (req, res) => {
     try {
       const userId = req.user?.id;
@@ -2897,6 +2943,126 @@ async function startServer() {
       res.json({ deleted, id: targetId });
     } catch (err) {
       res.status(500).json({ error: err.message });
+    }
+  });
+  app.put("/api/leads/custom/:id", requireJwtMiddleware, async (req, res) => {
+    try {
+      const targetId = req.params.id;
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+      const body = req.body || {};
+      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
+      const safeTrim = (v, maxLen, fallback = "") => {
+        if (v === null || v === void 0) return fallback.slice(0, maxLen);
+        const s = String(v).replace(/\0/g, "").trim();
+        return (s || fallback).slice(0, maxLen);
+      };
+      const userParam = String(userId);
+      const emailParam = req.user?.email ? String(req.user.email) : userParam;
+      const existing = await ds.query(
+        "SELECT id, cluster_name FROM custom_leads WHERE id = ? AND (user_id = ? OR user_id = ?)",
+        [targetId, userParam, emailParam]
+      );
+      if (!existing || existing.length === 0) {
+        return res.status(404).json({ error: "Custom lead not found or not owned by your profile." });
+      }
+      const clusterName = safeTrim(body.clusterName || body.cluster, 128, existing[0].cluster_name || "General");
+      const techStackJson = JSON.stringify(
+        Array.isArray(body.techStack) ? body.techStack : String(body.techStack || "AWS, Salesforce").split(/[,;|]/).map((s) => s.trim()).filter(Boolean)
+      );
+      await ds.query(
+        `UPDATE custom_leads SET
+          cluster_name = ?,
+          company_name = ?,
+          domain = ?,
+          industry = ?,
+          employee_range = ?,
+          employee_count = ?,
+          revenue_range = ?,
+          annual_revenue_usd = ?,
+          country = ?,
+          city = ?,
+          contact_name = ?,
+          contact_title = ?,
+          seniority = ?,
+          department = ?,
+          contact_email = ?,
+          contact_phone = ?,
+          linkedin_url = ?,
+          verification_status = ?,
+          funding_stage = ?,
+          tech_stack = ?,
+          buying_intent_score = ?,
+          founded_year = ?,
+          has_direct_phone = ?
+        WHERE id = ? AND (user_id = ? OR user_id = ?)`,
+        [
+          clusterName,
+          safeTrim(body.companyName, 255, "My Custom Business"),
+          safeTrim(body.domain, 255, "business.io"),
+          safeTrim(body.industry, 255, "Enterprise Software & SaaS"),
+          safeTrim(body.employeeRange, 100, "51-200"),
+          Number(body.employeeCount) || 120,
+          safeTrim(body.revenueRange, 100, "$10M - $50M"),
+          Number(body.annualRevenueUsd) || 24e6,
+          safeTrim(body.country, 100, "United States"),
+          safeTrim(body.city, 255, "San Francisco, CA"),
+          safeTrim(body.contactName, 255, "Executive Contact"),
+          safeTrim(body.contactTitle, 255, "VP of Operations"),
+          safeTrim(body.seniority, 100, "VP"),
+          safeTrim(body.department, 100, "Operations & Supply Chain"),
+          safeTrim(body.contactEmail, 255, "contact@business.io"),
+          safeTrim(body.contactPhone, 100, "+1 (415) 555-0142"),
+          safeTrim(body.linkedinUrl, 500, ""),
+          safeTrim(body.verificationStatus, 50, "Verified"),
+          safeTrim(body.fundingStage, 100, "Series B"),
+          techStackJson,
+          Number(body.buyingIntentScore) || 88,
+          Number(body.foundedYear) || 2021,
+          body.hasDirectPhone !== void 0 ? body.hasDirectPhone ? 1 : 0 : 1,
+          targetId,
+          userParam,
+          emailParam
+        ]
+      );
+      const clusterId = `cls_${Buffer.from(userId + "_" + clusterName).toString("base64").replace(/[^a-zA-Z0-9]/g, "").slice(0, 32)}`;
+      await ds.query(
+        "INSERT IGNORE INTO custom_clusters (id, user_id, name, description, created_at) VALUES (?, ?, ?, ?, NOW())",
+        [clusterId, userId, clusterName, `${clusterName} lead cluster`]
+      ).catch(() => {
+      });
+      res.json({
+        success: true,
+        lead: {
+          id: targetId,
+          clusterName,
+          companyName: safeTrim(body.companyName, 255, "My Custom Business"),
+          domain: safeTrim(body.domain, 255, "business.io"),
+          industry: safeTrim(body.industry, 255, "Enterprise Software & SaaS"),
+          employeeRange: safeTrim(body.employeeRange, 100, "51-200"),
+          employeeCount: Number(body.employeeCount) || 120,
+          revenueRange: safeTrim(body.revenueRange, 100, "$10M - $50M"),
+          annualRevenueUsd: Number(body.annualRevenueUsd) || 24e6,
+          country: safeTrim(body.country, 100, "United States"),
+          city: safeTrim(body.city, 255, "San Francisco, CA"),
+          contactName: safeTrim(body.contactName, 255, "Executive Contact"),
+          contactTitle: safeTrim(body.contactTitle, 255, "VP of Operations"),
+          seniority: safeTrim(body.seniority, 100, "VP"),
+          department: safeTrim(body.department, 100, "Operations & Supply Chain"),
+          contactEmail: safeTrim(body.contactEmail, 255, "contact@business.io"),
+          contactPhone: safeTrim(body.contactPhone, 100, "+1 (415) 555-0142"),
+          verificationStatus: safeTrim(body.verificationStatus, 50, "Verified"),
+          fundingStage: safeTrim(body.fundingStage, 100, "Series B"),
+          buyingIntentScore: Number(body.buyingIntentScore) || 88,
+          isCustom: true
+        },
+        message: "Custom lead updated successfully."
+      });
+    } catch (err) {
+      console.error("Failed to update custom lead:", err);
+      res.status(500).json({ error: err.message || "Could not update custom lead" });
     }
   });
   app.get("/api/lists", async (req, res) => {
@@ -3132,6 +3298,60 @@ async function startServer() {
     } catch (err) {
       console.error("Failed to delete list from database:", err);
       res.status(500).json({ error: err.message || "Failed to delete list from database" });
+    }
+  });
+  app.put("/api/lists/:id", async (req, res) => {
+    try {
+      const targetId = req.params.id;
+      const { name, description } = req.body || {};
+      if (!name || !String(name).trim()) {
+        return res.status(400).json({ error: "List name cannot be empty." });
+      }
+      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
+      const listRepo = ds.getRepository((await Promise.resolve().then(() => (init_SavedList(), SavedList_exports))).SavedList);
+      const targetList = await listRepo.findOne({ where: { id: targetId } });
+      if (!targetList) {
+        return res.status(404).json({ error: "Saved list not found." });
+      }
+      targetList.name = String(name).trim();
+      if (description !== void 0) {
+        targetList.description = String(description).trim();
+      }
+      targetList.updatedAt = /* @__PURE__ */ new Date();
+      const saved = await listRepo.save(targetList);
+      await ds.query(
+        "UPDATE saved_lists SET name = ?, description = ?, updated_at = NOW() WHERE id = ?",
+        [saved.name, saved.description, targetId]
+      ).catch(() => {
+      });
+      try {
+        const ds2 = (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).SecondaryDataSource;
+        if (ds2 && ds2.isInitialized) {
+          await ds2.query(
+            "UPDATE saved_lists SET name = ?, description = ?, updated_at = NOW() WHERE id = ?",
+            [saved.name, saved.description, targetId]
+          ).catch(() => {
+          });
+        }
+      } catch {
+      }
+      res.json({
+        success: true,
+        list: {
+          id: saved.id,
+          name: saved.name,
+          description: saved.description,
+          leadIds: Array.isArray(saved.leadIds) ? saved.leadIds : typeof saved.leadIds === "string" ? JSON.parse(saved.leadIds || "[]") : [],
+          filterSummary: saved.filterSummary,
+          leadCount: saved.leadCount,
+          createdAt: saved.createdAt,
+          updatedAt: saved.updatedAt
+        },
+        message: "Saved list updated successfully."
+      });
+    } catch (err) {
+      console.error("Failed to update saved list:", err);
+      res.status(500).json({ error: err.message || "Failed to update saved list" });
     }
   });
   if (process.env.NODE_ENV !== "production") {

@@ -3,6 +3,7 @@ import {
   fetchSavedListsFromServerApi,
   createSavedListOnServerApi,
   deleteSavedListOnServerApi,
+  updateSavedListOnServerApi,
   addLeadsToSavedListOnServerApi,
   removeLeadFromSavedListOnServerApi,
   removeLeadsBatchFromSavedListOnServerApi
@@ -189,6 +190,35 @@ export const removeSavedList = createAsyncThunk(
   }
 );
 
+export const renameSavedList = createAsyncThunk(
+  'savedLists/renameSavedList',
+  async ({ listId, name, description }, { getState, rejectWithValue }) => {
+    try {
+      const response = await updateSavedListOnServerApi(listId, { name, description });
+      const updated = response.list;
+
+      // Also sync to Firestore
+      try {
+        const state = getState();
+        const existing = [...state.savedLists.lists, ...state.savedLists.firestoreLists].find((l) => l.id === listId);
+        if (existing) {
+          await saveLeadListToFirestore({
+            ...existing,
+            name: updated.name,
+            description: updated.description
+          });
+        }
+      } catch (e) {
+        console.warn('Firestore update list sync skipped:', e);
+      }
+
+      return updated;
+    } catch (error) {
+      return rejectWithValue(error.message || 'Failed to update saved list');
+    }
+  }
+);
+
 const initialState = {
   lists: [],
   firestoreLists: [],
@@ -272,6 +302,18 @@ const savedListsSlice = createSlice({
         }
       })
       .addCase(removeBatchLeadsFromSavedList.fulfilled, (state, action) => {
+        const updated = action.payload;
+        if (!updated) return;
+        const idx = state.lists.findIndex((l) => l.id === updated.id);
+        if (idx >= 0) {
+          state.lists[idx] = { ...state.lists[idx], ...updated };
+        }
+        const fsIdx = state.firestoreLists.findIndex((l) => l.id === updated.id);
+        if (fsIdx >= 0) {
+          state.firestoreLists[fsIdx] = { ...state.firestoreLists[fsIdx], ...updated };
+        }
+      })
+      .addCase(renameSavedList.fulfilled, (state, action) => {
         const updated = action.payload;
         if (!updated) return;
         const idx = state.lists.findIndex((l) => l.id === updated.id);
