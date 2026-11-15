@@ -30,6 +30,7 @@ import CustomLeadsPage from './components/CustomLeadsPage.jsx';
 import SavedListsPage from './components/SavedListsPage.jsx';
 import SignOutModal from './components/SignOutModal.jsx';
 import TargetListModeBanner from './components/TargetListModeBanner.jsx';
+import GlobalToast from './components/GlobalToast.jsx';
 import { ThemeProvider } from './context/ThemeContext.jsx';
 
 function WorkspaceContent({ activeView, setActiveView, onToggleLanding }) {
@@ -301,6 +302,7 @@ function MainApp() {
   if (!user) {
     return (
       <div className="min-h-screen">
+        <GlobalToast />
         <LandingPage />
         <AuthModal />
       </div>
@@ -311,6 +313,7 @@ function MainApp() {
   if (showLandingForLoggedIn) {
     return (
       <div className="relative min-h-screen">
+        <GlobalToast />
         <LandingPage
           onReturnDashboard={() => setShowLandingForLoggedIn(false)}
           onOpenProfile={handleOpenProfileDirectly}
@@ -324,11 +327,14 @@ function MainApp() {
   }
 
   return (
-    <WorkspaceContent
-      activeView={activeView}
-      setActiveView={handleSetActiveView}
-      onToggleLanding={() => setShowLandingForLoggedIn(true)}
-    />
+    <>
+      <GlobalToast />
+      <WorkspaceContent
+        activeView={activeView}
+        setActiveView={handleSetActiveView}
+        onToggleLanding={() => setShowLandingForLoggedIn(true)}
+      />
+    </>
   );
 }
 

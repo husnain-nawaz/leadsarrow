@@ -8,13 +8,13 @@ import {
   fetchSavedLists
 } from '../store/savedListsSlice.js';
 import { clearSelectedLeads } from '../store/leadsSlice.js';
+import { showToast } from '../store/toastSlice.js';
 
 export default function TargetListModeBanner({ activeView, setActiveView, onReturnToList }) {
   const dispatch = useDispatch();
   const { targetListForAdding } = useSelector((state) => state.savedLists);
   const { selectedLeadIds = [] } = useSelector((state) => state.leads);
   const [isAdding, setIsAdding] = useState(false);
-  const [successToast, setSuccessToast] = useState(null);
 
   if (!targetListForAdding) return null;
 
@@ -32,10 +32,19 @@ export default function TargetListModeBanner({ activeView, setActiveView, onRetu
       dispatch(incrementTargetListCount(count));
       dispatch(clearSelectedLeads());
       await dispatch(fetchSavedLists());
-      setSuccessToast(`Added ${count} lead(s) to "${targetListForAdding.name}"!`);
-      setTimeout(() => setSuccessToast(null), 3500);
+      dispatch(
+        showToast({
+          message: `Added ${count} lead(s) to "${targetListForAdding.name}"!`,
+          type: 'success'
+        })
+      );
     } catch (err) {
-      alert(err?.message || 'Failed to add leads to target list');
+      dispatch(
+        showToast({
+          message: err?.message || 'Failed to add leads to target list',
+          type: 'error'
+        })
+      );
     } finally {
       setIsAdding(false);
     }
@@ -131,14 +140,6 @@ export default function TargetListModeBanner({ activeView, setActiveView, onRetu
           </button>
         </div>
       </div>
-
-      {/* Success Toast */}
-      {successToast && (
-        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-xs font-semibold px-3 py-1 rounded-md shadow-lg flex items-center gap-1 animate-in fade-in duration-150 z-50">
-          <Check className="w-3.5 h-3.5" />
-          <span>{successToast}</span>
-        </div>
-      )}
     </div>
   );
 }

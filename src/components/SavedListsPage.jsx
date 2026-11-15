@@ -46,6 +46,7 @@ import {
 } from '../store/savedListsSlice.js';
 import { setSavedListFilter } from '../store/filtersSlice.js';
 import { setActiveLead, revealLeadContact, performRevealLead } from '../store/leadsSlice.js';
+import { showToast } from '../store/toastSlice.js';
 import { decrementExportCredits, openUpgradeModal } from '../store/authSlice.js';
 import { fetchLeadsByIdsApi, fetchSavedListsFromServerApi } from '../services/api.js';
 import ConfirmDeleteModal from './ConfirmDeleteModal.jsx';
@@ -177,7 +178,6 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
   const [bulkDeleteTarget, setBulkDeleteTarget] = useState(null);
   const [isRemovingBulk, setIsRemovingBulk] = useState(false);
   const [exportConfirmTarget, setExportConfirmTarget] = useState(null);
-  const [feedback, setFeedback] = useState(null);
 
   // Sorting state matching Lead Finder Data Grid
   const [sortBy, setSortBy] = useState('buyingIntentScore');
@@ -545,10 +545,19 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
           description: newDesc
         })
       ).unwrap();
-      setFeedback(`List renamed to "${newName}" successfully!`);
-      setTimeout(() => setFeedback(null), 3500);
+      dispatch(
+        showToast({
+          message: `List renamed to "${newName}" successfully!`,
+          type: 'success'
+        })
+      );
     } catch (err) {
-      alert(err.message || 'Failed to rename saved list');
+      dispatch(
+        showToast({
+          message: err.message || 'Failed to rename saved list',
+          type: 'error'
+        })
+      );
     }
   };
 
@@ -569,11 +578,20 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
           }
         } catch (e) {}
       }
-      setFeedback(`Permanently deleted list "${deleteListTarget.name}" from database.`);
-      setTimeout(() => setFeedback(null), 3500);
+      dispatch(
+        showToast({
+          message: `Permanently deleted list "${deleteListTarget.name}" from database.`,
+          type: 'success'
+        })
+      );
       setDeleteListTarget(null);
     } catch (err) {
-      alert(err.message || 'Failed to delete saved list');
+      dispatch(
+        showToast({
+          message: err.message || 'Failed to delete saved list',
+          type: 'error'
+        })
+      );
     } finally {
       setIsDeletingList(false);
     }
@@ -589,8 +607,12 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
           leadIds: selectedLeadIds
         })
       ).unwrap();
-      setFeedback(`Successfully added ${selectedLeadIds.length} lead(s) to "${selectedList.name}"!`);
-      setTimeout(() => setFeedback(null), 3500);
+      dispatch(
+        showToast({
+          message: `Successfully added ${selectedLeadIds.length} lead(s) to "${selectedList.name}"!`,
+          type: 'success'
+        })
+      );
       await dispatch(fetchSavedLists());
       const updatedList = {
         ...selectedList,
@@ -598,7 +620,12 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
       };
       await loadLeadsForSelectedList(updatedList);
     } catch (err) {
-      alert(err?.message || 'Failed to add selected leads to list');
+      dispatch(
+        showToast({
+          message: err?.message || 'Failed to add selected leads to list',
+          type: 'error'
+        })
+      );
     } finally {
       setIsAppendingSelected(false);
     }
@@ -615,11 +642,20 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
         })
       ).unwrap();
       setListLeads((prev) => prev.filter((l) => l.id !== deleteSingleLeadTarget.leadId));
-      setFeedback(`Removed "${deleteSingleLeadTarget.leadName}" from "${deleteSingleLeadTarget.listName}".`);
-      setTimeout(() => setFeedback(null), 3500);
+      dispatch(
+        showToast({
+          message: `Removed "${deleteSingleLeadTarget.leadName}" from "${deleteSingleLeadTarget.listName}".`,
+          type: 'success'
+        })
+      );
       setDeleteSingleLeadTarget(null);
     } catch (err) {
-      alert(err?.message || 'Failed to remove lead from list');
+      dispatch(
+        showToast({
+          message: err?.message || 'Failed to remove lead from list',
+          type: 'error'
+        })
+      );
     } finally {
       setIsRemovingSingleLead(false);
     }
@@ -659,8 +695,12 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
         setSelectedListId(action.payload.id);
         setListPage(1);
       }
-      setFeedback('New list created successfully.');
-      setTimeout(() => setFeedback(null), 3500);
+      dispatch(
+        showToast({
+          message: `Saved list "${newListName.trim()}" created successfully!`,
+          type: 'success'
+        })
+      );
     }
   };
 
@@ -722,8 +762,12 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
 
   const handleExportListCsv = () => {
     if (selectedListLeads.length === 0) {
-      setFeedback('Please select leads in this list using the checkboxes before exporting.');
-      setTimeout(() => setFeedback(null), 4000);
+      dispatch(
+        showToast({
+          message: 'Please select leads in this list using the checkboxes before exporting.',
+          type: 'warning'
+        })
+      );
       return;
     }
     setExportConfirmTarget({
@@ -741,8 +785,12 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
   const handleConfirmExportCsv = () => {
     if (!exportConfirmTarget || !exportConfirmTarget.leads.length) return;
     exportLeadsToCsv(exportConfirmTarget.leads, exportConfirmTarget.filename);
-    setFeedback(`Exported ${exportConfirmTarget.count} lead${exportConfirmTarget.count === 1 ? '' : 's'} to CSV spreadsheet.`);
-    setTimeout(() => setFeedback(null), 4000);
+    dispatch(
+      showToast({
+        message: `Exported ${exportConfirmTarget.count} lead${exportConfirmTarget.count === 1 ? '' : 's'} to CSV spreadsheet.`,
+        type: 'success'
+      })
+    );
     setExportConfirmTarget(null);
   };
 
@@ -758,12 +806,21 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
       ).unwrap();
       const removeSet = new Set(selectedInListIds);
       setListLeads((prev) => prev.filter((l) => !removeSet.has(l.id)));
-      setFeedback(`Removed ${selectedInListIds.length} lead(s) from "${selectedList.name}".`);
-      setTimeout(() => setFeedback(null), 3500);
+      dispatch(
+        showToast({
+          message: `Removed ${selectedInListIds.length} lead(s) from "${selectedList.name}".`,
+          type: 'success'
+        })
+      );
       setSelectedInListIds([]);
       setBulkDeleteTarget(null);
     } catch (err) {
-      alert(err?.message || 'Failed to remove selected leads');
+      dispatch(
+        showToast({
+          message: err?.message || 'Failed to remove selected leads',
+          type: 'error'
+        })
+      );
     } finally {
       setIsRemovingBulk(false);
     }
@@ -1930,26 +1987,6 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
         onClose={() => setRenamingListTarget(null)}
         onSave={handleSaveRenameList}
       />
-
-      {/* Floating Modern Toast (Position Fixed - Never Causes Layout Shift) */}
-      {feedback && (
-        <div className="fixed bottom-6 right-6 z-50 max-w-sm pointer-events-auto animate-in fade-in slide-in-from-bottom-5 duration-200">
-          <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-emerald-500/40 dark:border-emerald-500/50 shadow-2xl shadow-emerald-950/20 text-slate-800 dark:text-slate-100 text-xs font-semibold backdrop-blur-md">
-            <div className="w-6 h-6 rounded-lg bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-            </div>
-            <span className="flex-1 leading-snug">{feedback}</span>
-            <button
-              type="button"
-              onClick={() => setFeedback(null)}
-              className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              title="Dismiss"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

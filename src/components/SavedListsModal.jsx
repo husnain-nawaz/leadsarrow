@@ -23,6 +23,7 @@ import {
   appendLeadsToSavedList
 } from '../store/savedListsSlice.js';
 import { setSavedListFilter } from '../store/filtersSlice.js';
+import { showToast } from '../store/toastSlice.js';
 import AddLeadsToSavedListModal from './AddLeadsToSavedListModal.jsx';
 
 export default function SavedListsModal({ setActiveView, onSelectFullPageList }) {
@@ -190,13 +191,20 @@ export default function SavedListsModal({ setActiveView, onSelectFullPageList })
       ? activeSummaryParts.join(' · ')
       : (leadIdsToSave.length > 0 ? 'Custom Selected B2B Leads' : 'Empty Curated List');
 
+    const savedName = listName.trim();
     dispatch(
       createSavedList({
-        name: listName.trim(),
+        name: savedName,
         description: listDesc.trim() || 'Curated B2B target account segment',
         leadIds: leadIdsToSave,
         filterSummary,
         leadCount: leadIdsToSave.length
+      })
+    );
+    dispatch(
+      showToast({
+        message: `Saved list "${savedName}" created successfully!`,
+        type: 'success'
       })
     );
     setListName('');
@@ -211,15 +219,19 @@ export default function SavedListsModal({ setActiveView, onSelectFullPageList })
     try {
       await dispatch(appendLeadsToSavedList({ listId: targetId, leadIds: selectedLeadIds })).unwrap();
       const target = mergedLists.find((l) => l.id === targetId);
+      const successMsg = `Added ${selectedLeadIds.length} lead${selectedLeadIds.length > 1 ? 's' : ''} to "${target?.name || 'list'}" successfully!`;
+      dispatch(showToast({ message: successMsg, type: 'success' }));
       setAppendFeedback({
         type: 'success',
-        text: `Added ${selectedLeadIds.length} lead${selectedLeadIds.length > 1 ? 's' : ''} to "${target?.name || 'list'}" successfully!`
+        text: successMsg
       });
       setTimeout(() => setAppendFeedback(null), 4000);
     } catch (err) {
+      const errMsg = err?.message || 'Failed to add leads to list';
+      dispatch(showToast({ message: errMsg, type: 'error' }));
       setAppendFeedback({
         type: 'error',
-        text: err?.message || 'Failed to add leads to list'
+        text: errMsg
       });
     } finally {
       setIsAppending(false);

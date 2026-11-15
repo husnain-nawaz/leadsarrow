@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { X, Plus, Sparkles, Layers, Folder, Lock, Loader2 } from 'lucide-react';
 import { setAddLeadModalOpen, addCustomLead, fetchLeads } from '../store/leadsSlice.js';
+import { showToast } from '../store/toastSlice.js';
 
 export default function AddLeadModal() {
   const dispatch = useDispatch();
@@ -55,8 +56,19 @@ export default function AddLeadModal() {
       if (addCustomLead.fulfilled.match(action)) {
         dispatch(setAddLeadModalOpen(false));
         dispatch(fetchLeads(filters));
+        dispatch(
+          showToast({
+            message: `Custom lead "${form.companyName || 'Lead'}" added successfully!`,
+            type: 'success'
+          })
+        );
       } else {
-        alert(action.payload || action.error?.message || 'Failed to add custom lead');
+        dispatch(
+          showToast({
+            message: action.payload || action.error?.message || 'Failed to add custom lead',
+            type: 'error'
+          })
+        );
       }
     } finally {
       setIsSubmitting(false);

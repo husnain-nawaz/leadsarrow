@@ -33,6 +33,7 @@ import {
   selectAllCurrentPageLeads,
   clearSelectedLeads
 } from '../store/leadsSlice.js';
+import { showToast } from '../store/toastSlice.js';
 import { openAuthModal, openUpgradeModal } from '../store/authSlice.js';
 import {
   fetchCustomLeadsFromServerApi,
@@ -108,8 +109,6 @@ export default function CustomLeadsPage() {
   const [isCreatingCluster, setIsCreatingCluster] = useState(false);
 
   const [isConfirmExportOpen, setIsConfirmExportOpen] = useState(false);
-
-  const [feedbackMessage, setFeedbackMessage] = useState(null);
 
   // Persist cluster selection
   useEffect(() => {
@@ -248,15 +247,19 @@ export default function CustomLeadsPage() {
         return [lastAddedCustomLead, ...prev];
       });
 
-      setFeedbackMessage(`Custom lead added to cluster "${targetCls}"!`);
-      setTimeout(() => setFeedbackMessage(null), 4000);
+      dispatch(
+        showToast({
+          message: `Custom lead added to cluster "${targetCls}"!`,
+          type: 'success'
+        })
+      );
 
       // Force refresh from server for authoritative state
       loadCustomLeads(targetCls, true);
     } else {
       loadCustomLeads(undefined, true);
     }
-  }, [customLeadsVersion, lastAddedCustomLead, selectedCluster, loadCustomLeads]);
+  }, [customLeadsVersion, lastAddedCustomLead, selectedCluster, loadCustomLeads, dispatch]);
 
   // Handle lead deletion
   const handleDeleteClick = (leadId, companyName) => {
@@ -269,14 +272,23 @@ export default function CustomLeadsPage() {
     try {
       await deleteCustomLeadOnServerApi(deletingTarget.id);
       setLeads((prev) => prev.filter((l) => l.id !== deletingTarget.id));
-      setFeedbackMessage(`Permanently deleted "${deletingTarget.name}" from your custom leads database.`);
-      setTimeout(() => setFeedbackMessage(null), 4000);
+      dispatch(
+        showToast({
+          message: `Permanently deleted "${deletingTarget.name}" from custom leads.`,
+          type: 'success'
+        })
+      );
       setDeletingTarget(null);
       // Invalidate cluster cache on deletion to reload fresh counts
       clusterLeadsCacheRef.current = {};
       loadCustomLeads(undefined, true);
     } catch (err) {
-      alert(err.message || 'Failed to delete custom lead from database');
+      dispatch(
+        showToast({
+          message: err.message || 'Failed to delete custom lead from database',
+          type: 'error'
+        })
+      );
     } finally {
       setIsDeleting(false);
     }
@@ -311,8 +323,12 @@ export default function CustomLeadsPage() {
         name: trimmed,
         description: newClusterDesc.trim() || `${trimmed} lead cluster`
       });
-      setFeedbackMessage(`Cluster "${trimmed}" created successfully!`);
-      setTimeout(() => setFeedbackMessage(null), 4000);
+      dispatch(
+        showToast({
+          message: `Cluster "${trimmed}" created successfully!`,
+          type: 'success'
+        })
+      );
       setNewClusterName('');
       setNewClusterDesc('');
       setIsCreateClusterModalOpen(false);
@@ -339,7 +355,12 @@ export default function CustomLeadsPage() {
         }
       }, 50);
     } catch (err) {
-      alert(err.message || 'Failed to create cluster');
+      dispatch(
+        showToast({
+          message: err.message || 'Failed to create cluster',
+          type: 'error'
+        })
+      );
     } finally {
       setIsCreatingCluster(false);
     }
@@ -351,8 +372,12 @@ export default function CustomLeadsPage() {
     setIsDeletingCluster(true);
     try {
       await deleteCustomClusterOnServerApi(deleteClusterTarget.name);
-      setFeedbackMessage(`Cluster "${deleteClusterTarget.name}" and its associated custom leads have been removed.`);
-      setTimeout(() => setFeedbackMessage(null), 4000);
+      dispatch(
+        showToast({
+          message: `Cluster "${deleteClusterTarget.name}" and its leads have been removed.`,
+          type: 'success'
+        })
+      );
       
       const remainingClusters = clusters.filter((c) => c.name !== deleteClusterTarget.name);
       setClusters(remainingClusters);
@@ -362,7 +387,12 @@ export default function CustomLeadsPage() {
       clusterLeadsCacheRef.current = {};
       loadCustomLeads(nextCluster, true);
     } catch (err) {
-      alert(err.message || 'Failed to delete cluster');
+      dispatch(
+        showToast({
+          message: err.message || 'Failed to delete cluster',
+          type: 'error'
+        })
+      );
     } finally {
       setIsDeletingCluster(false);
     }
@@ -388,8 +418,12 @@ export default function CustomLeadsPage() {
     if (selectedCluster === oldName) {
       setSelectedCluster(newName);
     }
-    setFeedbackMessage(`Cluster "${oldName}" renamed to "${newName}" successfully!`);
-    setTimeout(() => setFeedbackMessage(null), 4000);
+    dispatch(
+      showToast({
+        message: `Cluster "${oldName}" renamed to "${newName}" successfully!`,
+        type: 'success'
+      })
+    );
   };
 
   // Handle lead saved/updated
@@ -402,8 +436,12 @@ export default function CustomLeadsPage() {
     if (updatedLead.clusterName && selectedCluster && updatedLead.clusterName !== selectedCluster) {
       loadCustomLeads(selectedCluster, true);
     }
-    setFeedbackMessage(`Lead "${updatedLead.companyName || 'Lead'}" updated successfully!`);
-    setTimeout(() => setFeedbackMessage(null), 4000);
+    dispatch(
+      showToast({
+        message: `Lead "${updatedLead.companyName || 'Lead'}" updated successfully!`,
+        type: 'success'
+      })
+    );
   };
 
   // Valid non-empty clusters
@@ -501,14 +539,22 @@ export default function CustomLeadsPage() {
     a.click();
     URL.revokeObjectURL(url);
 
-    setFeedbackMessage(`Exported ${selectedClusterLeads.length} selected lead${selectedClusterLeads.length === 1 ? '' : 's'} from cluster "${selectedCluster || 'General'}" to CSV.`);
-    setTimeout(() => setFeedbackMessage(null), 4000);
+    dispatch(
+      showToast({
+        message: `Exported ${selectedClusterLeads.length} lead${selectedClusterLeads.length === 1 ? '' : 's'} from cluster "${selectedCluster || 'General'}" to CSV.`,
+        type: 'success'
+      })
+    );
   };
 
   const handleOpenExportConfirm = () => {
     if (selectedClusterLeads.length === 0) {
-      setFeedbackMessage('Please select leads in the table using the checkboxes before exporting.');
-      setTimeout(() => setFeedbackMessage(null), 4000);
+      dispatch(
+        showToast({
+          message: 'Please select leads in the table using the checkboxes before exporting.',
+          type: 'warning'
+        })
+      );
       return;
     }
     setIsConfirmExportOpen(true);
@@ -1539,26 +1585,6 @@ export default function CustomLeadsPage() {
         onClose={() => setEditingLeadTarget(null)}
         onSave={handleLeadSaved}
       />
-
-      {/* Floating Modern Toast (Position Fixed - Never Causes Layout Shift) */}
-      {feedbackMessage && (
-        <div className="fixed bottom-6 right-6 z-50 max-w-sm pointer-events-auto animate-in fade-in slide-in-from-bottom-5 duration-200">
-          <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-emerald-500/40 dark:border-emerald-500/50 shadow-2xl shadow-emerald-950/20 text-slate-800 dark:text-slate-100 text-xs font-semibold backdrop-blur-md">
-            <div className="w-6 h-6 rounded-lg bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-            </div>
-            <span className="flex-1 leading-snug">{feedbackMessage}</span>
-            <button
-              type="button"
-              onClick={() => setFeedbackMessage(null)}
-              className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              title="Dismiss"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

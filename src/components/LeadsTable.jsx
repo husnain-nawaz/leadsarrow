@@ -25,6 +25,7 @@ import {
   deleteCustomLead,
   deleteCoreLeadByAdmin
 } from '../store/leadsSlice.js';
+import { showToast } from '../store/toastSlice.js';
 import {
   setSortConfig,
   setPage,
@@ -63,7 +64,6 @@ export default function LeadsTable() {
   const [copiedKey, setCopiedKey] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [feedbackMessage, setFeedbackMessage] = useState(null);
 
   const handleConfirmDeleteLead = async () => {
     if (!deleteTarget) return;
@@ -71,16 +71,29 @@ export default function LeadsTable() {
     try {
       if (deleteTarget.isCore) {
         await dispatch(deleteCoreLeadByAdmin(deleteTarget.id)).unwrap();
-        setFeedbackMessage(`Permanently deleted "${deleteTarget.name}" from the core database. This change is reflected across all accounts.`);
-        setTimeout(() => setFeedbackMessage(null), 5000);
+        dispatch(
+          showToast({
+            message: `Permanently deleted "${deleteTarget.name}" from core database.`,
+            type: 'success'
+          })
+        );
       } else {
         await dispatch(deleteCustomLead(deleteTarget.id)).unwrap();
-        setFeedbackMessage(`Removed "${deleteTarget.name}" from custom leads.`);
-        setTimeout(() => setFeedbackMessage(null), 3500);
+        dispatch(
+          showToast({
+            message: `Removed "${deleteTarget.name}" from custom leads.`,
+            type: 'success'
+          })
+        );
       }
       setDeleteTarget(null);
     } catch (err) {
-      alert(err.message || 'Failed to delete lead from core database');
+      dispatch(
+        showToast({
+          message: err.message || 'Failed to delete lead from database',
+          type: 'error'
+        })
+      );
     } finally {
       setIsDeleting(false);
     }
@@ -693,26 +706,6 @@ export default function LeadsTable() {
             : "This lead will be permanently erased from Database 4."
         }
       />
-
-      {/* Floating Modern Toast (Position Fixed - Never Causes Layout Shift) */}
-      {feedbackMessage && (
-        <div className="fixed bottom-6 right-6 z-50 max-w-sm pointer-events-auto animate-in fade-in slide-in-from-bottom-5 duration-200">
-          <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-emerald-500/40 dark:border-emerald-500/50 shadow-2xl shadow-emerald-950/20 text-slate-800 dark:text-slate-100 text-xs font-semibold backdrop-blur-md">
-            <div className="w-6 h-6 rounded-lg bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-            </div>
-            <span className="flex-1 leading-snug">{feedbackMessage}</span>
-            <button
-              type="button"
-              onClick={() => setFeedbackMessage(null)}
-              className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              title="Dismiss"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

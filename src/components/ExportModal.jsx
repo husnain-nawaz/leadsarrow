@@ -5,6 +5,7 @@ import { setExportModalOpen } from '../store/leadsSlice.js';
 import { decrementExportCredits, consumeCredits, openUpgradeModal } from '../store/authSlice.js';
 import { fetchLeadsByIdsApi } from '../services/api.js';
 import ConfirmExportModal from './ConfirmExportModal.jsx';
+import { showToast } from '../store/toastSlice.js';
 
 export default function ExportModal() {
   const dispatch = useDispatch();
@@ -162,6 +163,12 @@ export default function ExportModal() {
     dispatch(decrementExportCredits(targetLeads.length));
     dispatch(consumeCredits(targetLeads.length));
     dispatch(setExportModalOpen(false));
+    dispatch(
+      showToast({
+        message: `Exported ${targetLeads.length} lead${targetLeads.length === 1 ? '' : 's'} to CSV spreadsheet!`,
+        type: 'success'
+      })
+    );
   };
 
   return (
