@@ -11,6 +11,7 @@ import {
   Phone,
   MapPin,
   Shield,
+  ShieldCheck,
   Lock,
   UserCheck,
   ExternalLink,
