@@ -28,7 +28,10 @@ import {
   Check,
   Copy,
   ShieldCheck,
-  X
+  X,
+  Wifi,
+  WifiOff,
+  AlertTriangle
 } from 'lucide-react';
 import {
   fetchSavedLists,
@@ -124,6 +127,9 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
   });
   const [listLeads, setListLeads] = useState([]);
   const [leadsLoading, setLeadsLoading] = useState(false);
+  const [networkNotice, setNetworkNotice] = useState(null);
+  const [isSlowConnection, setIsSlowConnection] = useState(false);
+  const slowTimerRef = useRef(null);
   const [listSearchQuery, setListSearchQuery] = useState('');
   const [leadSearchQuery, setLeadSearchQuery] = useState('');
   const [listPage, setListPage] = useState(1);
@@ -208,6 +214,8 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
     if (!list) {
       setListLeads([]);
       setLeadsLoading(false);
+      setNetworkNotice(null);
+      setIsSlowConnection(false);
       return;
     }
 
@@ -252,18 +260,49 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
     if (!forceRefresh && leadsCacheRef.current[cacheKey]) {
       setListLeads(leadsCacheRef.current[cacheKey]);
       setLeadsLoading(false);
+      setNetworkNotice(null);
+      setIsSlowConnection(false);
       return;
     }
 
     setLeadsLoading(true);
+    setNetworkNotice(null);
+    setIsSlowConnection(false);
+
+    if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+    // If request takes more than 3 seconds, highlight slow internet connection
+    slowTimerRef.current = setTimeout(() => {
+      setIsSlowConnection(true);
+    }, 3000);
+
     try {
       const response = await fetchLeadsByIdsApi(ids);
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+      setIsSlowConnection(false);
+      setNetworkNotice(null);
+
       const fetched = response.leads || [];
       leadsCacheRef.current[cacheKey] = fetched;
       setListLeads(fetched);
     } catch (err) {
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+      setIsSlowConnection(false);
       console.error('Failed to load leads for list:', err);
-      setListLeads([]);
+
+      const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+      const errMsg = String(err?.message || '').toLowerCase();
+      const isSlowOrTimeout = isOffline || errMsg.includes('network') || errMsg.includes('timeout') || errMsg.includes('failed to fetch') || errMsg.includes('aborted');
+
+      setNetworkNotice({
+        type: isSlowOrTimeout ? 'slow' : 'error',
+        message: isSlowOrTimeout
+          ? 'Slow or interrupted internet connection detected while loading leads.'
+          : (err?.message || 'Connection error while communicating with the database.')
+      });
+
+      if (!leadsCacheRef.current[cacheKey]) {
+        setListLeads([]);
+      }
     } finally {
       setLeadsLoading(false);
     }
@@ -1176,13 +1215,86 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
                   <div className="absolute top-0 left-0 right-0 z-30 h-0.5 bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600 animate-indeterminate" />
                 )}
 
-                {listLeads.length === 0 ? (
+                {/* Highlight banner if internet connection is slow */}
+                {isSlowConnection && (
+                  <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2 flex items-center justify-between text-xs text-amber-700 dark:text-amber-400 animate-in fade-in duration-200 shrink-0">
+                    <div className="flex items-center gap-2">
+                      <Wifi className="w-4 h-4 text-amber-500 animate-pulse shrink-0" />
+                      <span className="font-semibold">
+                        Slow internet connection detected.
+                      </span>
+                      <span className="hidden sm:inline text-slate-500 dark:text-slate-400">
+                        Retrieving records from database with higher latency.
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300 font-bold shrink-0">
+                      Streaming Data...
+                    </span>
+                  </div>
+                )}
+
+                {/* Display Network Slowness / Connection Alert if request experienced an error or timeout */}
+                {networkNotice && listLeads.length === 0 ? (
+                  <div className="flex-1 flex flex-col items-center justify-center p-10 text-center animate-in fade-in duration-200">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto mb-3 shadow-xs">
+                      <WifiOff className="w-6 h-6" />
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
+                      Slow or Interrupted Internet Connection
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 max-w-md mx-auto leading-relaxed">
+                      We noticed delays reaching the database server. Your <span className="font-semibold text-slate-700 dark:text-slate-200">{selectedList?.leadCount || 'saved'} leads</span> are safe in your account.
+                    </p>
+                    <div className="mt-2 text-[11px] font-mono text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 px-3 py-1.5 rounded-lg border border-amber-200 dark:border-amber-900/60 max-w-md mx-auto">
+                      {networkNotice.message}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => selectedList && loadLeadsForSelectedList(selectedList, true)}
+                      className="mt-4 px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 active:scale-95 rounded-xl shadow-xs transition-colors cursor-pointer inline-flex items-center gap-1.5"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>Retry Loading Leads</span>
+                    </button>
+                  </div>
+                ) : listLeads.length === 0 ? (
                   leadsLoading ? (
                     <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
                       <div className="w-8 h-8 rounded-full border-2 border-orange-500 border-t-transparent animate-spin mb-3" />
-                      <p className="text-xs text-slate-500 dark:text-slate-400">Loading list leads...</p>
+                      <p className="text-xs text-slate-700 dark:text-slate-200 font-semibold">
+                        {isSlowConnection
+                          ? `Slow connection detected — loading ${selectedList?.leadCount || ''} leads...`
+                          : `Loading leads for "${selectedList?.name || 'list'}"...`}
+                      </p>
+                      {isSlowConnection && (
+                        <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1 max-w-xs mx-auto">
+                          Network latency is high. Streaming full decision-maker firmographics from database.
+                        </p>
+                      )}
+                    </div>
+                  ) : (selectedList?.leadCount || 0) > 0 ? (
+                    // If list has positive lead count, never show "empty list"
+                    <div className="flex-1 flex flex-col items-center justify-center p-12 text-center animate-in fade-in duration-200">
+                      <div className="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center mx-auto mb-3">
+                        <RefreshCw className="w-5 h-5" />
+                      </div>
+                      <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                        {selectedList?.name} ({selectedList?.leadCount} Leads) Ready to Load
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
+                        If your connection experienced high latency, click below to stream all leads immediately.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => selectedList && loadLeadsForSelectedList(selectedList, true)}
+                        className="mt-4 px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 active:scale-95 rounded-xl shadow-xs transition-colors cursor-pointer inline-flex items-center gap-1.5"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>Load {selectedList?.leadCount} Leads Now</span>
+                      </button>
                     </div>
                   ) : (
+                    // Truly empty list (0 leads created)
                     <div className="flex-1 flex flex-col items-center justify-center p-12 text-center animate-in fade-in duration-200">
                       <Building2 className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
                       <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">

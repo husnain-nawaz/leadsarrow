@@ -693,7 +693,7 @@ async function startServer() {
     }
   });
 
-  app.post('/api/leads/by-ids', antiScraperProtectionMiddleware, async (req: any, res) => {
+  app.post('/api/leads/by-ids', async (req: any, res) => {
     try {
       const { ids } = req.body || {};
       const userId = req.user?.id ? String(req.user.id) : null;
