@@ -34,7 +34,6 @@ export const performRevealLead = createAsyncThunk(
         const { refreshCurrentUserProfile } = await import('./authSlice.js');
         dispatch(refreshCurrentUserProfile());
       }
-      dispatch(showToast({ message: '1 credit used · Contact revealed!', type: 'success' }));
       return { leadId, user: res.user };
     } catch (err) {
       dispatch(showToast({ message: err.message || 'Failed to reveal contact', type: 'error' }));

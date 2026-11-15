@@ -19,6 +19,7 @@ function loadPersistedState() {
     hasVerifiedEmail: false,
     hasDirectPhone: false,
     onlyCustom: false,
+    onlyRevealed: false,
     savedListLeadIds: null,
     activePresetName: null,
     sortBy: 'buyingIntentScore',
@@ -76,6 +77,7 @@ function persistCurrentFilterState(state) {
       hasVerifiedEmail: state.hasVerifiedEmail,
       hasDirectPhone: state.hasDirectPhone,
       onlyCustom: state.onlyCustom,
+      onlyRevealed: state.onlyRevealed,
       savedListLeadIds: state.savedListLeadIds,
       activePresetName: state.activePresetName,
       sortBy: state.sortBy,
@@ -106,6 +108,7 @@ const defaultResetState = {
   hasVerifiedEmail: false,
   hasDirectPhone: false,
   onlyCustom: false,
+  onlyRevealed: false,
   savedListLeadIds: null,
   activePresetName: null,
   sortBy: 'buyingIntentScore',
@@ -152,6 +155,12 @@ const filtersSlice = createSlice({
     },
     setHasDirectPhone(state, action) {
       state.hasDirectPhone = Boolean(action.payload);
+      state.page = 1;
+      state.activePresetName = null;
+      persistCurrentFilterState(state);
+    },
+    setOnlyRevealed(state, action) {
+      state.onlyRevealed = Boolean(action.payload);
       state.page = 1;
       state.activePresetName = null;
       persistCurrentFilterState(state);
@@ -222,6 +231,7 @@ export const {
   setMinIntentScore,
   setHasVerifiedEmail,
   setHasDirectPhone,
+  setOnlyRevealed,
   setOnlyCustom,
   setSavedListFilter,
   applyQuickSegmentPreset,

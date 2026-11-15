@@ -731,6 +731,7 @@ async function queryLeadsDatabase(params = {}, userId) {
     hasVerifiedEmail = false,
     hasDirectPhone = false,
     onlyCustom = false,
+    onlyRevealed = false,
     savedListLeadIds,
     sortBy = "buying_intent_score",
     sortOrder = "desc",
@@ -949,6 +950,58 @@ async function queryLeadsDatabase(params = {}, userId) {
     qb.andWhere("lead.id IN (:...savedIdsArr)", { savedIdsArr });
     hasWhere = true;
   }
+  if (String(onlyRevealed) === "true" || onlyRevealed === true) {
+    if (!userId) {
+      return {
+        leads: [],
+        pagination: {
+          page: 1,
+          pageSize: safePageSize,
+          totalCatalogRows: 0,
+          totalPages: 1,
+          estimatedGlobalMatches: 0,
+          totalDatabaseRecords: 0
+        },
+        metrics: {
+          verifiedRatio: 100,
+          avgIntentScore: 90,
+          activeFiltersCount: 1
+        },
+        facets: {}
+      };
+    }
+    try {
+      const ds4 = await getDataSource();
+      const revealedRows = await ds4.query(
+        "SELECT lead_id FROM user_revealed_leads WHERE user_id = ?",
+        [userId]
+      );
+      const revealedIds = (revealedRows || []).map((r) => String(r.lead_id)).filter(Boolean);
+      if (revealedIds.length === 0) {
+        return {
+          leads: [],
+          pagination: {
+            page: 1,
+            pageSize: safePageSize,
+            totalCatalogRows: 0,
+            totalPages: 1,
+            estimatedGlobalMatches: 0,
+            totalDatabaseRecords: 0
+          },
+          metrics: {
+            verifiedRatio: 100,
+            avgIntentScore: 90,
+            activeFiltersCount: 1
+          },
+          facets: {}
+        };
+      }
+      qb.andWhere("lead.id IN (:...revealedIds)", { revealedIds });
+      hasWhere = true;
+    } catch (err) {
+      console.error("Error querying user_revealed_leads in queryLeadsDatabase:", err.message);
+    }
+  }
   const isUnfiltered = !hasWhere;
   let totalMatches = 0;
   if (isUnfiltered) {
@@ -1139,7 +1192,7 @@ async function queryLeadsDatabase(params = {}, userId) {
     metrics: {
       verifiedRatio,
       avgIntentScore,
-      activeFiltersCount: (searchLower ? 1 : 0) + indArr.length + empArr.length + revArr.length + countryArr.length + senArr.length + deptArr.length + verArr.length + fundArr.length + techArr.length + (minScore > 0 ? 1 : 0) + (String(hasVerifiedEmail) === "true" ? 1 : 0) + (String(hasDirectPhone) === "true" ? 1 : 0)
+      activeFiltersCount: (searchLower ? 1 : 0) + indArr.length + empArr.length + revArr.length + countryArr.length + senArr.length + deptArr.length + verArr.length + fundArr.length + techArr.length + (minScore > 0 ? 1 : 0) + (String(hasVerifiedEmail) === "true" ? 1 : 0) + (String(hasDirectPhone) === "true" ? 1 : 0) + (String(onlyRevealed) === "true" || onlyRevealed === true ? 1 : 0)
     },
     facets
   };
@@ -1704,10 +1757,12 @@ async function upgradeUserPlan(userIdOrEmail, targetPlanId) {
   };
   const spec = planSpecs[targetPlanId] || planSpecs.free;
   const newTotalPaid = Number(user.totalPaid || 0) + spec.price;
+  const previousRemaining = Math.max(0, Number(user.creditsRemaining ?? user.credits_remaining ?? 0));
+  const newCreditsRemaining = targetPlanId === "unlimited" ? 999999 : Math.max(spec.credits, spec.credits + previousRemaining);
   await userRepo.update(user.id, {
     plan: spec.name,
     planId: targetPlanId,
-    creditsRemaining: spec.credits,
+    creditsRemaining: newCreditsRemaining,
     dailyCreditsLimit: spec.limit,
     creditsUsedToday: 0,
     lastCreditResetAt: /* @__PURE__ */ new Date(),
@@ -1952,13 +2007,17 @@ async function updateUserByAdmin(userId, updates = {}) {
     updatePayload.dailyCreditsLimit = spec.limit;
     updatePayload.paymentStatus = spec.status;
     updatePayload.amountPaid = spec.price;
-    if (updates.creditsRemaining === void 0) {
+    const previousRemaining = Math.max(0, Number(user.creditsRemaining ?? user.credits_remaining ?? 0));
+    const isPlanUpgrade = updates.planId !== user.planId;
+    if (isPlanUpgrade) {
+      updatePayload.creditsRemaining = updates.planId === "unlimited" ? 999999 : Math.max(spec.credits, spec.credits + previousRemaining);
+    } else if (updates.creditsRemaining === void 0) {
       updatePayload.creditsRemaining = spec.credits;
     }
     updatePayload.creditsUsedToday = 0;
     updatePayload.lastCreditResetAt = /* @__PURE__ */ new Date();
   }
-  if (updates.creditsRemaining !== void 0) {
+  if (updates.creditsRemaining !== void 0 && (!updates.planId || updates.planId === user.planId || Number(updates.creditsRemaining) > (updatePayload.creditsRemaining || 0))) {
     updatePayload.creditsRemaining = Number(updates.creditsRemaining);
     updatePayload.lastCreditResetAt = /* @__PURE__ */ new Date();
   }
@@ -2591,7 +2650,7 @@ async function startServer() {
       res.status(500).json({ error: "Failed to fetch preview leads" });
     }
   });
-  app.get("/api/leads", async (req, res) => {
+  app.get("/api/leads", optionalAuthMiddleware, async (req, res) => {
     const tStart = Date.now();
     try {
       const userId = req.user?.id ? String(req.user.id) : null;

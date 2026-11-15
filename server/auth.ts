@@ -441,10 +441,16 @@ export async function upgradeUserPlan(userIdOrEmail: string, targetPlanId: strin
   const spec = planSpecs[targetPlanId] || planSpecs.free;
   const newTotalPaid = Number(user.totalPaid || 0) + spec.price;
 
+  // When upgrading plan, carry over previous unused credits on top of the new plan allowance!
+  const previousRemaining = Math.max(0, Number(user.creditsRemaining ?? user.credits_remaining ?? 0));
+  const newCreditsRemaining = targetPlanId === 'unlimited'
+    ? 999999
+    : Math.max(spec.credits, spec.credits + previousRemaining);
+
   await userRepo.update(user.id, {
     plan: spec.name,
     planId: targetPlanId,
-    creditsRemaining: spec.credits,
+    creditsRemaining: newCreditsRemaining,
     dailyCreditsLimit: spec.limit,
     creditsUsedToday: 0,
     lastCreditResetAt: new Date(),
@@ -745,14 +751,22 @@ export async function updateUserByAdmin(userId: string, updates: any = {}) {
     updatePayload.paymentStatus = spec.status;
     updatePayload.amountPaid = spec.price;
 
-    if (updates.creditsRemaining === undefined) {
+    const previousRemaining = Math.max(0, Number(user.creditsRemaining ?? user.credits_remaining ?? 0));
+    const isPlanUpgrade = updates.planId !== user.planId;
+
+    if (isPlanUpgrade) {
+      updatePayload.creditsRemaining = updates.planId === 'unlimited'
+        ? 999999
+        : Math.max(spec.credits, spec.credits + previousRemaining);
+    } else if (updates.creditsRemaining === undefined) {
       updatePayload.creditsRemaining = spec.credits;
     }
     updatePayload.creditsUsedToday = 0;
     updatePayload.lastCreditResetAt = new Date();
   }
 
-  if (updates.creditsRemaining !== undefined) {
+  // Only override creditsRemaining if explicitly provided AND either plan did not change or value exceeds plan default
+  if (updates.creditsRemaining !== undefined && (!updates.planId || updates.planId === user.planId || Number(updates.creditsRemaining) > (updatePayload.creditsRemaining || 0))) {
     updatePayload.creditsRemaining = Number(updates.creditsRemaining);
     updatePayload.lastCreditResetAt = new Date();
   }

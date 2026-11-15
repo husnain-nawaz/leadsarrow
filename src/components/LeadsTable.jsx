@@ -139,6 +139,7 @@ export default function LeadsTable() {
   if (filters.minIntentScore > 0) activeFilterTags.push(`Intent Score ≥ ${filters.minIntentScore}`);
   if (filters.hasVerifiedEmail) activeFilterTags.push('Verified Email Only');
   if (filters.hasDirectPhone) activeFilterTags.push('Direct Phone Only');
+  if (filters.onlyRevealed) activeFilterTags.push('Revealed Contacts Only');
   if (filters.onlyCustom) activeFilterTags.push('New Leads Only');
 
   const pageIds = items.map((l) => l.id);

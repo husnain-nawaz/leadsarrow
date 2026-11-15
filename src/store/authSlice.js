@@ -183,11 +183,13 @@ export const upgradeUserPlanThunk = createAsyncThunk(
       const spec = planSpecs[planId] || planSpecs.free;
       const { auth } = getState();
       if (auth.user) {
+        const previousRemaining = Math.max(0, Number(auth.user.creditsRemaining || 0));
+        const newCredits = planId === 'unlimited' ? 999999 : Math.max(spec.credits, spec.credits + previousRemaining);
         const updatedUser = {
           ...auth.user,
           plan: spec.name,
           planId,
-          creditsRemaining: spec.credits,
+          creditsRemaining: newCredits,
           dailyCreditsLimit: spec.limit
         };
         persistAuthSession({

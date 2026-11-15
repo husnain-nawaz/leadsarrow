@@ -6,7 +6,8 @@ import {
   RotateCcw,
   ChevronDown,
   ChevronRight,
-  X
+  X,
+  Unlock
 } from 'lucide-react';
 import {
   setSearchQuery,
@@ -14,6 +15,7 @@ import {
   setMinIntentScore,
   setHasVerifiedEmail,
   setHasDirectPhone,
+  setOnlyRevealed,
   resetAllFilters,
   setMobileFilterOpen
 } from '../store/filtersSlice.js';
@@ -238,6 +240,18 @@ export default function FilterSidebar() {
               type="checkbox"
               checked={filters.hasDirectPhone}
               onChange={(e) => dispatch(setHasDirectPhone(e.target.checked))}
+              className="w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-orange-600 focus:ring-orange-500"
+            />
+          </label>
+          <label className="flex items-center justify-between gap-2 text-xs text-slate-700 dark:text-slate-300 cursor-pointer hover:text-slate-900 dark:hover:text-white transition-colors">
+            <span className="flex items-center gap-1.5">
+              <Unlock className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
+              <span>Revealed Contacts Only</span>
+            </span>
+            <input
+              type="checkbox"
+              checked={filters.onlyRevealed}
+              onChange={(e) => dispatch(setOnlyRevealed(e.target.checked))}
               className="w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-orange-600 focus:ring-orange-500"
             />
           </label>

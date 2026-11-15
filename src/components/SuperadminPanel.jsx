@@ -1411,13 +1411,24 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                       </label>
                       <select
                         value={editFormData.planId}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const newPlan = e.target.value;
+                          const planSpecs = {
+                            free: 100,
+                            starter: 2000,
+                            pro: 10000,
+                            unlimited: 999999
+                          };
+                          const newLimit = planSpecs[newPlan] || 100;
+                          const currentRemaining = selectedCustomer?.creditsRemaining ?? 100;
+                          const newCredits = newPlan === 'unlimited' ? 999999 : Math.max(newLimit, newLimit + currentRemaining);
                           setEditFormData({
                             ...editFormData,
-                            planId: e.target.value,
-                            paymentStatus: e.target.value === 'free' ? 'free' : 'paid'
-                          })
-                        }
+                            planId: newPlan,
+                            creditsRemaining: newCredits,
+                            paymentStatus: newPlan === 'free' ? 'free' : 'paid'
+                          });
+                        }}
                         className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
                       >
                         <option value="free">Free Starter ($0 · 100 credits/day)</option>

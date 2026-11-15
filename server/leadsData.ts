@@ -276,6 +276,7 @@ export async function queryLeadsDatabase(params: any = {}, userId?: string | nul
     hasVerifiedEmail = false,
     hasDirectPhone = false,
     onlyCustom = false,
+    onlyRevealed = false,
     savedListLeadIds,
     sortBy = 'buying_intent_score',
     sortOrder = 'desc',
@@ -503,6 +504,60 @@ export async function queryLeadsDatabase(params: any = {}, userId?: string | nul
   if (savedIdsArr.length > 0) {
     qb.andWhere('lead.id IN (:...savedIdsArr)', { savedIdsArr });
     hasWhere = true;
+  }
+
+  if (String(onlyRevealed) === 'true' || onlyRevealed === true) {
+    if (!userId) {
+      return {
+        leads: [],
+        pagination: {
+          page: 1,
+          pageSize: safePageSize,
+          totalCatalogRows: 0,
+          totalPages: 1,
+          estimatedGlobalMatches: 0,
+          totalDatabaseRecords: 0
+        },
+        metrics: {
+          verifiedRatio: 100,
+          avgIntentScore: 90,
+          activeFiltersCount: 1
+        },
+        facets: {}
+      };
+    }
+
+    try {
+      const ds4 = await getDataSource();
+      const revealedRows: any = await ds4.query(
+        'SELECT lead_id FROM user_revealed_leads WHERE user_id = ?',
+        [userId]
+      );
+      const revealedIds = (revealedRows || []).map((r: any) => String(r.lead_id)).filter(Boolean);
+      if (revealedIds.length === 0) {
+        return {
+          leads: [],
+          pagination: {
+            page: 1,
+            pageSize: safePageSize,
+            totalCatalogRows: 0,
+            totalPages: 1,
+            estimatedGlobalMatches: 0,
+            totalDatabaseRecords: 0
+          },
+          metrics: {
+            verifiedRatio: 100,
+            avgIntentScore: 90,
+            activeFiltersCount: 1
+          },
+          facets: {}
+        };
+      }
+      qb.andWhere('lead.id IN (:...revealedIds)', { revealedIds });
+      hasWhere = true;
+    } catch (err: any) {
+      console.error('Error querying user_revealed_leads in queryLeadsDatabase:', err.message);
+    }
   }
 
   const isUnfiltered = !hasWhere;
@@ -747,7 +802,8 @@ export async function queryLeadsDatabase(params: any = {}, userId?: string | nul
         techArr.length +
         (minScore > 0 ? 1 : 0) +
         (String(hasVerifiedEmail) === 'true' ? 1 : 0) +
-        (String(hasDirectPhone) === 'true' ? 1 : 0)
+        (String(hasDirectPhone) === 'true' ? 1 : 0) +
+        (String(onlyRevealed) === 'true' || onlyRevealed === true ? 1 : 0)
     },
     facets
   };

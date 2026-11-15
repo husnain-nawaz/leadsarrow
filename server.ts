@@ -678,7 +678,7 @@ async function startServer() {
     }
   });
 
-  app.get('/api/leads', async (req: any, res) => {
+  app.get('/api/leads', optionalAuthMiddleware, async (req: any, res) => {
     const tStart = Date.now();
     try {
       const userId = req.user?.id ? String(req.user.id) : null;
