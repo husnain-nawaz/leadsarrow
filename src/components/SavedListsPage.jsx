@@ -45,12 +45,25 @@ import {
   setTargetListForAdding
 } from '../store/savedListsSlice.js';
 import { setSavedListFilter } from '../store/filtersSlice.js';
-import { setActiveLead } from '../store/leadsSlice.js';
+import { setActiveLead, revealLeadContact, performRevealLead } from '../store/leadsSlice.js';
+import { decrementExportCredits, openUpgradeModal } from '../store/authSlice.js';
 import { fetchLeadsByIdsApi, fetchSavedListsFromServerApi } from '../services/api.js';
 import ConfirmDeleteModal from './ConfirmDeleteModal.jsx';
 import ConfirmExportModal from './ConfirmExportModal.jsx';
 import AddLeadsToSavedListModal from './AddLeadsToSavedListModal.jsx';
 import RenameListModal from './RenameListModal.jsx';
+
+function maskEmail(email) {
+  const [userPart, domainPart] = String(email || '').split('@');
+  if (!domainPart) return '•••••@company.io';
+  return `${userPart.slice(0, 2)}••••@${domainPart}`;
+}
+
+function maskPhone(phone) {
+  const str = String(phone || '');
+  if (str.length < 6) return '+1 •••-••••';
+  return `${str.slice(0, 6)} •••-••${str.slice(-2)}`;
+}
 
 export default function SavedListsPage({ setActiveView, initialSelectedListId }) {
   const dispatch = useDispatch();
@@ -58,7 +71,7 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
     (state) => state.savedLists
   );
   const { user } = useSelector((state) => state.auth);
-  const { selectedLeadIds = [] } = useSelector((state) => state.leads);
+  const { selectedLeadIds = [], revealedLeadIds = [] } = useSelector((state) => state.leads);
 
   // Robustly combine server lists and user Firestore lists, strictly prioritizing authoritative MySQL server lists
   const mergedLists = useMemo(() => {
@@ -465,6 +478,28 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
     navigator.clipboard.writeText(text);
     setCopiedKey(key);
     setTimeout(() => setCopiedKey(null), 1600);
+  };
+
+  const handleRevealLead = (e, leadId) => {
+    e.stopPropagation();
+    const isSuperAdmin = Boolean(
+      user && (
+        user.isSuperAdmin ||
+        user.is_super_admin ||
+        user.role === 'superadmin' ||
+        user.role === 'Superadmin' ||
+        user.email === 'alex@leadsarrow.io' ||
+        user.email === 'alex@nexuslead.io'
+      )
+    );
+    const isUnlimited = isSuperAdmin || user?.planId === 'unlimited' || user?.plan?.toLowerCase().includes('unlimited');
+    if (!isUnlimited && (user?.creditsRemaining ?? 100) <= 0) {
+      dispatch(openUpgradeModal('starter'));
+      return;
+    }
+    dispatch(revealLeadContact(leadId));
+    dispatch(decrementExportCredits(1));
+    dispatch(performRevealLead(leadId));
   };
 
   // Executive KPI metrics matching Lead Finder Analytics Bar
@@ -1552,38 +1587,67 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
 
                               {/* Direct Contact & Verification */}
                               <td className="py-2.5 px-3 align-middle w-[270px] min-w-[270px]" onClick={(e) => e.stopPropagation()}>
-                                <div className="space-y-0.5 max-w-[270px]">
-                                  <div className="flex items-center gap-1.5 font-mono text-[11px] text-slate-800 dark:text-slate-200">
-                                    <span className="truncate">{lead.contactEmail || '—'}</span>
-                                    {lead.contactEmail && (
+                                {(() => {
+                                  const isLeadRevealed = Boolean(lead.isCustom) || Boolean(lead.isRevealed) || revealedLeadIds.includes(lead.id);
+
+                                  if (isLeadRevealed) {
+                                    return (
+                                      <div className="space-y-0.5 max-w-[270px]">
+                                        <div className="flex items-center gap-1.5 font-mono text-[11px] text-slate-800 dark:text-slate-200">
+                                          <span className="truncate">{lead.contactEmail || '—'}</span>
+                                          {lead.contactEmail && (
+                                            <button
+                                              type="button"
+                                              onClick={(e) => handleCopy(e, lead.contactEmail, `${lead.id}_email`)}
+                                              className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer shrink-0"
+                                              title="Copy email"
+                                            >
+                                              {copiedKey === `${lead.id}_email` ? (
+                                                <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                                              ) : (
+                                                <Copy className="w-3 h-3" />
+                                              )}
+                                            </button>
+                                          )}
+                                        </div>
+                                        <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 font-mono tabular-nums">
+                                          <span>{lead.contactPhone || '—'}</span>
+                                          <span aria-hidden="true">·</span>
+                                          <span
+                                            className={
+                                              lead.verificationStatus === 'Catch-All'
+                                                ? 'text-amber-700 dark:text-amber-400 font-sans font-medium'
+                                                : 'text-emerald-700 dark:text-emerald-400 font-sans font-medium'
+                                            }
+                                          >
+                                            {lead.verificationStatus || 'Verified'}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+
+                                  return (
+                                    <div className="grid grid-cols-[1fr_72px] items-center gap-3 w-full">
+                                      <div className="min-w-0 overflow-hidden">
+                                        <div className="font-mono text-[11px] text-slate-500 dark:text-slate-400 truncate select-none" title={maskEmail(lead.contactEmail)}>
+                                          {maskEmail(lead.contactEmail)}
+                                        </div>
+                                        <div className="text-[11px] text-slate-400 dark:text-slate-500 font-mono tabular-nums truncate select-none">
+                                          {maskPhone(lead.contactPhone)} · {lead.verificationStatus || 'Verified'}
+                                        </div>
+                                      </div>
                                       <button
                                         type="button"
-                                        onClick={(e) => handleCopy(e, lead.contactEmail, `${lead.id}_email`)}
-                                        className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer shrink-0"
-                                        title="Copy email"
+                                        onClick={(e) => handleRevealLead(e, lead.id)}
+                                        className="inline-flex items-center justify-center gap-1 w-[72px] py-1 text-[11px] font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/50 hover:bg-orange-100 dark:hover:bg-orange-900/60 border border-orange-200/60 dark:border-orange-800/60 rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer text-center justify-self-end"
                                       >
-                                        {copiedKey === `${lead.id}_email` ? (
-                                          <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                                        ) : (
-                                          <Copy className="w-3 h-3" />
-                                        )}
+                                        <Eye className="w-3 h-3" />
+                                        Reveal
                                       </button>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 font-mono tabular-nums">
-                                    <span>{lead.contactPhone || '—'}</span>
-                                    <span aria-hidden="true">·</span>
-                                    <span
-                                      className={
-                                        lead.verificationStatus === 'Catch-All'
-                                          ? 'text-amber-700 dark:text-amber-400 font-sans font-medium'
-                                          : 'text-emerald-700 dark:text-emerald-400 font-sans font-medium'
-                                      }
-                                    >
-                                      {lead.verificationStatus || 'Verified'}
-                                    </span>
-                                  </div>
-                                </div>
+                                    </div>
+                                  );
+                                })()}
                               </td>
 
                               {/* Employees */}
