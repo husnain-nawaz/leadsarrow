@@ -360,7 +360,14 @@ export default function LeadsTable() {
             ) : (
               items.map((lead) => {
                 const isSelected = selectedLeadIds.includes(lead.id);
-                const isRevealed = revealedLeadIds.includes(lead.id);
+                const isRevealed = Boolean(
+                  lead.isCustom ||
+                  String(lead.id || '').startsWith('custom_') ||
+                  lead.source === 'manual_custom_lead' ||
+                  lead.isRevealed ||
+                  revealedLeadIds.includes(lead.id) ||
+                  filters.onlyRevealed
+                );
 
                 return (
                   <tr

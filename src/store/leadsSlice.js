@@ -111,6 +111,7 @@ export const deleteCoreLeadByAdmin = createAsyncThunk(
 );
 
 const STORAGE_SELECTED_KEY = 'leadsarrow_selected_lead_ids';
+const STORAGE_REVEALED_KEY = 'leadsarrow_revealed_lead_ids';
 
 function loadPersistedSelectedLeadIds() {
   try {
@@ -126,6 +127,23 @@ function loadPersistedSelectedLeadIds() {
 function persistSelectedLeadIds(ids) {
   try {
     localStorage.setItem(STORAGE_SELECTED_KEY, JSON.stringify(ids));
+  } catch (e) {}
+}
+
+function loadPersistedRevealedLeadIds() {
+  try {
+    const raw = localStorage.getItem(STORAGE_REVEALED_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (e) {}
+  return [];
+}
+
+function persistRevealedLeadIds(ids) {
+  try {
+    localStorage.setItem(STORAGE_REVEALED_KEY, JSON.stringify(ids));
   } catch (e) {}
 }
 
@@ -158,7 +176,7 @@ const initialState = {
   },
   executedSql: '',
   selectedLeadIds: loadPersistedSelectedLeadIds(),
-  revealedLeadIds: ['lead_100001', 'lead_100002'],
+  revealedLeadIds: loadPersistedRevealedLeadIds(),
   activeLead: null,
   isAddLeadModalOpen: false,
   targetClusterName: '',
@@ -203,8 +221,9 @@ const leadsSlice = createSlice({
     },
     revealLeadContact(state, action) {
       const id = action.payload;
-      if (!state.revealedLeadIds.includes(id)) {
+      if (id && !state.revealedLeadIds.includes(id)) {
         state.revealedLeadIds.push(id);
+        persistRevealedLeadIds(state.revealedLeadIds);
       }
     },
     setActiveLead(state, action) {
@@ -232,11 +251,13 @@ const leadsSlice = createSlice({
         const ids = action.payload || [];
         const combined = new Set([...state.revealedLeadIds, ...ids]);
         state.revealedLeadIds = Array.from(combined);
+        persistRevealedLeadIds(state.revealedLeadIds);
       })
       .addCase(performRevealLead.fulfilled, (state, action) => {
         const { leadId } = action.payload || {};
         if (leadId && !state.revealedLeadIds.includes(leadId)) {
           state.revealedLeadIds.push(leadId);
+          persistRevealedLeadIds(state.revealedLeadIds);
         }
       })
       .addCase(fetchLeads.pending, (state) => {

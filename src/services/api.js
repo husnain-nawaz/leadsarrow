@@ -121,7 +121,12 @@ export async function fetchLeadsFromServer(filters) {
   if (filters.minIntentScore > 0) params.set('minIntentScore', String(filters.minIntentScore));
   if (filters.hasVerifiedEmail) params.set('hasVerifiedEmail', 'true');
   if (filters.hasDirectPhone) params.set('hasDirectPhone', 'true');
-  if (filters.onlyRevealed) params.set('onlyRevealed', 'true');
+  if (filters.onlyRevealed) {
+    params.set('onlyRevealed', 'true');
+    if (Array.isArray(filters.revealedLeadIds) && filters.revealedLeadIds.length > 0) {
+      params.set('revealedIds', filters.revealedLeadIds.join('|'));
+    }
+  }
   if (filters.onlyCustom) params.set('onlyCustom', 'true');
   if (filters.savedListLeadIds?.length) params.set('savedListLeadIds', filters.savedListLeadIds.join('|'));
   if (filters.sortBy) params.set('sortBy', filters.sortBy);
