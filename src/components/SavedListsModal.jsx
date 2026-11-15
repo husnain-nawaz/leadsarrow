@@ -3,7 +3,6 @@ import { useSelector, useDispatch } from 'react-redux';
 import {
   X,
   Plus,
-  Trash2,
   Filter,
   ExternalLink,
   Bookmark,
@@ -11,7 +10,6 @@ import {
   AlertCircle,
   Loader2,
   UserPlus,
-  Pencil,
   Search,
   ChevronDown,
   ChevronLeft,
@@ -21,15 +19,11 @@ import {
 import {
   setSavedListsModalOpen,
   createSavedList,
-  removeSavedList,
-  renameSavedList,
   fetchSavedLists,
   appendLeadsToSavedList
 } from '../store/savedListsSlice.js';
 import { setSavedListFilter } from '../store/filtersSlice.js';
-import ConfirmDeleteModal from './ConfirmDeleteModal.jsx';
 import AddLeadsToSavedListModal from './AddLeadsToSavedListModal.jsx';
-import RenameListModal from './RenameListModal.jsx';
 
 export default function SavedListsModal({ setActiveView, onSelectFullPageList }) {
   const dispatch = useDispatch();
@@ -46,9 +40,6 @@ export default function SavedListsModal({ setActiveView, onSelectFullPageList })
   const [isAppending, setIsAppending] = useState(false);
   const [appendFeedback, setAppendFeedback] = useState(null);
   const [addLeadsModalTarget, setAddLeadsModalTarget] = useState(null);
-  const [deleteTarget, setDeleteTarget] = useState(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [renamingTarget, setRenamingTarget] = useState(null);
 
   // Custom searchable dropdown states for Option 1
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -74,34 +65,6 @@ export default function SavedListsModal({ setActiveView, onSelectFullPageList })
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isDropdownOpen]);
-
-  const handleSaveRename = async (listId, newName, newDesc) => {
-    try {
-      await dispatch(
-        renameSavedList({
-          listId,
-          name: newName,
-          description: newDesc
-        })
-      ).unwrap();
-      dispatch(fetchSavedLists());
-    } catch (err) {
-      alert(err.message || 'Failed to rename saved list');
-    }
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!deleteTarget) return;
-    setIsDeleting(true);
-    try {
-      await dispatch(removeSavedList(deleteTarget.id));
-      setDeleteTarget(null);
-    } catch (err) {
-      alert(err.message || 'Failed to delete list from database');
-    } finally {
-      setIsDeleting(false);
-    }
-  };
 
   // Always refresh saved lists from MySQL whenever modal opens
   useEffect(() => {
@@ -630,66 +593,44 @@ export default function SavedListsModal({ setActiveView, onSelectFullPageList })
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       {selectedLeadIds.length > 0 && (
                         <button
                           type="button"
                           disabled={isAppending}
                           onClick={() => handleAppendSelectedLeads(list.id)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors cursor-pointer shadow-2xs"
+                          className="p-2 text-white bg-orange-600 hover:bg-orange-700 active:scale-95 disabled:opacity-40 disabled:pointer-events-none rounded-lg transition-all cursor-pointer shadow-2xs"
                           title={`Add ${selectedLeadIds.length} selected leads to "${list.name}"`}
                         >
-                          <Plus className="w-3 h-3" />
-                          <span>Add {selectedLeadIds.length} Leads</span>
+                          <Plus className="w-3.5 h-3.5" />
                         </button>
                       )}
 
                       <button
                         type="button"
                         onClick={() => setAddLeadsModalTarget(list)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer shadow-2xs"
+                        className="p-2 text-slate-600 dark:text-slate-300 hover:text-orange-600 dark:hover:text-orange-400 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-all cursor-pointer shadow-2xs"
                         title="Search and add leads to this list"
                       >
-                        <UserPlus className="w-3 h-3 text-orange-600 dark:text-orange-400" />
-                        <span>Add Leads</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleOpenFullPage(list.id)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer shadow-2xs"
-                        title="Open detailed view of this saved list"
-                      >
-                        <span>View Details</span>
-                        <ExternalLink className="w-3 h-3 text-slate-400" />
+                        <UserPlus className="w-3.5 h-3.5" />
                       </button>
 
                       <button
                         type="button"
                         onClick={() => handleLoadList(list)}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/40 hover:bg-orange-100 dark:hover:bg-orange-900/60 border border-orange-200/60 dark:border-orange-800/60 rounded-lg transition-colors cursor-pointer"
-                        title="Filter table by this list"
+                        className="p-2 text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/40 hover:bg-orange-100 dark:hover:bg-orange-900/60 border border-orange-200/60 dark:border-orange-800/60 rounded-lg transition-all cursor-pointer shadow-2xs"
+                        title="Filter Lead Finder table by this list"
                       >
-                        <Filter className="w-3 h-3" />
-                        <span>Filter Leads</span>
+                        <Filter className="w-3.5 h-3.5" />
                       </button>
 
                       <button
                         type="button"
-                        onClick={() => setRenamingTarget(list)}
-                        className="p-1.5 text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 rounded-lg transition-colors cursor-pointer"
-                        title="Rename saved list"
+                        onClick={() => handleOpenFullPage(list.id)}
+                        className="p-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-all cursor-pointer shadow-2xs"
+                        title="Open in full Saved Lists manager & details page"
                       >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setDeleteTarget({ id: list.id, name: list.name })}
-                        className="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg transition-colors cursor-pointer"
-                        title="Delete saved list"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <ExternalLink className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
@@ -770,20 +711,6 @@ export default function SavedListsModal({ setActiveView, onSelectFullPageList })
         </div>
       </div>
 
-      {/* Confirmation Modal for Deleting Saved List */}
-      <ConfirmDeleteModal
-        isOpen={Boolean(deleteTarget)}
-        onClose={() => !isDeleting && setDeleteTarget(null)}
-        onConfirm={handleConfirmDelete}
-        loading={isDeleting}
-        title="Delete Saved List?"
-        message="Are you sure you want to permanently delete this saved list? This will remove the list from the database."
-        itemName={deleteTarget?.name}
-        confirmText="Yes, Delete List"
-        cancelText="Cancel"
-        dangerNote="This list will be erased from the database and cannot be recovered."
-      />
-
       {/* Modal to Search and Add Leads to Any Already Saved List */}
       <AddLeadsToSavedListModal
         isOpen={Boolean(addLeadsModalTarget)}
@@ -792,14 +719,6 @@ export default function SavedListsModal({ setActiveView, onSelectFullPageList })
         onSuccess={() => {
           dispatch(fetchSavedLists());
         }}
-      />
-
-      {/* Rename Saved List Modal */}
-      <RenameListModal
-        isOpen={Boolean(renamingTarget)}
-        list={renamingTarget}
-        onClose={() => setRenamingTarget(null)}
-        onSave={handleSaveRename}
       />
     </div>
   );
