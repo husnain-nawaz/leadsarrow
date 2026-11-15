@@ -77,7 +77,10 @@ async function startServer() {
     }
   });
 
-  app.get('/api/auth/me', requireJwtMiddleware, (req: any, res) => {
+  app.get('/api/auth/me', optionalAuthMiddleware, (req: any, res) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required. Please sign in.' });
+    }
     res.json({ user: req.user });
   });
 

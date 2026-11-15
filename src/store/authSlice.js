@@ -261,6 +261,16 @@ const authSlice = createSlice({
       state.isUpgradeModalOpen = false;
       state.upgradeTargetPlan = null;
     },
+    setAccountDeactivated(state, action) {
+      if (state.user) {
+        state.user.isDeactivated = Boolean(action.payload ?? true);
+        persistAuthSession({
+          user: state.user,
+          token: state.token || '',
+          rememberMe: true
+        });
+      }
+    },
     clearAuthError(state) {
       state.error = null;
     },
@@ -309,6 +319,17 @@ const authSlice = createSlice({
       .addCase(refreshCurrentUserProfile.fulfilled, (state, action) => {
         if (action.payload) {
           state.user = action.payload;
+        }
+      })
+      .addCase(refreshCurrentUserProfile.rejected, (state, action) => {
+        const msg = String(action.payload || '').toLowerCase();
+        if (msg.includes('deactivated') && state.user) {
+          state.user.isDeactivated = true;
+          persistAuthSession({
+            user: state.user,
+            token: state.token || '',
+            rememberMe: true
+          });
         }
       })
       .addCase(consumeCredits.fulfilled, (state, action) => {
@@ -394,7 +415,8 @@ export const {
   closeUpgradeModal,
   clearAuthError,
   syncFirebaseSession,
-  decrementExportCredits
+  decrementExportCredits,
+  setAccountDeactivated
 } = authSlice.actions;
 
 export default authSlice.reducer;

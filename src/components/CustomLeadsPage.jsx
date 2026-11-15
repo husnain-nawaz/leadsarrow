@@ -450,6 +450,18 @@ export default function CustomLeadsPage() {
     return (clusters || []).filter((c) => c && c.name && String(c.name).trim().length > 0);
   }, [clusters]);
 
+  // Keep selectedCluster strictly synchronized with valid loaded clusters
+  useEffect(() => {
+    if (validClusters.length === 0) {
+      if (selectedCluster !== null) {
+        setSelectedCluster(null);
+        try { localStorage.removeItem('leadsarrow_custom_selected_cluster'); } catch (e) {}
+      }
+    } else if (selectedCluster && !validClusters.some((c) => (c.name || c.id) === selectedCluster)) {
+      setSelectedCluster(validClusters[0].name || validClusters[0].id || null);
+    }
+  }, [validClusters, selectedCluster]);
+
   // Displayed slice of clusters (starting with 5, loading +5 progressively)
   const displayedClusters = useMemo(() => {
     return validClusters.slice(0, clusterDisplayLimit);
@@ -1047,21 +1059,8 @@ export default function CustomLeadsPage() {
                 {/* Active progressive loading runner */}
                 <TopLoadingBar loading={loading} height="h-1" />
 
-                {error ? (
-                  <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-200">
-                    <AlertCircle className="w-8 h-8 text-rose-600 dark:text-rose-400 mx-auto mb-2" />
-                    <h3 className="text-sm font-bold text-rose-900 dark:text-rose-200">Unable to load cluster leads</h3>
-                    <p className="text-xs text-rose-600 dark:text-rose-400 mt-1">{error}</p>
-                    <button
-                      type="button"
-                      onClick={() => loadCustomLeads(undefined, true)}
-                      className="mt-4 px-4 py-2 text-xs font-semibold text-rose-700 dark:text-rose-300 bg-white dark:bg-slate-800 border border-rose-300 dark:border-rose-700 rounded-lg hover:bg-rose-50 cursor-pointer"
-                    >
-                      Try Again
-                    </button>
-                  </div>
-                ) : clusters.length === 0 ? (
-                  /* No Clusters Yet Empty State */
+                {validClusters.length === 0 ? (
+                  /* No Clusters Yet Clean Empty State */
                   <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-200">
                     <div className="w-12 h-12 rounded-xl bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 flex items-center justify-center mx-auto mb-3 border border-orange-200/50 dark:border-orange-800/50">
                       <FolderPlus className="w-5 h-5" />
@@ -1079,6 +1078,19 @@ export default function CustomLeadsPage() {
                     >
                       <Plus className="w-4 h-4" />
                       <span>+ Create First Cluster</span>
+                    </button>
+                  </div>
+                ) : error ? (
+                  <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-200">
+                    <AlertCircle className="w-8 h-8 text-rose-600 dark:text-rose-400 mx-auto mb-2" />
+                    <h3 className="text-sm font-bold text-rose-900 dark:text-rose-200">Unable to load cluster leads</h3>
+                    <p className="text-xs text-rose-600 dark:text-rose-400 mt-1">{error}</p>
+                    <button
+                      type="button"
+                      onClick={() => loadCustomLeads(undefined, true)}
+                      className="mt-4 px-4 py-2 text-xs font-semibold text-rose-700 dark:text-rose-300 bg-white dark:bg-slate-800 border border-rose-300 dark:border-rose-700 rounded-lg hover:bg-rose-50 cursor-pointer"
+                    >
+                      Try Again
                     </button>
                   </div>
                 ) : leads.length === 0 ? (

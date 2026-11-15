@@ -92,6 +92,15 @@ async function apiRequest(url, options = {}) {
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
+    if (data.isDeactivated || (response.status === 403 && String(data.error || '').toLowerCase().includes('deactivated'))) {
+      const stored = getStoredUser();
+      if (stored) {
+        persistAuthSession({ user: { ...stored, isDeactivated: true }, token: getStoredToken(), rememberMe: true });
+      }
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('leadsarrow_account_deactivated', { detail: data }));
+      }
+    }
     throw new Error(data.error || `Request failed with status ${response.status}`);
   }
   return data;

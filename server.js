@@ -2258,7 +2258,10 @@ async function startServer() {
       res.status(400).json({ error: error.message || "Google authentication sync failed" });
     }
   });
-  app.get("/api/auth/me", requireJwtMiddleware, (req, res) => {
+  app.get("/api/auth/me", optionalAuthMiddleware, (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Authentication required. Please sign in." });
+    }
     res.json({ user: req.user });
   });
   app.put("/api/auth/profile", requireJwtMiddleware, async (req, res) => {

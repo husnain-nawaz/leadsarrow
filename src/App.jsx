@@ -3,7 +3,7 @@ import { Provider, useSelector, useDispatch } from 'react-redux';
 import store from './store/store.js';
 import { fetchLeads, setFirestoreCustomLeads, fetchRevealedLeads } from './store/leadsSlice.js';
 import { fetchSavedLists, setFirestoreSavedLists } from './store/savedListsSlice.js';
-import { syncFirebaseSession, refreshCurrentUserProfile, logoutUser } from './store/authSlice.js';
+import { syncFirebaseSession, refreshCurrentUserProfile, logoutUser, setAccountDeactivated } from './store/authSlice.js';
 import {
   auth,
   onAuthStateChanged,
@@ -239,8 +239,18 @@ function getInitialActiveView() {
 }
 
 function MainApp() {
+  const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const [showLandingForLoggedIn, setShowLandingForLoggedIn] = useState(false);
+
+  // Instantly catch deactivation broadcast from API layer and block dashboard
+  useEffect(() => {
+    const handleDeactivated = () => {
+      dispatch(setAccountDeactivated(true));
+    };
+    window.addEventListener('leadsarrow_account_deactivated', handleDeactivated);
+    return () => window.removeEventListener('leadsarrow_account_deactivated', handleDeactivated);
+  }, [dispatch]);
 
   // Persist current active navbar view across browser refreshes via both localStorage and URL hash
   const [activeView, setActiveView] = useState(getInitialActiveView);
