@@ -106,6 +106,13 @@ export default function LeadsTable() {
       (user.plan && !user.plan.toLowerCase().includes('free'))
     ))
   );
+
+  // If a non-superadmin profile has a page outside standard browsing range (or switched from superadmin last page), reset to page 1
+  useEffect(() => {
+    if (!isSuperAdmin && (filters.page > 100 || pagination.page > 100)) {
+      dispatch(setPage(1));
+    }
+  }, [isSuperAdmin, filters.page, pagination.page, dispatch]);
   const activeFilterTags = [];
   if (filters.searchQuery) activeFilterTags.push(`Search: "${filters.searchQuery}"`);
   if (filters.industries?.length) activeFilterTags.push(...filters.industries);
@@ -538,11 +545,11 @@ export default function LeadsTable() {
             <strong className="font-mono tabular-nums text-slate-900 dark:text-white">
               {pagination.page}
             </strong>{' '}
-            {user?.role === 'superadmin' ? (
+            {isSuperAdmin ? (
               <>
                 of{' '}
                 <strong className="font-mono tabular-nums text-slate-900 dark:text-white">
-                  {pagination.totalPages}
+                  {pagination.totalPages.toLocaleString()}
                 </strong>{' '}
                 ({(pagination.estimatedGlobalMatches || 0).toLocaleString()} total matches)
               </>
@@ -578,11 +585,10 @@ export default function LeadsTable() {
           {(() => {
             const current = pagination.page;
             const total = pagination.totalPages;
-            const isSuperAdmin = user?.role === 'superadmin';
             const pages = [];
 
             if (isSuperAdmin) {
-              // Superadmin sees full pagination with last page jumps
+              // Superadmin sees full pagination with first page, surrounding pages, and last page jumps
               if (total <= 7) {
                 for (let i = 1; i <= total; i++) pages.push(i);
               } else {
@@ -595,11 +601,28 @@ export default function LeadsTable() {
                 pages.push(total);
               }
             } else {
-              // Standard client users & customers: progressive window without jumping to the end
-              const start = Math.max(1, current - 2);
-              const end = Math.min(total, current + 2);
-              for (let i = start; i <= end; i++) {
-                pages.push(i);
+              // Standard client users & all other profiles:
+              // 1. FIRST PAGINATION (Page 1) MUST ALWAYS BE VISIBLE TO EVERYONE.
+              // 2. LAST PAGINATIONS (e.g. 414,537 or the end of database) ARE NEVER SHOWN to non-superadmin.
+              const maxBrowsePage = Math.min(total, 100);
+              const safeCurrent = Math.min(Math.max(1, current), maxBrowsePage);
+
+              if (total <= 5) {
+                for (let i = 1; i <= total; i++) pages.push(i);
+              } else if (safeCurrent <= 4) {
+                // Show first pages: 1, 2, 3, 4, 5
+                const count = Math.min(maxBrowsePage, 5);
+                for (let i = 1; i <= count; i++) pages.push(i);
+                if (maxBrowsePage > 5) pages.push('...');
+              } else {
+                // When navigating deeper (e.g. page 5, 6...):
+                // Always keep Page 1 visible first!
+                pages.push(1);
+                pages.push('...');
+                const start = Math.max(2, safeCurrent - 1);
+                const end = Math.min(maxBrowsePage, safeCurrent + 2);
+                for (let i = start; i <= end; i++) pages.push(i);
+                if (end < maxBrowsePage) pages.push('....');
               }
             }
 
@@ -635,7 +658,11 @@ export default function LeadsTable() {
 
           <button
             type="button"
-            disabled={pagination.page >= pagination.totalPages}
+            disabled={
+              isSuperAdmin
+                ? pagination.page >= pagination.totalPages
+                : (pagination.page >= pagination.totalPages || pagination.page >= 100)
+            }
             onClick={() => dispatch(setPage(pagination.page + 1))}
             className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:pointer-events-none cursor-pointer whitespace-nowrap transition-colors ml-1"
           >

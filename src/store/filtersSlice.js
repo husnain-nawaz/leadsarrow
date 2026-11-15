@@ -35,7 +35,7 @@ function loadPersistedState() {
       return {
         ...fallback,
         ...parsed,
-        page: Math.max(1, Number(parsed.page) || 1),
+        page: Math.min(100, Math.max(1, Number(parsed.page) || 1)),
         pageSize: [25, 50, 100].includes(Number(parsed.pageSize)) ? Number(parsed.pageSize) : 25,
         isMobileFilterOpen: false
       };
