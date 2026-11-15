@@ -43,24 +43,24 @@ export default function ConfirmExportModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in duration-150 overflow-y-auto">
       {/* Click outside to cancel */}
       <div
         className="fixed inset-0"
         onClick={() => !loading && onClose()}
       />
 
-      <div className="relative z-10 w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col text-slate-900 dark:text-slate-100 transition-colors">
+      <div className="relative z-10 w-full max-w-[calc(100vw-24px)] sm:max-w-md mx-auto my-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col text-slate-900 dark:text-slate-100 transition-colors">
         {/* Header */}
-        <div className="px-6 pt-6 pb-4 flex items-start gap-4">
-          <div className="w-11 h-11 rounded-xl bg-orange-50 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-900/60 flex items-center justify-center shrink-0 text-orange-600 dark:text-orange-400">
+        <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 flex items-start gap-3 sm:gap-4">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-orange-50 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-900/60 flex items-center justify-center shrink-0 text-orange-600 dark:text-orange-400">
             <FileSpreadsheet className="w-5 h-5" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-base font-bold text-slate-900 dark:text-white font-display">
+            <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white font-display truncate">
               {title}
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">
               {message}
             </p>
           </div>
@@ -68,15 +68,15 @@ export default function ConfirmExportModal({
             type="button"
             disabled={loading}
             onClick={onClose}
-            className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-50"
+            className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-50 shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Export Details Summary Card */}
-        <div className="px-6 py-2 space-y-2.5">
-          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 space-y-2 text-xs">
+        <div className="px-4 sm:px-6 py-2 space-y-2.5">
+          <div className="p-3 sm:p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 space-y-2 text-xs">
             <div className="flex items-center justify-between">
               <span className="text-slate-500 dark:text-slate-400">Total Leads to Export:</span>
               <span className="font-bold font-mono text-orange-600 dark:text-orange-400 text-sm">
@@ -87,7 +87,7 @@ export default function ConfirmExportModal({
             {targetName && (
               <div className="flex items-center justify-between">
                 <span className="text-slate-500 dark:text-slate-400">Target Segment / Source:</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200 truncate max-w-[200px]" title={targetName}>
+                <span className="font-semibold text-slate-800 dark:text-slate-200 truncate max-w-[170px] sm:max-w-[200px]" title={targetName}>
                   {targetName}
                 </span>
               </div>
@@ -118,13 +118,13 @@ export default function ConfirmExportModal({
         </div>
 
         {/* Footer Actions: Cancel is default-focused! */}
-        <div className="px-6 py-4 mt-2 bg-slate-50/80 dark:bg-slate-800/60 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-3">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 mt-2 bg-slate-50/80 dark:bg-slate-800/60 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2.5 sm:gap-3">
           <button
             ref={cancelBtnRef}
             type="button"
             disabled={loading}
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-slate-400"
+            className="px-3 sm:px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-slate-400"
           >
             {cancelText}
           </button>
@@ -132,7 +132,7 @@ export default function ConfirmExportModal({
             type="button"
             disabled={loading || exportCount === 0}
             onClick={onConfirm}
-            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-xl shadow-xs transition-colors cursor-pointer disabled:opacity-50 active:scale-95"
+            className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-xl shadow-xs transition-colors cursor-pointer disabled:opacity-50 active:scale-95"
           >
             {loading ? (
               <>

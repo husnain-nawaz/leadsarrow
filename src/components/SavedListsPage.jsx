@@ -1357,11 +1357,12 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
                         type="button"
                         disabled={isAppendingSelected}
                         onClick={handleQuickAppendSelected}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/40 hover:bg-orange-100 dark:hover:bg-orange-900/60 border border-orange-300 dark:border-orange-800 rounded-lg transition-colors cursor-pointer shadow-2xs"
+                        className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 text-xs font-semibold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/40 hover:bg-orange-100 dark:hover:bg-orange-900/60 border border-orange-300 dark:border-orange-800 rounded-lg transition-colors cursor-pointer shadow-2xs"
                         title={`Append ${selectedLeadIds.length} leads selected in Lead Finder`}
                       >
                         <Plus className="w-3.5 h-3.5" />
-                        <span>Add {selectedLeadIds.length} Selected</span>
+                        <span className="hidden sm:inline">Add {selectedLeadIds.length} Selected</span>
+                        <span className="sm:hidden text-xs">+{selectedLeadIds.length}</span>
                       </button>
                     )}
 
@@ -1369,11 +1370,12 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
                     <button
                       type="button"
                       onClick={() => handleApplyToFinder(selectedList)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer shadow-2xs"
+                      className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer shadow-2xs"
                       title="Filter and inspect these leads in Lead Finder"
                     >
                       <Filter className="w-3.5 h-3.5 text-orange-500" />
                       <span className="hidden sm:inline">Filter in Finder</span>
+                      <span className="sm:hidden text-xs">Filter</span>
                     </button>
 
                     {/* Export CSV */}
@@ -1382,7 +1384,7 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
                         type="button"
                         onClick={handleExportListCsv}
                         disabled={selectedListLeads.length === 0}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors shadow-2xs cursor-pointer ${
+                        className={`inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors shadow-2xs cursor-pointer ${
                           selectedListLeads.length > 0
                             ? 'bg-orange-600 hover:bg-orange-700 text-white font-bold shadow-xs active:scale-95'
                             : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 opacity-60 cursor-not-allowed'
@@ -1394,7 +1396,8 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
                         }
                       >
                         <Download className="w-3.5 h-3.5" />
-                        <span>Export CSV{selectedListLeads.length > 0 ? ` (${selectedListLeads.length})` : ''}</span>
+                        <span className="hidden sm:inline">Export CSV{selectedListLeads.length > 0 ? ` (${selectedListLeads.length})` : ''}</span>
+                        <span className="sm:hidden text-xs">Export{selectedListLeads.length > 0 ? ` (${selectedListLeads.length})` : ''}</span>
                       </button>
                     )}
 

@@ -172,19 +172,19 @@ export default function ExportModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150 overflow-y-auto">
       <div
         className="fixed inset-0"
         onClick={() => dispatch(setExportModalOpen(false))}
       />
 
-      <div className="relative z-10 w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col text-slate-900 dark:text-slate-100 transition-colors">
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-800/80">
-          <div>
-            <h2 className="text-base font-bold text-slate-900 dark:text-white font-display">
+      <div className="relative z-10 w-full max-w-[calc(100vw-24px)] sm:max-w-md mx-auto my-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col text-slate-900 dark:text-slate-100 transition-colors">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-800/80 gap-2">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white font-display truncate">
               Export B2B Leads Dataset
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
               {selectedLeadIds.length === 0
                 ? 'No leads selected for export'
                 : isLoadingLeads
@@ -195,15 +195,15 @@ export default function ExportModal() {
           <button
             type="button"
             onClick={() => dispatch(setExportModalOpen(false))}
-            className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="p-6 space-y-4 text-xs">
+        <div className="p-4 sm:p-6 space-y-3.5 sm:space-y-4 text-xs overflow-y-auto max-h-[calc(85vh-80px)]">
           {selectedLeadIds.length === 0 ? (
-            <div className="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-xl text-amber-900 dark:text-amber-200 space-y-2">
+            <div className="p-3.5 sm:p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-xl text-amber-900 dark:text-amber-200 space-y-1.5">
               <div className="flex items-center gap-2 font-semibold text-xs">
                 <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
                 <span>Please Select Leads First</span>
@@ -221,7 +221,7 @@ export default function ExportModal() {
                   <span className="font-mono tabular-nums font-bold text-slate-900 dark:text-white">{selectedLeadIds.length} leads</span>
                 </div>
                 <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
-                  <span>Single Export Limit (Max 50% daily limit or 5,000):</span>
+                  <span>Single Export Limit (Max 50% or 5,000):</span>
                   <span className="font-mono tabular-nums">{maxAllowedBatch.toLocaleString()} leads</span>
                 </div>
                 {!isUnlimited && (
@@ -237,52 +237,52 @@ export default function ExportModal() {
                 )}
               </div>
 
-              <div className="space-y-2">
-                <label className="block font-semibold text-slate-700 dark:text-slate-300">Export Format</label>
-                <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5 sm:space-y-2">
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 text-xs">Export Format</label>
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   <button
                     type="button"
                     onClick={() => setFormat('csv')}
-                    className={`p-3 border rounded-xl text-left transition-colors cursor-pointer ${
+                    className={`p-2.5 sm:p-3 border rounded-xl text-left transition-colors cursor-pointer ${
                       format === 'csv'
                         ? 'border-orange-600 bg-orange-50/60 dark:bg-orange-950/40 text-slate-900 dark:text-white font-semibold'
                         : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
                     }`}
                   >
-                    <div>CSV Spreadsheet</div>
-                    <div className="text-[11px] font-normal text-slate-500 dark:text-slate-400 mt-0.5">
-                      Compatible with Salesforce, HubSpot, Excel
+                    <div className="text-xs sm:text-sm font-semibold truncate">CSV Spreadsheet</div>
+                    <div className="text-[10px] sm:text-[11px] font-normal text-slate-500 dark:text-slate-400 mt-0.5 leading-snug line-clamp-2">
+                      Salesforce, HubSpot, Excel
                     </div>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setFormat('json')}
-                    className={`p-3 border rounded-xl text-left transition-colors cursor-pointer ${
+                    className={`p-2.5 sm:p-3 border rounded-xl text-left transition-colors cursor-pointer ${
                       format === 'json'
                         ? 'border-orange-600 bg-orange-50/60 dark:bg-orange-950/40 text-slate-900 dark:text-white font-semibold'
                         : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
                     }`}
                   >
-                    <div>JSON Objects</div>
-                    <div className="text-[11px] font-normal text-slate-500 dark:text-slate-400 mt-0.5">
-                      Structured array for API & webhook ingestion
+                    <div className="text-xs sm:text-sm font-semibold truncate">JSON Objects</div>
+                    <div className="text-[10px] sm:text-[11px] font-normal text-slate-500 dark:text-slate-400 mt-0.5 leading-snug line-clamp-2">
+                      Structured array for API ingestion
                     </div>
                   </button>
                 </div>
               </div>
 
-              <div className="p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-slate-600 dark:text-slate-400">
+              <div className="p-2.5 sm:p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-[11px] sm:text-xs text-slate-600 dark:text-slate-400">
                 Includes verified decision-maker emails, direct phones, verification status, and company firmographics.
               </div>
             </>
           )}
 
-          <div className="pt-2 flex items-center justify-end gap-2.5">
+          <div className="pt-2 flex items-center justify-end gap-2">
             <button
               type="button"
               onClick={() => dispatch(setExportModalOpen(false))}
-              className="px-4 py-2 font-semibold text-xs text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+              className="px-3 sm:px-4 py-2 font-semibold text-xs text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -290,17 +290,17 @@ export default function ExportModal() {
               type="button"
               disabled={selectedLeadIds.length === 0 || isLoadingLeads}
               onClick={handleOpenExportConfirm}
-              className="inline-flex items-center gap-1.5 px-4 py-2 font-bold text-xs text-white bg-orange-600 hover:bg-orange-700 disabled:opacity-40 disabled:pointer-events-none rounded-xl transition-colors cursor-pointer shadow-xs active:scale-95"
+              className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 font-bold text-xs text-white bg-orange-600 hover:bg-orange-700 disabled:opacity-40 disabled:pointer-events-none rounded-xl transition-colors cursor-pointer shadow-xs active:scale-95 whitespace-nowrap"
             >
               {isLoadingLeads ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  Preparing...
+                  <span>Preparing...</span>
                 </>
               ) : (
                 <>
-                  <Download className="w-3.5 h-3.5" />
-                  Download {format.toUpperCase()} ({targetLeads.length})
+                  <Download className="w-3.5 h-3.5 shrink-0" />
+                  <span>Download {format.toUpperCase()} ({targetLeads.length})</span>
                 </>
               )}
             </button>

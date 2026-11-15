@@ -259,30 +259,31 @@ export default function SavedListsModal({ setActiveView, onSelectFullPageList })
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150 overflow-y-auto">
       <div
         className="fixed inset-0"
         onClick={() => dispatch(setSavedListsModalOpen(false))}
       />
 
-      <div className="relative z-10 w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] text-slate-900 dark:text-slate-100 transition-colors">
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/80 flex items-center justify-between shrink-0">
-          <div>
-            <h2 className="text-base font-bold text-slate-900 dark:text-white font-display">
+      <div className="relative z-10 w-full max-w-[calc(100vw-24px)] sm:max-w-2xl mx-auto my-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] text-slate-900 dark:text-slate-100 transition-colors">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/80 flex items-center justify-between gap-2 shrink-0">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white font-display truncate">
               Saved B2B Lead Lists & Target Segments
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
               Save selected leads ({selectedLeadIds.length > 0 ? `${selectedLeadIds.length} selected` : 'current view'}) to a reusable list or mix custom leads
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               type="button"
               onClick={() => handleOpenFullPage()}
               title="Open full page detailed manager"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/40 hover:bg-orange-100 dark:hover:bg-orange-900/60 border border-orange-200/60 dark:border-orange-800/60 rounded-lg transition-all cursor-pointer shadow-2xs"
+              className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/40 hover:bg-orange-100 dark:hover:bg-orange-900/60 border border-orange-200/60 dark:border-orange-800/60 rounded-lg transition-all cursor-pointer shadow-2xs"
             >
-              <span>Full Page View</span>
+              <span className="hidden sm:inline">Full Page View</span>
+              <span className="sm:hidden text-xs">Full Page</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </button>
             <button
@@ -295,7 +296,7 @@ export default function SavedListsModal({ setActiveView, onSelectFullPageList })
           </div>
         </div>
 
-        <div className="p-6 overflow-y-auto space-y-6 flex-1 overscroll-contain text-xs">
+        <div className="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-6 flex-1 overscroll-contain text-xs">
           {/* Append Feedback Alert */}
           {appendFeedback && (
             <div
@@ -703,20 +704,21 @@ export default function SavedListsModal({ setActiveView, onSelectFullPageList })
         </div>
 
         {/* Modal Footer with Direct Link to Full Details Page (Just like ProfileModal) */}
-        <div className="px-6 py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80 flex items-center justify-between gap-3 shrink-0">
+        <div className="px-4 sm:px-6 py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80 flex items-center justify-between gap-2.5 sm:gap-3 shrink-0">
           <button
             type="button"
             onClick={() => handleOpenFullPage()}
-            className="text-xs font-semibold text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 hover:underline flex items-center gap-1.5 cursor-pointer"
+            className="text-xs font-semibold text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 hover:underline flex items-center gap-1.5 cursor-pointer truncate"
           >
-            <span>Open Full Saved Lists Manager & Details Page</span>
-            <ExternalLink className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Open Full Saved Lists Manager & Details Page</span>
+            <span className="sm:hidden">Full Saved Lists Manager</span>
+            <ExternalLink className="w-3.5 h-3.5 shrink-0" />
           </button>
 
           <button
             type="button"
             onClick={() => dispatch(setSavedListsModalOpen(false))}
-            className="px-3.5 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
+            className="px-3 sm:px-3.5 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer shrink-0"
           >
             Close
           </button>
