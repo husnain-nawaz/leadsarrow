@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   Search,
@@ -124,6 +124,52 @@ export default function FilterSidebar() {
   const filters = useSelector((state) => state.filters);
   const { facets, metrics, loading } = useSelector((state) => state.leads);
   const [searchInput, setSearchInput] = useState(filters.searchQuery || '');
+
+  // Resizable sidebar width with localStorage persistence
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    try {
+      const saved = localStorage.getItem('leadsarrow_filter_sidebar_width');
+      if (saved) {
+        const num = Number(saved);
+        if (num >= 220 && num <= 520) return num;
+      }
+    } catch (e) {}
+    return 280;
+  });
+  const [isResizingSidebar, setIsResizingSidebar] = useState(false);
+  const sidebarWidthRef = useRef(sidebarWidth);
+  sidebarWidthRef.current = sidebarWidth;
+
+  const startResizing = useCallback((e) => {
+    e.preventDefault();
+    setIsResizingSidebar(true);
+    const startX = e.clientX;
+    const startWidth = sidebarWidthRef.current;
+
+    const handleMouseMove = (moveEvent) => {
+      const delta = moveEvent.clientX - startX;
+      const newWidth = Math.min(520, Math.max(220, startWidth + delta));
+      setSidebarWidth(newWidth);
+    };
+
+    const handleMouseUp = (upEvent) => {
+      setIsResizingSidebar(false);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+      const finalDelta = upEvent.clientX - startX;
+      const finalWidth = Math.min(520, Math.max(220, startWidth + finalDelta));
+      try {
+        localStorage.setItem('leadsarrow_filter_sidebar_width', String(finalWidth));
+      } catch (err) {}
+    };
+
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'col-resize';
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  }, []);
 
   // Keep local search input synchronized if reset from outside
   useEffect(() => {
@@ -387,9 +433,25 @@ export default function FilterSidebar() {
 
   return (
     <>
-      {/* Desktop Permanent Filter Sidebar (280px width) */}
-      <aside className="hidden lg:block w-[280px] shrink-0 h-screen sticky top-0 self-start">
+      {/* Desktop Permanent Filter Sidebar (Resizable width) */}
+      <aside
+        style={{ width: `${sidebarWidth}px` }}
+        className="hidden lg:block shrink-0 h-screen sticky top-0 self-start relative group/sidebar"
+      >
         {sidebarContent}
+
+        {/* Draggable border resizer */}
+        <div
+          onMouseDown={startResizing}
+          onDoubleClick={() => {
+            setSidebarWidth(280);
+            try { localStorage.setItem('leadsarrow_filter_sidebar_width', '280'); } catch (e) {}
+          }}
+          title="Drag to resize filter sidebar (Double click to reset)"
+          className={`absolute top-0 right-0 -mr-1 w-2 h-full cursor-col-resize z-40 transition-colors ${
+            isResizingSidebar ? 'bg-orange-500 shadow-sm' : 'hover:bg-orange-500/50'
+          }`}
+        />
       </aside>
 
       {/* Mobile Slide-Over Filter Drawer */}

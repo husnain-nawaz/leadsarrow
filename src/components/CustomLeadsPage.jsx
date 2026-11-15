@@ -34,6 +34,7 @@ import {
   clearSelectedLeads
 } from '../store/leadsSlice.js';
 import { showToast } from '../store/toastSlice.js';
+import TopLoadingBar from './TopLoadingBar.jsx';
 import { openAuthModal, openUpgradeModal } from '../store/authSlice.js';
 import {
   fetchCustomLeadsFromServerApi,
@@ -1043,10 +1044,8 @@ export default function CustomLeadsPage() {
 
               {/* Table / Empty State Container */}
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs flex-1 flex flex-col min-h-[460px] relative transition-all duration-200">
-                {/* Sleek top indeterminate shimmer progress bar while loading */}
-                {loading && (
-                  <div className="absolute top-0 left-0 right-0 z-30 h-0.5 bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600 animate-indeterminate" />
-                )}
+                {/* Active progressive loading runner */}
+                <TopLoadingBar loading={loading} height="h-1" />
 
                 {error ? (
                   <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-200">

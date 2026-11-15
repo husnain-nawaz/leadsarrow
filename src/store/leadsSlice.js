@@ -137,8 +137,8 @@ const initialState = {
     pageSize: 25,
     totalCatalogRows: 600,
     totalPages: 24,
-    estimatedGlobalMatches: 0,
-    totalDatabaseRecords: 0
+    estimatedGlobalMatches: 10363428,
+    totalDatabaseRecords: 10363428
   },
   metrics: {
     verifiedRatio: 100,

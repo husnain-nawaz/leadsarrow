@@ -27,6 +27,7 @@ import {
   deleteCoreLeadByAdmin
 } from '../store/leadsSlice.js';
 import { showToast } from '../store/toastSlice.js';
+import TopLoadingBar from './TopLoadingBar.jsx';
 import {
   setSortConfig,
   setPage,
@@ -200,12 +201,8 @@ export default function LeadsTable() {
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 overflow-hidden relative transition-colors">
-      {/* High-visibility top loading progress bar when retrieving/filtering data */}
-      {loading && (
-        <div className="absolute top-0 left-0 right-0 h-1 bg-orange-100 dark:bg-orange-950/60 z-30 overflow-hidden shadow-xs">
-          <div className="h-full bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600 animate-indeterminate w-1/2" />
-        </div>
-      )}
+      {/* High-visibility active progressive loading runner */}
+      <TopLoadingBar loading={loading} height="h-1" />
 
       {/* High-Density Enterprise Data Grid */}
       <div className="overflow-auto flex-1 min-h-0 bg-white dark:bg-slate-900">
