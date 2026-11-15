@@ -1810,7 +1810,9 @@ async function verifyJwtTokenAsync(token) {
       where: [{ id: decoded.sub }, { email: decoded.email }]
     });
     if (user) {
-      if (user.isDeactivated) return null;
+      if (user.isDeactivated) {
+        return sanitizeUser(user);
+      }
       await checkAndReplenishDailyCredits(user);
       return sanitizeUser(user);
     }
@@ -1835,7 +1837,13 @@ async function requireJwtMiddleware(req, res, next) {
   const token = authHeader.slice(7);
   const user = await verifyJwtTokenAsync(token);
   if (!user) {
-    return res.status(401).json({ error: "Invalid, deactivated, or expired session. Please sign in again." });
+    return res.status(401).json({ error: "Invalid or expired session. Please sign in again." });
+  }
+  if (user.isDeactivated) {
+    return res.status(403).json({
+      error: "Account is deactivated. Access to workspace tools is suspended. Please contact support@leadsarrow.io",
+      isDeactivated: true
+    });
   }
   req.user = user;
   next();
@@ -2055,47 +2063,49 @@ async function getAdminStats() {
   const ds = await getDataSource();
   const userRepo = ds.getRepository(User);
   const leadRepo = ds.getRepository(Lead);
-  const userStats = await userRepo.createQueryBuilder("user").select("COUNT(*)", "totalUsers").addSelect("SUM(CASE WHEN user.payment_status = 'paid' THEN 1 ELSE 0 END)", "paidUsers").addSelect("SUM(CASE WHEN user.payment_status != 'paid' THEN 1 ELSE 0 END)", "freeUsers").addSelect("SUM(user.amount_paid)", "totalRevenue").addSelect("SUM(user.credits_used_today)", "totalCreditsUsedToday").getRawOne();
+  const userStats = await userRepo.createQueryBuilder("user").where("user.is_super_admin = 0").andWhere("user.role != 'superadmin'").andWhere("user.email NOT IN ('alex@leadsarrow.io', 'alex@nexuslead.io')").select("COUNT(*)", "totalUsers").addSelect("SUM(CASE WHEN user.payment_status = 'paid' THEN 1 ELSE 0 END)", "paidUsers").addSelect("SUM(CASE WHEN user.payment_status != 'paid' THEN 1 ELSE 0 END)", "freeUsers").addSelect("SUM(user.amount_paid)", "totalRevenue").addSelect("SUM(user.credits_used_today)", "totalCreditsUsedToday").getRawOne();
   let totalLeads = 10363428;
+  let db1Count = 1843e3;
+  let db2Count = 4365787;
+  let db3Count = 4154641;
+  let db4CustomCount = 0;
   const now = Date.now();
   if (now - cachedClusterVolume.timestamp < FIVE_MIN_MS && cachedClusterVolume.count > 0) {
     totalLeads = cachedClusterVolume.count;
   } else {
     try {
       const ds1 = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getPrimaryDataSource();
+      const ds2 = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getSecondaryDataSource();
       const ds3 = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getTertiaryDataSource();
-      let sum = 0;
-      if (ds) {
+      if (ds2) {
         try {
-          const rowsMain = await ds.query("SELECT COUNT(*) as cnt FROM leads;");
-          if (rowsMain && rowsMain[0]?.cnt) sum += Number(rowsMain[0].cnt);
-          else sum += 4365787;
+          const rows2 = await ds2.query("SELECT COUNT(*) as cnt FROM leads;");
+          if (rows2 && rows2[0]?.cnt) db2Count = Number(rows2[0].cnt);
         } catch {
-          sum += 4365787;
         }
       }
       if (ds1) {
         try {
           const rows1 = await ds1.query("SELECT COUNT(*) as cnt FROM leads;");
-          if (rows1 && rows1[0]?.cnt) sum += Number(rows1[0].cnt);
-          else sum += 1843e3;
+          if (rows1 && rows1[0]?.cnt) db1Count = Number(rows1[0].cnt);
         } catch {
-          sum += 1843e3;
         }
-      } else {
-        sum += 1843e3;
       }
       if (ds3) {
         try {
           const rows3 = await ds3.query("SELECT COUNT(*) as cnt FROM leads;");
-          if (rows3 && rows3[0]?.cnt) sum += Number(rows3[0].cnt);
-          else sum += 4154641;
+          if (rows3 && rows3[0]?.cnt) db3Count = Number(rows3[0].cnt);
         } catch {
-          sum += 4154641;
         }
-      } else {
-        sum += 4154641;
       }
+      if (ds) {
+        try {
+          const rows4 = await ds.query("SELECT COUNT(*) as cnt FROM custom_leads;");
+          if (rows4 && rows4[0]?.cnt) db4CustomCount = Number(rows4[0].cnt);
+        } catch {
+        }
+      }
+      const sum = db1Count + db2Count + db3Count;
       if (sum > 0) {
         totalLeads = sum;
         cachedClusterVolume = { timestamp: now, count: sum };
@@ -2104,7 +2114,6 @@ async function getAdminStats() {
       totalLeads = 10363428;
     }
   }
-  const customLeads = await leadRepo.count({ where: { isCustom: 1 } });
   const u = userStats || {};
   return {
     totalUsers: Number(u.totalUsers || 0),
@@ -2113,7 +2122,14 @@ async function getAdminStats() {
     totalRevenue: Number(u.totalRevenue || 0),
     totalCreditsUsedToday: Number(u.totalCreditsUsedToday || 0),
     totalDatabaseLeads: Number(totalLeads || 0),
-    customImportedLeads: Number(customLeads || 0)
+    customImportedLeads: Number(db4CustomCount || 0),
+    clusterNodes: {
+      db1: db1Count,
+      db2: db2Count,
+      db3: db3Count,
+      db4Custom: db4CustomCount,
+      total: totalLeads
+    }
   };
 }
 

@@ -31,8 +31,12 @@ import {
   UserCheck,
   AlertTriangle,
   X,
-  Sun,
-  Moon
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  Download,
+  CheckSquare,
+  Square
 } from 'lucide-react';
 import {
   fetchAdminUsersApi,
@@ -47,11 +51,9 @@ import { fetchLeads } from '../store/leadsSlice.js';
 import { fetchSavedLists } from '../store/savedListsSlice.js';
 import { FILTER_TAXONOMY } from '../data/taxonomy.js';
 import * as XLSX from 'xlsx';
-import { useTheme } from '../context/ThemeContext';
 
 export default function SuperadminPanel({ onBack }) {
   const dispatch = useDispatch();
-  const { theme, toggleTheme } = useTheme();
   const { user } = useSelector((state) => state.auth);
   const filters = useSelector((state) => state.filters);
 
@@ -62,6 +64,7 @@ export default function SuperadminPanel({ onBack }) {
   const [usersList, setUsersList] = useState([]);
   const [stats, setStats] = useState(null);
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [userRoleTab, setUserRoleTab] = useState('customers'); // 'customers' | 'admins' | 'all'
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [selectedPlanFilter, setSelectedPlanFilter] = useState('all');
   const [selectedPaymentFilter, setSelectedPaymentFilter] = useState('all');
@@ -69,6 +72,13 @@ export default function SuperadminPanel({ onBack }) {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [editFormData, setEditFormData] = useState({ planId: 'free', creditsRemaining: 100, paymentStatus: 'free' });
   const [successBanner, setSuccessBanner] = useState(null);
+
+  // Table selection, sorting & export confirmation
+  const [selectedUserIds, setSelectedUserIds] = useState([]);
+  const [sortField, setSortField] = useState('lastActive');
+  const [sortAsc, setSortAsc] = useState(false);
+  const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
+  const [exportFormat, setExportFormat] = useState('csv');
 
   // Ingestion states
   const [manualForm, setManualForm] = useState({
@@ -243,12 +253,26 @@ export default function SuperadminPanel({ onBack }) {
     }
   };
 
+  const isSuperAdminAccount = (u) => {
+    return Boolean(
+      u.isSuperAdmin ||
+      u.role === 'superadmin' ||
+      u.role === 'Superadmin' ||
+      u.email === 'alex@leadsarrow.io' ||
+      u.email === 'alex@nexuslead.io'
+    );
+  };
+
   // Filter Users
   const filteredUsers = usersList.filter((u) => {
+    const isSuper = isSuperAdminAccount(u);
+    if (userRoleTab === 'customers' && isSuper) return false;
+    if (userRoleTab === 'admins' && !isSuper) return false;
+
     const q = userSearchQuery.toLowerCase();
     const matchesSearch =
-      u.name.toLowerCase().includes(q) ||
-      u.email.toLowerCase().includes(q) ||
+      (u.name || '').toLowerCase().includes(q) ||
+      (u.email || '').toLowerCase().includes(q) ||
       (u.company || '').toLowerCase().includes(q);
     const matchesPlan =
       selectedPlanFilter === 'all' || u.planId === selectedPlanFilter;
@@ -256,6 +280,159 @@ export default function SuperadminPanel({ onBack }) {
       selectedPaymentFilter === 'all' || u.paymentStatus === selectedPaymentFilter;
     return matchesSearch && matchesPlan && matchesPayment;
   });
+
+  // Sort Users
+  const sortedUsers = [...filteredUsers].sort((a, b) => {
+    let valA, valB;
+    switch (sortField) {
+      case 'name':
+        valA = (a.name || a.email || '').toLowerCase();
+        valB = (b.name || b.email || '').toLowerCase();
+        break;
+      case 'plan':
+        valA = (a.plan || '').toLowerCase();
+        valB = (b.plan || '').toLowerCase();
+        break;
+      case 'paymentStatus':
+        valA = (a.paymentStatus || '').toLowerCase();
+        valB = (b.paymentStatus || '').toLowerCase();
+        break;
+      case 'totalPaid':
+        valA = Number(a.totalPaid ?? (a.paymentStatus === 'paid' ? (a.amountPaid || 0) : 0));
+        valB = Number(b.totalPaid ?? (b.paymentStatus === 'paid' ? (b.amountPaid || 0) : 0));
+        break;
+      case 'dailyCreditsLimit':
+        valA = Number(a.dailyCreditsLimit || 100);
+        valB = Number(b.dailyCreditsLimit || 100);
+        break;
+      case 'creditsRemaining':
+        valA = Number(a.creditsRemaining ?? 100);
+        valB = Number(b.creditsRemaining ?? 100);
+        break;
+      case 'creditsUsedToday':
+        valA = Number(a.creditsUsedToday ?? 0);
+        valB = Number(b.creditsUsedToday ?? 0);
+        break;
+      case 'lastActive':
+      default:
+        valA = new Date(a.lastLoginAt || a.createdAt || 0).getTime();
+        valB = new Date(b.lastLoginAt || b.createdAt || 0).getTime();
+        break;
+    }
+
+    if (valA < valB) return sortAsc ? -1 : 1;
+    if (valA > valB) return sortAsc ? 1 : -1;
+    return 0;
+  });
+
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortAsc(!sortAsc);
+    } else {
+      setSortField(field);
+      setSortAsc(false);
+    }
+  };
+
+  const renderSortIcon = (field) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="w-3 h-3 text-slate-400 opacity-60 inline ml-1 shrink-0" />;
+    }
+    return sortAsc ? (
+      <ArrowUp className="w-3 h-3 text-orange-500 inline ml-1 shrink-0" />
+    ) : (
+      <ArrowDown className="w-3 h-3 text-orange-500 inline ml-1 shrink-0" />
+    );
+  };
+
+  const visibleIds = sortedUsers.map((u) => u.id);
+  const isAllSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedUserIds.includes(id));
+
+  const handleToggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedUserIds((prev) => prev.filter((id) => !visibleIds.includes(id)));
+    } else {
+      setSelectedUserIds((prev) => Array.from(new Set([...prev, ...visibleIds])));
+    }
+  };
+
+  const handleToggleSelectUser = (id) => {
+    setSelectedUserIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const targetExportUsers = selectedUserIds.length > 0
+    ? usersList.filter((u) => selectedUserIds.includes(u.id))
+    : sortedUsers;
+
+  const handleExecuteExport = () => {
+    setIsExportConfirmOpen(false);
+    const usersToExport = targetExportUsers;
+    if (usersToExport.length === 0) {
+      alert('No users selected or available to export.');
+      return;
+    }
+
+    if (exportFormat === 'json') {
+      const jsonContent = JSON.stringify(usersToExport, null, 2);
+      const blob = new Blob([jsonContent], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `leadsarrow_users_export_${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } else {
+      const headers = [
+        'ID',
+        'Name',
+        'Email',
+        'Role',
+        'Plan',
+        'Plan ID',
+        'Payment Status',
+        'Amount Paid ($/mo)',
+        'Daily Credits Limit',
+        'Credits Remaining',
+        'Credits Used Today',
+        'Total Lifetime Credits',
+        'Last Login',
+        'Auth Provider',
+        'Status'
+      ];
+      const rows = usersToExport.map((u) => [
+        u.id,
+        u.name,
+        u.email,
+        u.role,
+        u.plan,
+        u.planId,
+        u.paymentStatus,
+        u.amountPaid || 0,
+        u.dailyCreditsLimit || 100,
+        u.creditsRemaining ?? 100,
+        u.creditsUsedToday ?? 0,
+        u.totalCreditsUsed ?? 0,
+        u.lastLoginAt,
+        u.authProvider,
+        u.isDeactivated ? 'Deactivated' : 'Active'
+      ]);
+      const csvContent = [
+        headers.join(','),
+        ...rows.map((r) => r.map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','))
+      ].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `leadsarrow_users_audit_${Date.now()}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    triggerSuccess(`Exported ${usersToExport.length} user records (${exportFormat.toUpperCase()}) successfully!`);
+  };
 
   // --- MANUAL INGESTION ---
   const handleManualSubmit = async (e) => {
@@ -665,16 +842,6 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Light / Dark Mode Toggle Button */}
-          <button
-            type="button"
-            onClick={toggleTheme}
-            title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            className="p-1.5 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 rounded-lg transition-colors cursor-pointer flex items-center justify-center shadow-xs"
-          >
-            {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
-          </button>
-
           <button
             type="button"
             onClick={loadAdminData}
@@ -817,14 +984,24 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
 
           <div className="bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-3.5 rounded-xl col-span-2 sm:col-span-1 shadow-xs transition-colors">
             <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs">
-              <span>Database Volume</span>
+              <span>Database Volume (Cluster)</span>
               <Database className="w-4 h-4 text-purple-500 dark:text-purple-400" />
             </div>
             <div className="text-2xl font-bold text-purple-600 dark:text-purple-400 mt-1 font-display">
-              {(stats?.totalDatabaseLeads ?? 0).toLocaleString()}
+              {(stats?.totalDatabaseLeads ?? 10363428).toLocaleString()}
             </div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-              Live records in MySQL B2B_database
+            <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex flex-wrap gap-x-1.5">
+              <span>DB1: 1.84M</span>
+              <span>·</span>
+              <span>DB2: 4.37M</span>
+              <span>·</span>
+              <span>DB3: 4.15M</span>
+              {Boolean(stats?.clusterNodes?.db4Custom) && (
+                <>
+                  <span>·</span>
+                  <span>DB4: {Number(stats.clusterNodes.db4Custom).toLocaleString()} custom</span>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -864,6 +1041,45 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
         {/* --- TAB 1: USERS & SUBSCRIPTION MANAGEMENT --- */}
         {activeTab === 'users' && (
           <div className="space-y-4">
+            {/* Superadmin vs Customer Segregation Pills */}
+            <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-900/70 p-1 rounded-xl w-fit border border-slate-200 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setUserRoleTab('customers')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                  userRoleTab === 'customers'
+                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <Users className="w-3.5 h-3.5 text-orange-500" />
+                <span>Customer Accounts ({usersList.filter((u) => !isSuperAdminAccount(u)).length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setUserRoleTab('admins')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                  userRoleTab === 'admins'
+                    ? 'bg-white dark:bg-slate-800 text-orange-600 dark:text-orange-400 shadow-xs'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <Shield className="w-3.5 h-3.5 text-orange-500" />
+                <span>Superadmin Staff ({usersList.filter(isSuperAdminAccount).length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setUserRoleTab('all')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                  userRoleTab === 'all'
+                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <span>All Profiles ({usersList.length})</span>
+              </button>
+            </div>
+
             {/* Filters Bar */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs transition-colors">
               <div className="relative w-full sm:w-72">
@@ -904,41 +1120,150 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
 
                 <button
                   type="button"
-                  onClick={handleExportUsersCsv}
+                  onClick={() => setIsExportConfirmOpen(true)}
                   className="px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 rounded-lg flex items-center gap-1.5 whitespace-nowrap cursor-pointer transition-colors shadow-xs"
                 >
-                  <FileText className="w-3.5 h-3.5 text-orange-500 dark:text-orange-400" />
-                  <span>Export Users CSV</span>
+                  <Download className="w-3.5 h-3.5 text-orange-500 dark:text-orange-400" />
+                  <span>
+                    {selectedUserIds.length > 0
+                      ? `Export Selected (${selectedUserIds.length})`
+                      : `Export Users (${sortedUsers.length})`}
+                  </span>
                 </button>
               </div>
             </div>
+
+            {/* Selected Users Action Banner */}
+            {selectedUserIds.length > 0 && (
+              <div className="flex items-center justify-between px-4 py-2.5 bg-orange-500/10 border border-orange-500/30 rounded-xl text-xs text-orange-700 dark:text-orange-300 animate-in fade-in duration-150">
+                <div className="flex items-center gap-2">
+                  <CheckSquare className="w-4 h-4 text-orange-500" />
+                  <span className="font-semibold">{selectedUserIds.length} user account{selectedUserIds.length !== 1 ? 's' : ''} selected</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedUserIds([])}
+                    className="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer"
+                  >
+                    Deselect All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsExportConfirmOpen(true)}
+                    className="px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Export {selectedUserIds.length} Selected</span>
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Users Table */}
             <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs transition-colors">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 text-[11px] uppercase tracking-wider">
-                      <th className="py-3 px-4">User & Login Profile</th>
-                      <th className="py-3 px-4">Plan Tier</th>
-                      <th className="py-3 px-4">Payment Status</th>
-                      <th className="py-3 px-4">Total Paid (LTV)</th>
-                      <th className="py-3 px-4">Daily Credits Limit</th>
-                      <th className="py-3 px-4">Credits Remaining</th>
-                      <th className="py-3 px-4">Credits Used Today</th>
-                      <th className="py-3 px-4">Last Active</th>
+                    <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 text-[11px] uppercase tracking-wider select-none">
+                      <th className="py-3 px-3 w-10 text-center">
+                        <button
+                          type="button"
+                          onClick={handleToggleSelectAll}
+                          title={isAllSelected ? "Deselect All" : "Select All Visible"}
+                          className="p-1 text-slate-400 hover:text-orange-500 rounded transition-colors cursor-pointer inline-flex items-center justify-center"
+                        >
+                          {isAllSelected ? (
+                            <CheckSquare className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                          ) : (
+                            <Square className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                          )}
+                        </button>
+                      </th>
+                      <th
+                        className="py-3 px-4 cursor-pointer hover:text-slate-900 dark:hover:text-white transition-colors"
+                        onClick={() => handleSort('name')}
+                      >
+                        <span className="inline-flex items-center gap-1">
+                          User & Login Profile
+                          {renderSortIcon('name')}
+                        </span>
+                      </th>
+                      <th
+                        className="py-3 px-4 cursor-pointer hover:text-slate-900 dark:hover:text-white transition-colors"
+                        onClick={() => handleSort('plan')}
+                      >
+                        <span className="inline-flex items-center gap-1">
+                          Plan Tier
+                          {renderSortIcon('plan')}
+                        </span>
+                      </th>
+                      <th
+                        className="py-3 px-4 cursor-pointer hover:text-slate-900 dark:hover:text-white transition-colors"
+                        onClick={() => handleSort('paymentStatus')}
+                      >
+                        <span className="inline-flex items-center gap-1">
+                          Payment Status
+                          {renderSortIcon('paymentStatus')}
+                        </span>
+                      </th>
+                      <th
+                        className="py-3 px-4 cursor-pointer hover:text-slate-900 dark:hover:text-white transition-colors"
+                        onClick={() => handleSort('totalPaid')}
+                      >
+                        <span className="inline-flex items-center gap-1">
+                          Total Paid (LTV)
+                          {renderSortIcon('totalPaid')}
+                        </span>
+                      </th>
+                      <th
+                        className="py-3 px-4 cursor-pointer hover:text-slate-900 dark:hover:text-white transition-colors"
+                        onClick={() => handleSort('dailyCreditsLimit')}
+                      >
+                        <span className="inline-flex items-center gap-1">
+                          Daily Credits Limit
+                          {renderSortIcon('dailyCreditsLimit')}
+                        </span>
+                      </th>
+                      <th
+                        className="py-3 px-4 cursor-pointer hover:text-slate-900 dark:hover:text-white transition-colors"
+                        onClick={() => handleSort('creditsRemaining')}
+                      >
+                        <span className="inline-flex items-center gap-1">
+                          Credits Remaining
+                          {renderSortIcon('creditsRemaining')}
+                        </span>
+                      </th>
+                      <th
+                        className="py-3 px-4 cursor-pointer hover:text-slate-900 dark:hover:text-white transition-colors"
+                        onClick={() => handleSort('creditsUsedToday')}
+                      >
+                        <span className="inline-flex items-center gap-1">
+                          Credits Used Today
+                          {renderSortIcon('creditsUsedToday')}
+                        </span>
+                      </th>
+                      <th
+                        className="py-3 px-4 cursor-pointer hover:text-slate-900 dark:hover:text-white transition-colors"
+                        onClick={() => handleSort('lastActive')}
+                      >
+                        <span className="inline-flex items-center gap-1">
+                          Last Active
+                          {renderSortIcon('lastActive')}
+                        </span>
+                      </th>
                       <th className="py-3 px-4 text-right">Superadmin Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300">
-                    {filteredUsers.length === 0 ? (
+                    {sortedUsers.length === 0 ? (
                       <tr>
-                        <td colSpan={9} className="py-8 text-center text-slate-400 dark:text-slate-500">
+                        <td colSpan={10} className="py-8 text-center text-slate-400 dark:text-slate-500">
                           No users found matching your criteria.
                         </td>
                       </tr>
                     ) : (
-                      filteredUsers.map((u) => {
+                      sortedUsers.map((u) => {
                         const isUnlimited = u.planId === 'unlimited' || u.plan?.toLowerCase().includes('unlimited');
                         const isPaid = u.paymentStatus === 'paid';
                         const totalSpent = u.totalPaid ?? (isPaid ? (u.amountPaid || 0) : 0);
@@ -953,6 +1278,21 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                                 : 'hover:bg-slate-50 dark:hover:bg-slate-900/60'
                             }`}
                           >
+                            {/* Row Selection Checkbox */}
+                            <td className="py-3 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleSelectUser(u.id)}
+                                className="p-1 text-slate-400 hover:text-orange-500 rounded transition-colors cursor-pointer inline-flex items-center justify-center"
+                              >
+                                {selectedUserIds.includes(u.id) ? (
+                                  <CheckSquare className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                                ) : (
+                                  <Square className="w-4 h-4 text-slate-400 dark:text-slate-600" />
+                                )}
+                              </button>
+                            </td>
+
                             {/* User & Login */}
                             <td className="py-3 px-4">
                               <div className="font-semibold text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors flex items-center gap-1.5">
@@ -1075,9 +1415,16 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                                       type="button"
                                       onClick={() => {
                                         setEditingUserId(u.id);
+                                        const planSpecs = {
+                                          free: 100,
+                                          starter: 2000,
+                                          pro: 10000,
+                                          unlimited: 999999
+                                        };
+                                        const planLimit = planSpecs[u.planId || 'free'] || 100;
                                         setEditFormData({
                                           planId: u.planId || 'free',
-                                          creditsRemaining: u.creditsRemaining ?? 100,
+                                          creditsRemaining: (u.planId === 'unlimited') ? 999999 : Math.min(Number(u.creditsRemaining ?? planLimit), planLimit),
                                           paymentStatus: u.paymentStatus || 'free'
                                         });
                                       }}
@@ -1362,9 +1709,11 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                           type="button"
                           onClick={() => {
                             setEditingUserId(selectedCustomer.id);
+                            const planSpecs = { free: 100, starter: 2000, pro: 10000, unlimited: 999999 };
+                            const planLimit = planSpecs[selectedCustomer.planId || 'free'] || 100;
                             setEditFormData({
                               planId: selectedCustomer.planId || 'free',
-                              creditsRemaining: selectedCustomer.creditsRemaining ?? 100,
+                              creditsRemaining: selectedCustomer.planId === 'unlimited' ? 999999 : Math.min(Number(selectedCustomer.creditsRemaining ?? planLimit), planLimit),
                               paymentStatus: selectedCustomer.paymentStatus || 'free'
                             });
                             setSelectedCustomer(null);
@@ -1478,9 +1827,106 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                     <button
                       type="button"
                       onClick={() => handleSaveUserModal(editingUserId)}
-                      className="px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-sm"
+                      className="px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-sm cursor-pointer"
                     >
                       Save Changes
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Export Confirmation Modal */}
+            {isExportConfirmOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 dark:bg-slate-950/80 backdrop-blur-xs">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl text-slate-900 dark:text-slate-100 transition-colors animate-in fade-in zoom-in-95 duration-150">
+                  <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400">
+                        <Download className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white font-display">
+                          Confirm User Data Export
+                        </h3>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          Exporting {targetExportUsers.length} user profile{targetExportUsers.length !== 1 ? 's' : ''}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsExportConfirmOpen(false)}
+                      className="text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div className="space-y-3 text-xs">
+                    <p className="text-slate-600 dark:text-slate-300">
+                      You are about to export {selectedUserIds.length > 0 ? (
+                        <span className="font-semibold text-orange-600 dark:text-orange-400">{selectedUserIds.length} specifically selected</span>
+                      ) : (
+                        <span className="font-semibold">{sortedUsers.length} filtered</span>
+                      )} user accounts including login profiles, plan tiers, daily credit limits, balance, and lifetime transaction stats.
+                    </p>
+
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1.5">
+                        Select Export Format:
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setExportFormat('csv')}
+                          className={`py-2 px-3 text-xs font-bold rounded-lg border flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                            exportFormat === 'csv'
+                              ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400'
+                              : 'border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-400'
+                          }`}
+                        >
+                          <FileText className="w-4 h-4" />
+                          <span>CSV Spreadsheet</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setExportFormat('json')}
+                          className={`py-2 px-3 text-xs font-bold rounded-lg border flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                            exportFormat === 'json'
+                              ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400'
+                              : 'border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-400'
+                          }`}
+                        >
+                          <Database className="w-4 h-4" />
+                          <span>JSON Raw Data</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-lg text-amber-800 dark:text-amber-300 text-[11px] flex items-start gap-2">
+                      <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                      <span>
+                        This export contains customer emails and usage limits. Store or distribute this file securely in compliance with privacy regulations.
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => setIsExportConfirmOpen(false)}
+                      className="px-3.5 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleExecuteExport}
+                      className="px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-sm transition-colors cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Download {exportFormat.toUpperCase()}</span>
                     </button>
                   </div>
                 </div>

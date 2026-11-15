@@ -3,7 +3,7 @@ import { Provider, useSelector, useDispatch } from 'react-redux';
 import store from './store/store.js';
 import { fetchLeads, setFirestoreCustomLeads, fetchRevealedLeads } from './store/leadsSlice.js';
 import { fetchSavedLists, setFirestoreSavedLists } from './store/savedListsSlice.js';
-import { syncFirebaseSession, refreshCurrentUserProfile } from './store/authSlice.js';
+import { syncFirebaseSession, refreshCurrentUserProfile, logoutUser } from './store/authSlice.js';
 import {
   auth,
   onAuthStateChanged,
@@ -31,6 +31,7 @@ import SavedListsPage from './components/SavedListsPage.jsx';
 import SignOutModal from './components/SignOutModal.jsx';
 import TargetListModeBanner from './components/TargetListModeBanner.jsx';
 import GlobalToast from './components/GlobalToast.jsx';
+import AccountDeactivatedScreen from './components/AccountDeactivatedScreen.jsx';
 import { ThemeProvider } from './context/ThemeContext.jsx';
 
 function WorkspaceContent({ activeView, setActiveView, onToggleLanding }) {
@@ -305,6 +306,20 @@ function MainApp() {
         <GlobalToast />
         <LandingPage />
         <AuthModal />
+      </div>
+    );
+  }
+
+  // If account is deactivated, block dashboard access and show clear notice with support/contact options
+  if (user?.isDeactivated) {
+    return (
+      <div className="min-h-screen">
+        <GlobalToast />
+        <AccountDeactivatedScreen
+          user={user}
+          onSignOut={() => dispatch(logoutUser())}
+          onRefresh={() => dispatch(refreshCurrentUserProfile())}
+        />
       </div>
     );
   }

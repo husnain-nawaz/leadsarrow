@@ -505,7 +505,9 @@ export async function verifyJwtTokenAsync(token: string) {
     });
 
     if (user) {
-      if (user.isDeactivated) return null;
+      if (user.isDeactivated) {
+        return sanitizeUser(user);
+      }
       await checkAndReplenishDailyCredits(user);
       return sanitizeUser(user);
     }
@@ -532,7 +534,13 @@ export async function requireJwtMiddleware(req: any, res: any, next: any) {
   const token = authHeader.slice(7);
   const user = await verifyJwtTokenAsync(token);
   if (!user) {
-    return res.status(401).json({ error: 'Invalid, deactivated, or expired session. Please sign in again.' });
+    return res.status(401).json({ error: 'Invalid or expired session. Please sign in again.' });
+  }
+  if (user.isDeactivated) {
+    return res.status(403).json({
+      error: 'Account is deactivated. Access to workspace tools is suspended. Please contact support@leadsarrow.io',
+      isDeactivated: true
+    });
   }
   req.user = user;
   next();
@@ -817,6 +825,9 @@ export async function getAdminStats() {
 
   const userStats = await userRepo
     .createQueryBuilder('user')
+    .where('user.is_super_admin = 0')
+    .andWhere("user.role != 'superadmin'")
+    .andWhere("user.email NOT IN ('alex@leadsarrow.io', 'alex@nexuslead.io')")
     .select('COUNT(*)', 'totalUsers')
     .addSelect("SUM(CASE WHEN user.payment_status = 'paid' THEN 1 ELSE 0 END)", 'paidUsers')
     .addSelect("SUM(CASE WHEN user.payment_status != 'paid' THEN 1 ELSE 0 END)", 'freeUsers')
@@ -826,52 +837,53 @@ export async function getAdminStats() {
 
   // Cluster total lead count: Exact verified records in MySQL cluster (DB1: 1,843,000 + DB2: 4,365,787 + DB3: 4,154,641 = 10,363,428)
   let totalLeads = 10363428;
+  let db1Count = 1843000;
+  let db2Count = 4365787;
+  let db3Count = 4154641;
+  let db4CustomCount = 0;
+
   const now = Date.now();
   if (now - cachedClusterVolume.timestamp < FIVE_MIN_MS && cachedClusterVolume.count > 0) {
     totalLeads = cachedClusterVolume.count;
   } else {
     try {
       const ds1 = await (await import('./dataSource.ts')).getPrimaryDataSource();
+      const ds2 = await (await import('./dataSource.ts')).getSecondaryDataSource();
       const ds3 = await (await import('./dataSource.ts')).getTertiaryDataSource();
-      let sum = 0;
-      
-      // DB2 (Main)
-      if (ds) {
+
+      // DB2 (High-Growth Node 2: 4.36M leads)
+      if (ds2) {
         try {
-          const rowsMain = await ds.query("SELECT COUNT(*) as cnt FROM leads;");
-          if (rowsMain && rowsMain[0]?.cnt) sum += Number(rowsMain[0].cnt);
-          else sum += 4365787;
-        } catch {
-          sum += 4365787;
-        }
+          const rows2 = await ds2.query("SELECT COUNT(*) as cnt FROM leads;");
+          if (rows2 && rows2[0]?.cnt) db2Count = Number(rows2[0].cnt);
+        } catch {}
       }
 
-      // DB1
+      // DB1 (Core B2B Node 1: 1.84M leads)
       if (ds1) {
         try {
           const rows1 = await ds1.query("SELECT COUNT(*) as cnt FROM leads;");
-          if (rows1 && rows1[0]?.cnt) sum += Number(rows1[0].cnt);
-          else sum += 1843000;
-        } catch {
-          sum += 1843000;
-        }
-      } else {
-        sum += 1843000;
+          if (rows1 && rows1[0]?.cnt) db1Count = Number(rows1[0].cnt);
+        } catch {}
       }
 
-      // DB3
+      // DB3 (Enterprise Global Node 3: 4.15M leads)
       if (ds3) {
         try {
           const rows3 = await ds3.query("SELECT COUNT(*) as cnt FROM leads;");
-          if (rows3 && rows3[0]?.cnt) sum += Number(rows3[0].cnt);
-          else sum += 4154641;
-        } catch {
-          sum += 4154641;
-        }
-      } else {
-        sum += 4154641;
+          if (rows3 && rows3[0]?.cnt) db3Count = Number(rows3[0].cnt);
+        } catch {}
       }
 
+      // DB4 (Private Custom Leads)
+      if (ds) {
+        try {
+          const rows4 = await ds.query("SELECT COUNT(*) as cnt FROM custom_leads;");
+          if (rows4 && rows4[0]?.cnt) db4CustomCount = Number(rows4[0].cnt);
+        } catch {}
+      }
+
+      const sum = db1Count + db2Count + db3Count;
       if (sum > 0) {
         totalLeads = sum;
         cachedClusterVolume = { timestamp: now, count: sum };
@@ -881,8 +893,6 @@ export async function getAdminStats() {
     }
   }
 
-  const customLeads = await leadRepo.count({ where: { isCustom: 1 } });
-
   const u = userStats || {};
   return {
     totalUsers: Number(u.totalUsers || 0),
@@ -891,6 +901,13 @@ export async function getAdminStats() {
     totalRevenue: Number(u.totalRevenue || 0),
     totalCreditsUsedToday: Number(u.totalCreditsUsedToday || 0),
     totalDatabaseLeads: Number(totalLeads || 0),
-    customImportedLeads: Number(customLeads || 0)
+    customImportedLeads: Number(db4CustomCount || 0),
+    clusterNodes: {
+      db1: db1Count,
+      db2: db2Count,
+      db3: db3Count,
+      db4Custom: db4CustomCount,
+      total: totalLeads
+    }
   };
 }
