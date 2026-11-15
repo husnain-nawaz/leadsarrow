@@ -67,8 +67,17 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
   const userPlanName = user?.plan || 'Free Starter';
   const isSuperAdmin = Boolean(user && (user.isSuperAdmin || user.role === 'superadmin' || user.email === 'alex@leadsarrow.io' || user.email === 'alex@nexuslead.io'));
 
-  // Clean first name for concise profile button
-  const userFirstName = (user?.name || 'User').split(' ')[0];
+  // Clean display name helper to avoid duplicate email display when name equals email or is unset
+  const formatUserName = (name, email) => {
+    if (!name || (email && name.toLowerCase() === email.toLowerCase()) || name.includes('@')) {
+      if (!email) return 'User';
+      const handle = email.split('@')[0];
+      return handle.charAt(0).toUpperCase() + handle.slice(1);
+    }
+    return name;
+  };
+  const displayName = formatUserName(user?.name, user?.email);
+  const userFirstName = displayName.split(' ')[0];
 
   const getTimeUntilReset = (nextResetAt) => {
     if (!nextResetAt) return '24h';
@@ -278,7 +287,7 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
                     {/* User info & Plan */}
                     <div className="px-2 py-1.5 bg-slate-50 dark:bg-slate-800/60 rounded-lg border border-slate-100 dark:border-slate-800 space-y-1">
                       <div className="text-[11px] font-bold text-slate-900 dark:text-white truncate">
-                        {user.name || 'User'}
+                        {displayName}
                       </div>
                       <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono truncate">
                         {user.email}
@@ -362,7 +371,7 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
           />
 
           {/* Sidebar Drawer Panel */}
-          <aside className="fixed inset-y-0 left-0 z-50 w-72 sm:w-80 max-w-[85vw] bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col justify-between overflow-y-auto animate-in slide-in-from-left duration-200 text-slate-900 dark:text-slate-100">
+          <aside className="fixed inset-y-0 left-0 z-50 w-[300px] sm:w-80 max-w-[85vw] bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col justify-between overflow-y-auto animate-in slide-in-from-left duration-200 text-slate-900 dark:text-slate-100">
             {/* Sidebar Top: Wordmark & Close Button */}
             <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 bg-slate-50/70 dark:bg-slate-850/60">
               <div className="flex items-center gap-2">
@@ -529,7 +538,7 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
                   <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1.5 shadow-2xs">
                     <div className="flex items-center justify-between gap-2">
                       <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                        {user.name || 'User'}
+                        {displayName}
                       </div>
                       <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-orange-100 dark:bg-orange-950 text-orange-600 dark:text-orange-400 shrink-0">
                         {userPlanName}
