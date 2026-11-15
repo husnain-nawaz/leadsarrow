@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Pencil, Layers, Loader2 } from 'lucide-react';
+import { X, Pencil, Layers, Loader2, Lock } from 'lucide-react';
 import { updateCustomLeadOnServerApi } from '../services/api.js';
 
 export default function EditCustomLeadModal({ lead, clusters = [], isOpen, onClose, onSave }) {
@@ -111,30 +111,31 @@ export default function EditCustomLeadModal({ lead, clusters = [], isOpen, onClo
             </div>
           )}
 
-          {/* Cluster Selector */}
-          <div className="p-3 bg-orange-50/60 dark:bg-orange-950/30 border border-orange-200/80 dark:border-orange-800/60 rounded-xl space-y-1.5">
-            <label className="font-bold text-orange-950 dark:text-orange-300 flex items-center justify-between">
-              <span className="flex items-center gap-1.5">
+          {/* Assigned Cluster (Fixed & Non-Editable to Prevent Mistaken Reassignment) */}
+          <div className="p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                 <Layers className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
-                <span>Assigned Cluster / Target Group *</span>
+                <span>Assigned Cluster / Target Group</span>
               </span>
-              <span className="text-[10px] text-slate-400 font-normal">Move lead between your clusters</span>
-            </label>
-            <select
-              value={form.clusterName}
-              onChange={(e) => handleChange('clusterName', e.target.value)}
-              required
-              className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 font-semibold focus:outline-none focus:border-orange-600 cursor-pointer"
-            >
-              {clusters.map((c) => (
-                <option key={c.id || c.name} value={c.name}>
-                  {c.name} ({c.leadCount || 0} leads)
-                </option>
-              ))}
-              {!clusters.some((c) => c.name === form.clusterName) && (
-                <option value={form.clusterName}>{form.clusterName}</option>
-              )}
-            </select>
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 dark:text-slate-400 bg-slate-200/60 dark:bg-slate-700/60 px-2 py-0.5 rounded-md">
+                <Lock className="w-3 h-3 text-slate-400 dark:text-slate-400" />
+                <span>Fixed Cluster</span>
+              </span>
+            </div>
+
+            <div className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg flex items-center justify-between text-slate-900 dark:text-white select-none shadow-2xs">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-orange-500" />
+                <span className="font-bold text-xs">{form.clusterName || lead.clusterName || 'General'}</span>
+              </div>
+              <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+                Private Cluster
+              </span>
+            </div>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+              Cluster assignment is locked to "{form.clusterName || lead.clusterName}" so this lead remains strictly within its designated cluster.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
