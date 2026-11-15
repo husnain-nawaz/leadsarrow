@@ -32,7 +32,8 @@ import {
   Wifi,
   WifiOff,
   AlertTriangle,
-  Pencil
+  Pencil,
+  ChevronDown
 } from 'lucide-react';
 import {
   fetchSavedLists,
@@ -178,6 +179,19 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
   const [bulkDeleteTarget, setBulkDeleteTarget] = useState(null);
   const [isRemovingBulk, setIsRemovingBulk] = useState(false);
   const [exportConfirmTarget, setExportConfirmTarget] = useState(null);
+  const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
+  const addMenuRef = useRef(null);
+
+  // Close Add Leads dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (addMenuRef.current && !addMenuRef.current.contains(e.target)) {
+        setIsAddMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Sorting state matching Lead Finder Data Grid
   const [sortBy, setSortBy] = useState('buyingIntentScore');
@@ -1121,72 +1135,117 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
           {selectedList ? (
             <div className="flex-1 flex flex-col min-w-0 space-y-4">
               {/* Selected List Hero Header */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-xs space-y-4">
-                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-lg font-bold text-slate-900 dark:text-white font-display">
-                        {selectedList.name}
-                      </h2>
-                      <button
-                        type="button"
-                        onClick={() => setRenamingListTarget(selectedList)}
-                        title="Rename list & edit description"
-                        className="p-1 text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/40 rounded-md transition-colors cursor-pointer"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
-                      <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
-                        {selectedList.leadCount || (selectedList.leadIds ? selectedList.leadIds.length : 0)} Leads
-                      </span>
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 sm:p-4 shadow-xs space-y-3">
+                <div className="flex flex-wrap lg:flex-nowrap items-center justify-between gap-3">
+                  {/* Left: List Title, Edit icon, Lead count badge, and Inline Metadata */}
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
+                      <Bookmark className="w-4 h-4" />
                     </div>
-                    {selectedList.description &&
-                      selectedList.description.toLowerCase() !== 'curated b2b target account segment' &&
-                      selectedList.description.toLowerCase() !== 'target account segment' && (
-                        <p className="text-xs text-slate-600 dark:text-slate-300 mt-1">
-                          {selectedList.description}
-                        </p>
-                      )}
-                    <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-400 mt-1">
-                      {selectedList.createdAt && (
-                        <span>Created {new Date(selectedList.createdAt).toLocaleDateString()}</span>
-                      )}
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h2 className="text-base font-bold text-slate-900 dark:text-white font-display truncate">
+                          {selectedList.name}
+                        </h2>
+                        <button
+                          type="button"
+                          onClick={() => setRenamingListTarget(selectedList)}
+                          title="Rename list"
+                          className="p-1 text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/40 rounded transition-colors cursor-pointer"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <span className="px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800 shrink-0">
+                          {selectedList.leadCount || (selectedList.leadIds ? selectedList.leadIds.length : 0)} Leads
+                        </span>
+                        {selectedList.createdAt && (
+                          <span className="text-[11px] text-slate-400 hidden sm:inline shrink-0">
+                            · Created {new Date(selectedList.createdAt).toLocaleDateString()}
+                          </span>
+                        )}
+                        {selectedList.description &&
+                          selectedList.description.toLowerCase() !== 'curated b2b target account segment' &&
+                          selectedList.description.toLowerCase() !== 'target account segment' && (
+                            <span className="text-[11px] text-slate-400 max-w-xs truncate hidden md:inline" title={selectedList.description}>
+                              · {selectedList.description}
+                            </span>
+                          )}
+                      </div>
+                      {/* Mobile description if present */}
+                      {selectedList.description &&
+                        selectedList.description.toLowerCase() !== 'curated b2b target account segment' &&
+                        selectedList.description.toLowerCase() !== 'target account segment' && (
+                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5 md:hidden">
+                            {selectedList.description}
+                          </p>
+                        )}
                     </div>
                   </div>
 
                   {/* Actions for this list */}
-                  <div className="flex flex-wrap items-center gap-2">
-                    {/* Add from Core Lead Finder (Full Database with filters and pagination) */}
-                    <button
-                      type="button"
-                      onClick={() => handleStartAddingInMainPage('finder')}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 active:scale-95 rounded-lg transition-all cursor-pointer shadow-2xs"
-                      title="Open Lead Finder in Target List mode to search, filter, and append core database leads"
-                    >
-                      <Search className="w-3.5 h-3.5" />
-                      <span>+ Add from Lead Finder</span>
-                    </button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {/* Unified Add Leads Dropdown */}
+                    <div className="relative" ref={addMenuRef}>
+                      <button
+                        type="button"
+                        onClick={() => setIsAddMenuOpen((prev) => !prev)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 active:scale-95 rounded-lg transition-all cursor-pointer shadow-2xs"
+                        title="Add leads to this list"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add Leads</span>
+                        <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isAddMenuOpen ? 'rotate-180' : ''}`} />
+                      </button>
 
-                    {/* Add from Custom Leads Workspace */}
-                    <button
-                      type="button"
-                      onClick={() => handleStartAddingInMainPage('custom')}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 rounded-lg transition-all cursor-pointer shadow-2xs"
-                      title="Open Custom Leads workspace to select and append custom cluster leads"
-                    >
-                      <Layers className="w-3.5 h-3.5 text-orange-500" />
-                      <span>+ Add from Custom Leads</span>
-                    </button>
+                      {isAddMenuOpen && (
+                        <div className="absolute right-0 top-full mt-1.5 w-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl py-1 z-40 animate-in fade-in zoom-in-95 duration-150">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsAddMenuOpen(false);
+                              handleStartAddingInMainPage('finder');
+                            }}
+                            className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs text-slate-700 dark:text-slate-200 hover:bg-orange-50 dark:hover:bg-orange-950/40 hover:text-orange-600 dark:hover:text-orange-400 transition-colors cursor-pointer"
+                          >
+                            <Search className="w-4 h-4 text-orange-500 shrink-0" />
+                            <div>
+                              <div className="font-semibold">From Lead Finder</div>
+                              <div className="text-[10px] text-slate-400">Search & filter 414k+ core leads</div>
+                            </div>
+                          </button>
 
-                    {/* Quick Modal Option */}
-                    <button
-                      type="button"
-                      onClick={() => setIsAddLeadsModalOpen(true)}
-                      className="p-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer shadow-2xs"
-                      title="Open scrollable modal with search and pagination"
-                    >
-                      <UserPlus className="w-3.5 h-3.5" />
-                    </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsAddMenuOpen(false);
+                              handleStartAddingInMainPage('custom');
+                            }}
+                            className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs text-slate-700 dark:text-slate-200 hover:bg-orange-50 dark:hover:bg-orange-950/40 hover:text-orange-600 dark:hover:text-orange-400 transition-colors cursor-pointer"
+                          >
+                            <Layers className="w-4 h-4 text-orange-500 shrink-0" />
+                            <div>
+                              <div className="font-semibold">From Custom Leads</div>
+                              <div className="text-[10px] text-slate-400">Select from private clusters</div>
+                            </div>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsAddMenuOpen(false);
+                              setIsAddLeadsModalOpen(true);
+                            }}
+                            className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs text-slate-700 dark:text-slate-200 hover:bg-orange-50 dark:hover:bg-orange-950/40 hover:text-orange-600 dark:hover:text-orange-400 transition-colors cursor-pointer border-t border-slate-100 dark:border-slate-800"
+                          >
+                            <UserPlus className="w-4 h-4 text-orange-500 shrink-0" />
+                            <div>
+                              <div className="font-semibold">Quick Search Modal</div>
+                              <div className="text-[10px] text-slate-400">Pick by company or contact</div>
+                            </div>
+                          </button>
+                        </div>
+                      )}
+                    </div>
 
                     {/* Quick Add Selected Leads if any selected in Lead Finder */}
                     {selectedLeadIds.length > 0 && (
@@ -1194,29 +1253,32 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
                         type="button"
                         disabled={isAppendingSelected}
                         onClick={handleQuickAppendSelected}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/40 hover:bg-orange-100 dark:hover:bg-orange-900/60 border border-orange-300 dark:border-orange-800 rounded-lg transition-colors cursor-pointer shadow-2xs"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/40 hover:bg-orange-100 dark:hover:bg-orange-900/60 border border-orange-300 dark:border-orange-800 rounded-lg transition-colors cursor-pointer shadow-2xs"
                         title={`Append ${selectedLeadIds.length} leads selected in Lead Finder`}
                       >
                         <Plus className="w-3.5 h-3.5" />
-                        <span>Add {selectedLeadIds.length} Selected Leads</span>
+                        <span>Add {selectedLeadIds.length} Selected</span>
                       </button>
                     )}
 
+                    {/* Filter in Lead Finder */}
                     <button
                       type="button"
                       onClick={() => handleApplyToFinder(selectedList)}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer shadow-2xs"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer shadow-2xs"
+                      title="Filter and inspect these leads in Lead Finder"
                     >
-                      <Filter className="w-3.5 h-3.5" />
-                      <span>Filter in Lead Finder</span>
+                      <Filter className="w-3.5 h-3.5 text-orange-500" />
+                      <span className="hidden sm:inline">Filter in Finder</span>
                     </button>
 
+                    {/* Export CSV */}
                     {listLeads.length > 0 && (
                       <button
                         type="button"
                         onClick={handleExportListCsv}
                         disabled={selectedListLeads.length === 0}
-                        className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg transition-colors shadow-2xs cursor-pointer ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors shadow-2xs cursor-pointer ${
                           selectedListLeads.length > 0
                             ? 'bg-orange-600 hover:bg-orange-700 text-white font-bold shadow-xs active:scale-95'
                             : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 opacity-60 cursor-not-allowed'
@@ -1228,26 +1290,15 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
                         }
                       >
                         <Download className="w-3.5 h-3.5" />
-                        <span>
-                          {selectedListLeads.length > 0
-                            ? `Export Selected CSV (${selectedListLeads.length})`
-                            : 'Export Selected CSV (0)'}
-                        </span>
+                        <span>Export CSV{selectedListLeads.length > 0 ? ` (${selectedListLeads.length})` : ''}</span>
                       </button>
                     )}
 
-                    <button
-                      type="button"
-                      onClick={() => setRenamingListTarget(selectedList)}
-                      className="p-2 text-slate-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950/40 border border-slate-200 dark:border-slate-700 rounded-lg transition-colors cursor-pointer"
-                      title="Rename this saved list"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                    </button>
+                    {/* Delete List */}
                     <button
                       type="button"
                       onClick={() => handleDeleteListClick(selectedList.id, selectedList.name)}
-                      className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-slate-700 rounded-lg transition-colors cursor-pointer"
+                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-slate-700 rounded-lg transition-colors cursor-pointer"
                       title="Delete this saved list"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
