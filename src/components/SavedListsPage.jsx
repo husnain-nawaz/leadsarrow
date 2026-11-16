@@ -2128,19 +2128,19 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
                   </div>
                 )}
 
-                {/* Table Footer with Pagination & Page Size Controls */}
+                {/* Table Footer with Pagination & Page Size Controls (Fully Responsive) */}
                 {listLeads.length > 0 && (
-                  <div className="px-4 py-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4 text-xs text-slate-600 dark:text-slate-400">
-                    <div className="flex items-center gap-3">
+                  <div className="px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-4 text-xs text-slate-600 dark:text-slate-400">
+                    <div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-3">
                       <span>
                         Showing <strong className="font-mono tabular-nums text-slate-900 dark:text-white">{startIdx} - {endIdx}</strong> of{' '}
-                        <strong className="font-mono tabular-nums text-slate-900 dark:text-white">{totalFilteredLeads}</strong> leads
+                        <strong className="font-mono tabular-nums text-slate-900 dark:text-white">{totalFilteredLeads}</strong>
                         {totalFilteredLeads !== listLeads.length && (
-                          <span className="text-slate-400 ml-1">({listLeads.length} total in list)</span>
+                          <span className="text-slate-400 ml-1 hidden md:inline">({listLeads.length} total)</span>
                         )}
                       </span>
                       <span>·</span>
-                      <label className="inline-flex items-center gap-1.5">
+                      <label className="inline-flex items-center gap-1.5 shrink-0">
                         <span className="text-slate-500 dark:text-slate-400">Rows:</span>
                         <select
                           value={pageSize}
@@ -2162,16 +2162,17 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
                       </label>
                     </div>
 
-                    {/* Numbered Pagination & Controls */}
-                    <div className="flex items-center gap-1">
+                    {/* Numbered Pagination & Controls (Never overflows screen) */}
+                    <div className="flex items-center justify-center sm:justify-end gap-1 max-w-full overflow-x-auto py-0.5">
                       <button
                         type="button"
                         disabled={page <= 1}
                         onClick={() => setPage((p) => Math.max(1, p - 1))}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:pointer-events-none cursor-pointer whitespace-nowrap transition-colors mr-1"
+                        className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:pointer-events-none cursor-pointer whitespace-nowrap transition-colors shrink-0"
+                        title="Previous page"
                       >
                         <ChevronLeft className="w-3.5 h-3.5" />
-                        Previous
+                        <span className="hidden sm:inline">Previous</span>
                       </button>
 
                       {(() => {
@@ -2193,7 +2194,7 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
                             return (
                               <span
                                 key={`ellipsis-${idx}`}
-                                className="min-w-6 h-7 px-1 flex items-center justify-center text-xs text-slate-400 select-none font-mono"
+                                className="min-w-5 sm:min-w-6 h-7 px-0.5 sm:px-1 flex items-center justify-center text-xs text-slate-400 select-none font-mono shrink-0"
                               >
                                 ...
                               </span>
@@ -2206,7 +2207,7 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
                               key={p}
                               type="button"
                               onClick={() => setPage(p)}
-                              className={`min-w-7 h-7 px-1.5 rounded-md text-xs font-mono font-medium transition-colors cursor-pointer flex items-center justify-center whitespace-nowrap ${
+                              className={`min-w-6 sm:min-w-7 h-7 px-1 sm:px-1.5 rounded-md text-xs font-mono font-medium transition-colors cursor-pointer flex items-center justify-center whitespace-nowrap shrink-0 ${
                                 isActive
                                   ? 'bg-orange-600 text-white shadow-xs font-semibold'
                                   : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
@@ -2222,9 +2223,10 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
                         type="button"
                         disabled={page >= totalPages}
                         onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:pointer-events-none cursor-pointer whitespace-nowrap transition-colors ml-1"
+                        className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:pointer-events-none cursor-pointer whitespace-nowrap transition-colors shrink-0"
+                        title="Next page"
                       >
-                        Next
+                        <span className="hidden sm:inline">Next</span>
                         <ChevronRight className="w-3.5 h-3.5" />
                       </button>
                     </div>
