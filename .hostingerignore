@@ -1,0 +1,25 @@
+# Hostinger Inode Protection Ignore Rules
+# Exclude mobile app and dev artifacts completely from Hostinger deployment
+
+# React Native Mobile App (Prevents 50,000+ inodes from being deployed to Hostinger)
+mobile/
+mobile/**
+
+# Build artifacts & caches
+dist/
+build/
+.cache/
+.expo/
+coverage/
+
+# Local logs & environment secrets
+*.log
+.env*
+!.env.example
+firebase-applet-config.json
+
+# Git & IDE internals
+.git/
+.github/
+.vscode/
+.idea/

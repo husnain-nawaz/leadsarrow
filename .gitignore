@@ -13,3 +13,20 @@ firebase-applet-config.json
 temp_extract/
 xl/
 =
+
+# Git & IDE internals
+.claude/
+mobile/.claude/
+
+mobile/node_modules/
+mobile/.expo/
+mobile/dist/
+mobile/web-build/
+mobile/android/
+mobile/ios/
+mobile/*.jks
+mobile/*.keystore
+mobile/*.apk
+mobile/*.aab
+mobile/.env*
+
