@@ -90,7 +90,7 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
   };
 
   return (
-    <header className="relative z-40 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 transition-colors">
+    <header className={`relative bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 transition-colors ${isMobileMenuOpen ? 'z-[100]' : 'z-40'}`}>
       <div className="flex items-center justify-between gap-2 sm:gap-3 px-3 sm:px-4 lg:px-6 py-2.5">
         {/* Zone 1: Mobile Hamburger Toggle, Brand Wordmark & Navigation Links */}
         <div className="flex items-center gap-2 sm:gap-3 lg:gap-6 shrink-0 min-w-0">
@@ -363,7 +363,7 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
 
       {/* Mobile Navigation Sidebar Drawer (Slides in from the left on small screens) */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="fixed inset-0 z-[100] lg:hidden">
           {/* Backdrop overlay */}
           <div
             className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200"
@@ -371,7 +371,7 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
           />
 
           {/* Sidebar Drawer Panel */}
-          <aside className="fixed inset-y-0 left-0 z-50 w-[300px] sm:w-80 max-w-[85vw] bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col justify-between overflow-y-auto animate-in slide-in-from-left duration-200 text-slate-900 dark:text-slate-100">
+          <aside className="fixed inset-y-0 left-0 z-[100] w-[300px] sm:w-80 max-w-[85vw] bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col justify-between overflow-y-auto animate-in slide-in-from-left duration-200 text-slate-900 dark:text-slate-100">
             {/* Sidebar Top: Wordmark & Close Button */}
             <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 bg-white dark:bg-slate-900">
               <div className="flex items-center gap-2">

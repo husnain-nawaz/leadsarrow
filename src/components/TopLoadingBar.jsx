@@ -75,7 +75,7 @@ export default function TopLoadingBar({
 
   return (
     <div
-      className={`absolute top-0 left-0 right-0 z-40 overflow-hidden pointer-events-none transition-opacity duration-200 ${height} ${className}`}
+      className={`absolute top-0 left-0 right-0 z-20 overflow-hidden pointer-events-none transition-opacity duration-200 ${height} ${className}`}
       style={{ opacity }}
     >
       {/* Background track */}
