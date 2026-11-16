@@ -267,15 +267,15 @@ export async function recordLoginSession(userId: string, req: any) {
     const ip = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '127.0.0.1';
     const device = req.headers['user-agent'] ? req.headers['user-agent'].substring(0, 100) : 'Web Client';
 
-    const login = loginRepo.create({
-      userId,
-      ip: String(ip).substring(0, 60),
-      location: 'Local Network',
-      device
-    });
-    await loginRepo.save(login);
+    await ds.query(
+      'INSERT INTO user_logins (user_id, ip, location, device, timestamp) VALUES (?, ?, ?, ?, NOW())',
+      [userId, String(ip).substring(0, 60), 'Local Network', device]
+    ).catch(() => {});
 
-    await userRepo.update(userId, { lastLoginAt: new Date() });
+    await ds.query(
+      'UPDATE users SET last_login_at = NOW() WHERE id = ?',
+      [userId]
+    ).catch(() => {});
   } catch (err: any) {
     console.error('Failed to record login session with TypeORM:', err.message);
   }
