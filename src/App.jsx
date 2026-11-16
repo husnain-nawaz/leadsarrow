@@ -315,7 +315,7 @@ function MainApp() {
   // Gated: No one can access the workspace dashboard without logging in first.
   if (!user) {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen w-full max-w-full overflow-x-hidden">
         <GlobalToast />
         <LandingPage />
         <AuthModal />
@@ -326,7 +326,7 @@ function MainApp() {
   // If user clicked "View Landing Page", allow browsing public landing page
   if (showLandingForLoggedIn) {
     return (
-      <div className="relative min-h-screen">
+      <div className="relative min-h-screen w-full max-w-full overflow-x-hidden">
         <GlobalToast />
         <LandingPage
           onReturnDashboard={() => setShowLandingForLoggedIn(false)}

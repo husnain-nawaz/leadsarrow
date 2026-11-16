@@ -126,21 +126,27 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
   ];
 
   return (
-    <div className={`min-h-screen ${isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'} flex flex-col selection:bg-orange-600 selection:text-white font-sans antialiased overflow-x-hidden transition-colors duration-300`}>
-      {/* Top Ambient Glow Effect */}
-      <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[450px] ${isDark ? 'bg-gradient-to-tr from-orange-600/20 via-amber-500/15 to-transparent blur-[120px]' : 'bg-gradient-to-tr from-orange-400/20 via-amber-300/15 to-transparent blur-[100px]'} pointer-events-none -z-10`} />
+    <div className={`min-h-screen w-full max-w-full overflow-x-hidden ${isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'} flex flex-col selection:bg-orange-600 selection:text-white font-sans antialiased relative transition-colors duration-300`}>
+      {/* Top Ambient Glow Effect with strict viewport clipping */}
+      <div className="absolute inset-x-0 top-0 h-[480px] overflow-hidden pointer-events-none -z-10">
+        <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-[600px] sm:w-[1000px] h-[350px] sm:h-[450px] ${
+          isDark
+            ? 'bg-gradient-to-tr from-orange-600/20 via-amber-500/15 to-transparent blur-[80px] sm:blur-[120px]'
+            : 'bg-gradient-to-tr from-orange-400/20 via-amber-300/15 to-transparent blur-[70px] sm:blur-[100px]'
+        }`} />
+      </div>
 
       {/* Top Announcement Banner */}
-      <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600 text-white text-xs py-2 px-3 sm:px-4 text-center font-medium flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 shadow-sm">
+      <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600 text-white text-xs py-2 px-3 sm:px-4 text-center font-medium flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 shadow-sm w-full">
         <Sparkles className="w-3.5 h-3.5 animate-pulse shrink-0" />
         {user ? (
           <>
             {user.isDeactivated ? (
-              <span className="text-amber-200 font-medium">
-                Workspace access is currently suspended. {user.deactivationReason ? `(Reason: ${user.deactivationReason})` : ''}
+              <span className="text-amber-200 font-medium text-[11px] sm:text-xs">
+                Workspace access suspended. {user.deactivationReason ? `(${user.deactivationReason})` : ''}
               </span>
             ) : (
-              <span>
+              <span className="text-[11px] sm:text-xs">
                 <span className="hidden sm:inline">
                   Signed in as <strong>{user.name}</strong> ({user.plan || 'Free Starter'} · {user.planId === 'unlimited' ? 'Unlimited Credits' : `${user.creditsRemaining ?? 100} credits available today`})
                 </span>
@@ -153,32 +159,32 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
               <button
                 type="button"
                 onClick={onReturnDashboard}
-                className="underline font-bold hover:text-orange-100 ml-1 cursor-pointer shrink-0"
+                className="underline font-bold hover:text-orange-100 ml-1 cursor-pointer shrink-0 text-[11px] sm:text-xs"
               >
                 {user.isDeactivated ? 'View Status →' : 'Dashboard →'}
               </button>
             )}
           </>
         ) : (
-          <>
-            <span>Launch Offer: Get <strong>100 Free Verified Credits every single day</strong> automatically. No credit card required.</span>
+          <div className="text-[11px] sm:text-xs flex flex-wrap items-center justify-center gap-1">
+            <span>Launch Offer: Get <strong>100 Free Credits/Day</strong> automatically.</span>
             <button
               type="button"
               onClick={() => handleOpenAuth('free')}
-              className="underline font-bold hover:text-orange-100 ml-1.5 cursor-pointer"
+              className="underline font-bold hover:text-orange-100 ml-1 cursor-pointer whitespace-nowrap"
             >
               Claim 100 Credits →
             </button>
-          </>
+          </div>
         )}
       </div>
 
       {/* Navigation Header */}
-      <header className={`sticky top-0 z-40 ${isDark ? 'bg-slate-900/90 border-slate-800/80 text-white' : 'bg-white/95 border-slate-200 text-slate-900 shadow-xs'} backdrop-blur-xl border-b transition-colors duration-300`}>
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between gap-6">
-          <div className="flex items-center gap-8">
-            <a href="#" className={`flex items-center gap-2.5 text-xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'} font-display`}>
-              <span className="w-3 h-3 rounded-full bg-orange-500 shadow-sm shadow-orange-500/50" />
+      <header className={`sticky top-0 z-40 ${isDark ? 'bg-slate-900/90 border-slate-800/80 text-white' : 'bg-white/95 border-slate-200 text-slate-900 shadow-xs'} backdrop-blur-xl border-b transition-colors duration-300 w-full`}>
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-6">
+          <div className="flex items-center gap-4 sm:gap-8 min-w-0">
+            <a href="#" className={`flex items-center gap-2 text-lg sm:text-xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'} font-display shrink-0`}>
+              <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-orange-500 shadow-sm shadow-orange-500/50" />
               <span><span className="text-orange-500">Leads</span>Arrow</span>
             </a>
 
@@ -190,19 +196,19 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
             </nav>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             {/* Dark / Light Mode Toggle Button */}
             <button
               type="button"
               onClick={toggleTheme}
               title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
-              className={`p-2 rounded-xl border transition-all cursor-pointer flex items-center justify-center ${
+              className={`p-1.5 sm:p-2 rounded-xl border transition-all cursor-pointer flex items-center justify-center shrink-0 ${
                 isDark
                   ? 'bg-slate-800/80 border-slate-700 text-amber-400 hover:bg-slate-800 hover:text-amber-300 shadow-inner'
                   : 'bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200 hover:text-slate-900 shadow-xs'
               }`}
             >
-              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4 text-slate-700" />}
+              {isDark ? <Sun className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Moon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-700" />}
             </button>
 
             {user ? (
@@ -313,7 +319,7 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
                 <button
                   type="button"
                   onClick={() => dispatch(openAuthModal('login'))}
-                  className={`px-4 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+                  className={`px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer shrink-0 ${
                     isDark
                       ? 'text-slate-300 hover:text-white hover:bg-slate-800'
                       : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
@@ -324,10 +330,11 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
                 <button
                   type="button"
                   onClick={() => handleOpenAuth('free')}
-                  className="px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-500 rounded-lg shadow-md shadow-orange-600/30 transition-all cursor-pointer flex items-center gap-1.5"
+                  className="px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-500 rounded-lg shadow-md shadow-orange-600/30 transition-all cursor-pointer flex items-center gap-1 sm:gap-1.5 shrink-0 whitespace-nowrap"
                 >
-                  <Zap className="w-3.5 h-3.5 fill-current" />
-                  <span>Start Free (100 Credits/Day)</span>
+                  <Zap className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-current shrink-0" />
+                  <span className="hidden sm:inline">Start Free (100 Credits/Day)</span>
+                  <span className="sm:hidden">Start Free</span>
                 </button>
               </>
             )}
@@ -336,20 +343,21 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
       </header>
 
       {/* Hero Section */}
-      <section className="relative pt-20 pb-20 px-6 overflow-hidden">
-        <div className="max-w-5xl mx-auto text-center space-y-6">
+      <section className="relative pt-12 sm:pt-20 pb-12 sm:pb-20 px-3 sm:px-6 overflow-hidden w-full">
+        <div className="max-w-5xl mx-auto text-center space-y-5 sm:space-y-6">
           {/* Eyebrow Pill */}
-          <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold shadow-inner ${
+          <div className={`inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full text-[11px] sm:text-xs font-semibold shadow-inner max-w-full ${
             isDark
               ? 'bg-slate-900 border border-orange-500/30 text-orange-300'
               : 'bg-orange-100/90 border border-orange-200 text-orange-900'
           }`}>
-            <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-            <span>10,363,428 Verified Global Decision Makers Ready to Outreach</span>
+            <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse shrink-0" />
+            <span className="hidden sm:inline">10,363,428 Verified Global Decision Makers Ready to Outreach</span>
+            <span className="sm:hidden">10.3M+ Verified Decision Makers Ready</span>
           </div>
 
           {/* Main Headline */}
-          <h1 className={`text-4xl sm:text-5xl md:text-6xl font-black font-display tracking-tight leading-[1.12] ${
+          <h1 className={`text-3xl sm:text-5xl md:text-6xl font-black font-display tracking-tight leading-[1.15] break-words ${
             isDark ? 'text-white' : 'text-slate-900'
           }`}>
             The High-Velocity B2B Intelligence Engine <br className="hidden sm:inline" />
@@ -359,25 +367,25 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
           </h1>
 
           {/* Subtitle */}
-          <p className={`max-w-2xl mx-auto text-base sm:text-lg leading-relaxed font-normal ${
+          <p className={`max-w-2xl mx-auto text-sm sm:text-lg leading-relaxed font-normal px-2 ${
             isDark ? 'text-slate-300' : 'text-slate-600'
           }`}>
             Filter 10M+ decision makers by intent signals, funding stages, technographics, and verified emails. Get <strong>100 free credits refreshed every single day</strong> automatically.
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-3">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
             <button
               type="button"
               onClick={() => handleOpenAuth('free')}
-              className="w-full sm:w-auto px-8 py-4 text-sm font-bold text-white bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 rounded-xl shadow-lg shadow-orange-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer transform hover:-translate-y-0.5"
+              className="w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 rounded-xl shadow-lg shadow-orange-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer transform hover:-translate-y-0.5"
             >
               <span>{user ? 'Open Workspace Dashboard' : 'Claim 100 Free Daily Credits'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
             <a
               href="#preview"
-              className={`w-full sm:w-auto px-7 py-4 text-sm font-semibold rounded-xl transition-all text-center border ${
+              className={`w-full sm:w-auto px-6 sm:px-7 py-3.5 sm:py-4 text-xs sm:text-sm font-semibold rounded-xl transition-all text-center border ${
                 isDark
                   ? 'text-slate-200 hover:text-white bg-slate-900/80 hover:bg-slate-800 border-slate-700/80'
                   : 'text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-100 border-slate-200 shadow-xs'
@@ -388,49 +396,54 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
           </div>
 
           {/* Trust Value Badges */}
-          <div className={`pt-8 flex flex-wrap items-center justify-center gap-6 sm:gap-10 text-xs font-medium ${
+          <div className={`pt-6 sm:pt-8 flex flex-wrap items-center justify-center gap-4 sm:gap-10 text-xs font-medium ${
             isDark ? 'text-slate-400' : 'text-slate-600'
           }`}>
             <div className="flex items-center gap-2">
-              <BadgeCheck className="w-4 h-4 text-emerald-500" />
-              <span>99.4% Verified SMTP Deliverability</span>
+              <BadgeCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+              <span>99.4% Verified Deliverability</span>
             </div>
             <div className="flex items-center gap-2">
-              <Database className="w-4 h-4 text-orange-500" />
+              <Database className="w-4 h-4 text-orange-500 shrink-0" />
               <span>10.3M+ Multi-Cluster Indexed Records</span>
             </div>
             <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-amber-500" />
+              <Zap className="w-4 h-4 text-amber-500 shrink-0" />
               <span>Daily Auto-Replenished Credits</span>
             </div>
           </div>
         </div>
 
         {/* Live Interactive Preview Card */}
-        <div id="preview" className="max-w-6xl mx-auto mt-16 px-2">
-          <div className={`relative rounded-2xl border shadow-2xl overflow-hidden ${
+        <div id="preview" className="max-w-6xl mx-auto mt-10 sm:mt-16 px-0 sm:px-2 w-full">
+          <div className={`relative rounded-2xl border shadow-2xl overflow-hidden w-full ${
             isDark ? 'border-slate-800 bg-slate-900/90' : 'border-slate-200 bg-white'
           }`}>
             {/* Mock Window Top Bar */}
-            <div className="bg-slate-950 px-4 py-3 flex items-center justify-between border-b border-slate-800">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-rose-500/80" />
-                <span className="w-3 h-3 rounded-full bg-amber-500/80" />
-                <span className="w-3 h-3 rounded-full bg-emerald-500/80" />
-                <span className="text-xs text-slate-400 font-mono ml-2">leadsarrow.io/workspace — Live Cluster Intelligence</span>
+            <div className="bg-slate-950 px-3 sm:px-4 py-2.5 sm:py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+                </div>
+                <span className="text-[11px] sm:text-xs text-slate-400 font-mono truncate">
+                  leadsarrow.io/workspace — Live Cluster Intelligence
+                </span>
               </div>
-              <div className="flex items-center gap-2 text-[11px] text-emerald-400 font-semibold bg-emerald-950/60 border border-emerald-800/60 px-3 py-1 rounded-full">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                <span>Cluster Online: 10,363,428 Records</span>
+              <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-emerald-400 font-semibold bg-emerald-950/60 border border-emerald-800/60 px-2.5 sm:px-3 py-1 rounded-full shrink-0 self-start sm:self-auto">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping shrink-0" />
+                <span className="hidden sm:inline">Cluster Online: 10,363,428 Records</span>
+                <span className="sm:hidden">Cluster Online: 10.3M</span>
               </div>
             </div>
 
             {/* Table Mockup */}
-            <div className={`p-4 sm:p-6 ${isDark ? 'bg-slate-900/60' : 'bg-slate-50/50'}`}>
-              <div className={`max-h-[460px] overflow-y-auto overflow-x-auto rounded-xl border shadow-inner ${
+            <div className={`p-3 sm:p-6 ${isDark ? 'bg-slate-900/60' : 'bg-slate-50/50'}`}>
+              <div className={`max-h-[460px] overflow-y-auto overflow-x-auto rounded-xl border shadow-inner max-w-full ${
                 isDark ? 'border-slate-800' : 'border-slate-200 bg-white'
               }`}>
-                <table className="w-full text-left text-xs">
+                <table className="w-full min-w-[650px] text-left text-xs">
                   <thead className={`sticky top-0 uppercase tracking-wider text-[10px] z-10 border-b ${
                     isDark ? 'bg-slate-950 border-slate-800 text-slate-400' : 'bg-slate-100 border-slate-200 text-slate-600'
                   }`}>
@@ -560,18 +573,18 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
               </div>
 
               {/* Login Gated Teaser Banner */}
-              <div className={`mt-5 p-5 border rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4 ${
+              <div className={`mt-5 p-4 sm:p-5 border rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
                 isDark
                   ? 'bg-gradient-to-r from-orange-950/60 via-slate-900 to-slate-950 border-orange-500/30'
                   : 'bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50/50 border-orange-200 shadow-xs'
               }`}>
-                <div className="flex items-center gap-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-orange-600 text-white flex items-center justify-center shrink-0 shadow-md">
-                    <Lock className="w-5 h-5" />
+                <div className="flex items-start sm:items-center gap-3">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-orange-600 text-white flex items-center justify-center shrink-0 shadow-md">
+                    <Lock className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                   <div>
-                    <h4 className={`text-sm font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Access Complete 10,363,428 Decision Maker Database</h4>
-                    <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                    <h4 className={`text-xs sm:text-sm font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Access Complete 10,363,428 Decision Maker Database</h4>
+                    <p className={`text-[11px] sm:text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                       Sign in or create an account to instantly receive <strong>100 free credits / day</strong> and reveal phone numbers and verified emails.
                     </p>
                   </div>
@@ -580,7 +593,7 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
                 <button
                   type="button"
                   onClick={() => handleOpenAuth('free')}
-                  className="px-5 py-2.5 text-xs font-bold text-white bg-orange-600 hover:bg-orange-500 rounded-xl shadow-md whitespace-nowrap cursor-pointer transition-colors"
+                  className="w-full sm:w-auto px-5 py-2.5 text-xs font-bold text-white bg-orange-600 hover:bg-orange-500 rounded-xl shadow-md whitespace-nowrap cursor-pointer transition-colors text-center shrink-0"
                 >
                   {user ? 'Go to Dashboard →' : 'Sign In / Claim 100 Free Credits →'}
                 </button>
@@ -591,8 +604,8 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
       </section>
 
       {/* Feature Bento Grid */}
-      <section id="features" className={`py-24 px-6 border-t ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-100 border-slate-200'}`}>
-        <div className="max-w-7xl mx-auto space-y-14">
+      <section id="features" className={`py-14 sm:py-24 px-4 sm:px-6 border-t ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-100 border-slate-200'}`}>
+        <div className="max-w-7xl mx-auto space-y-10 sm:space-y-14">
           <div className="text-center max-w-2xl mx-auto space-y-3">
             <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${
               isDark ? 'bg-slate-800 text-orange-400 border border-slate-700' : 'bg-white text-orange-600 border border-slate-200 shadow-xs'
@@ -600,55 +613,55 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
               <Layers className="w-3.5 h-3.5" />
               <span>Engineered for Revenue Velocity</span>
             </div>
-            <h2 className={`text-3xl sm:text-4xl font-extrabold font-display ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            <h2 className={`text-2xl sm:text-4xl font-extrabold font-display ${isDark ? 'text-white' : 'text-slate-900'}`}>
               Enterprise Lead Intelligence Capabilities
             </h2>
-            <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+            <p className={`text-xs sm:text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
               Modern search and filter infrastructure built to eliminate bounce-backs and power repeatable pipeline.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
             {/* Card 1 */}
-            <div className={`p-7 rounded-2xl border transition-all space-y-4 ${
+            <div className={`p-5 sm:p-7 rounded-2xl border transition-all space-y-4 ${
               isDark ? 'bg-slate-950/70 border-slate-800 hover:border-orange-500/40' : 'bg-white border-slate-200 hover:border-orange-400 shadow-sm'
             }`}>
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+              <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center ${
                 isDark ? 'bg-orange-950/70 border border-orange-800/50 text-orange-400' : 'bg-orange-100 text-orange-600'
               }`}>
-                <TrendingUp className="w-6 h-6" />
+                <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
-              <h3 className={`text-lg font-bold font-display ${isDark ? 'text-white' : 'text-slate-900'}`}>Deep Intent & Buying Signals</h3>
+              <h3 className={`text-base sm:text-lg font-bold font-display ${isDark ? 'text-white' : 'text-slate-900'}`}>Deep Intent & Buying Signals</h3>
               <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                 Filter prospect lists by active buying velocity, recent hiring growth, Series funding rounds, and technographic changes.
               </p>
             </div>
 
             {/* Card 2 */}
-            <div className={`p-7 rounded-2xl border transition-all space-y-4 ${
+            <div className={`p-5 sm:p-7 rounded-2xl border transition-all space-y-4 ${
               isDark ? 'bg-slate-950/70 border-slate-800 hover:border-orange-500/40' : 'bg-white border-slate-200 hover:border-orange-400 shadow-sm'
             }`}>
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+              <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center ${
                 isDark ? 'bg-orange-950/70 border border-orange-800/50 text-orange-400' : 'bg-orange-100 text-orange-600'
               }`}>
-                <ShieldCheck className="w-6 h-6" />
+                <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
-              <h3 className={`text-lg font-bold font-display ${isDark ? 'text-white' : 'text-slate-900'}`}>99.4% Deliverable Work Emails</h3>
+              <h3 className={`text-base sm:text-lg font-bold font-display ${isDark ? 'text-white' : 'text-slate-900'}`}>99.4% Deliverable Work Emails</h3>
               <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                 Zero bounce-backs. Every email address is verified via dynamic SMTP pinging, MX integrity testing, and anti-spam filters.
               </p>
             </div>
 
             {/* Card 3 */}
-            <div className={`p-7 rounded-2xl border transition-all space-y-4 ${
+            <div className={`p-5 sm:p-7 rounded-2xl border transition-all space-y-4 ${
               isDark ? 'bg-slate-950/70 border-slate-800 hover:border-orange-500/40' : 'bg-white border-slate-200 hover:border-orange-400 shadow-sm'
             }`}>
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+              <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center ${
                 isDark ? 'bg-orange-950/70 border border-orange-800/50 text-orange-400' : 'bg-orange-100 text-orange-600'
               }`}>
-                <Download className="w-6 h-6" />
+                <Download className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
-              <h3 className={`text-lg font-bold font-display ${isDark ? 'text-white' : 'text-slate-900'}`}>Instant CSV & CRM Exports</h3>
+              <h3 className={`text-base sm:text-lg font-bold font-display ${isDark ? 'text-white' : 'text-slate-900'}`}>Instant CSV & CRM Exports</h3>
               <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                 Download filtered decision maker lists to formatted CSV with full contact names, direct dials, company revenues, and intent scores.
               </p>
@@ -658,29 +671,29 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
       </section>
 
       {/* Pricing Plans Section */}
-      <section id="pricing" className={`py-24 px-6 border-t ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-200'}`}>
-        <div className="max-w-7xl mx-auto space-y-14">
-          <div className="text-center max-w-3xl mx-auto space-y-4">
+      <section id="pricing" className={`py-14 sm:py-24 px-4 sm:px-6 border-t ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-200'}`}>
+        <div className="max-w-7xl mx-auto space-y-10 sm:space-y-14">
+          <div className="text-center max-w-3xl mx-auto space-y-3 sm:space-y-4">
             <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
               isDark ? 'bg-orange-950/80 border border-orange-800/70 text-orange-400' : 'bg-orange-100 border border-orange-200 text-orange-800'
             }`}>
               <Zap className="w-3.5 h-3.5 fill-current" />
               <span>Transparent Daily Replenished Credits</span>
             </div>
-            <h2 className={`text-3xl sm:text-4xl font-extrabold font-display tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            <h2 className={`text-2xl sm:text-4xl font-extrabold font-display tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
               Predictable Pricing with Daily Refreshed Credits
             </h2>
-            <p className={`text-base ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+            <p className={`text-sm sm:text-base ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
               Start free with <strong>100 verified credits every 24 hours</strong>. Scale effortlessly with daily allowances from $10/mo up to unlimited.
             </p>
           </div>
 
           {/* 4 Plans Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 items-stretch">
             {PRICING_PLANS.map((plan) => (
               <div
                 key={plan.id}
-                className={`relative rounded-2xl p-6 sm:p-7 border flex flex-col justify-between transition-all hover:shadow-2xl ${
+                className={`relative rounded-2xl p-5 sm:p-7 border flex flex-col justify-between transition-all hover:shadow-2xl ${
                   isDark
                     ? plan.popular
                       ? 'border-orange-500 bg-slate-900/95 ring-2 ring-orange-500/30 shadow-xl'
@@ -709,7 +722,7 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
 
                   <div className="mb-4">
                     <div className="flex items-baseline gap-1">
-                      <span className={`text-4xl font-extrabold font-display ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                      <span className={`text-3xl sm:text-4xl font-extrabold font-display ${isDark ? 'text-white' : 'text-slate-900'}`}>
                         {plan.priceDisplay}
                       </span>
                       <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
@@ -769,13 +782,13 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
       </section>
 
       {/* FAQ Section */}
-      <section id="faq" className={`py-24 px-6 border-t ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
-        <div className="max-w-3xl mx-auto space-y-10">
+      <section id="faq" className={`py-14 sm:py-24 px-4 sm:px-6 border-t ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+        <div className="max-w-3xl mx-auto space-y-8 sm:space-y-10">
           <div className="text-center space-y-2">
-            <h2 className={`text-3xl font-extrabold font-display ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            <h2 className={`text-2xl sm:text-3xl font-extrabold font-display ${isDark ? 'text-white' : 'text-slate-900'}`}>
               Frequently Asked Questions
             </h2>
-            <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+            <p className={`text-xs sm:text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
               Clear answers regarding daily credit allowances, exports, and data accuracy.
             </p>
           </div>
@@ -791,7 +804,7 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
                 <button
                   type="button"
                   onClick={() => setOpenFaq(openFaq === idx ? -1 : idx)}
-                  className={`w-full px-5 py-4 text-left font-semibold text-sm flex items-center justify-between gap-4 cursor-pointer transition-colors ${
+                  className={`w-full px-4 sm:px-5 py-3.5 sm:py-4 text-left font-semibold text-xs sm:text-sm flex items-center justify-between gap-4 cursor-pointer transition-colors ${
                     isDark ? 'text-slate-200 hover:bg-slate-900/60' : 'text-slate-900 hover:bg-slate-50'
                   }`}
                 >
@@ -803,7 +816,7 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
                   />
                 </button>
                 {openFaq === idx && (
-                  <div className={`px-5 pb-4 pt-1 text-xs leading-relaxed border-t ${
+                  <div className={`px-4 sm:px-5 pb-4 pt-1 text-xs leading-relaxed border-t ${
                     isDark ? 'text-slate-400 border-slate-800/60 bg-slate-900/30' : 'text-slate-600 border-slate-100 bg-slate-50/50'
                   }`}>
                     {faq.a}
@@ -816,19 +829,19 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
       </section>
 
       {/* Final Call to Action */}
-      <section className="py-20 px-6 bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600 text-white text-center">
-        <div className="max-w-3xl mx-auto space-y-6">
-          <h2 className="text-3xl sm:text-4xl font-black font-display tracking-tight">
+      <section className="py-14 sm:py-20 px-4 sm:px-6 bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600 text-white text-center">
+        <div className="max-w-3xl mx-auto space-y-5 sm:space-y-6">
+          <h2 className="text-2xl sm:text-4xl font-black font-display tracking-tight">
             Ready to Supercharge Your B2B Outbound?
           </h2>
-          <p className="text-sm sm:text-base text-orange-100 max-w-xl mx-auto leading-relaxed">
+          <p className="text-xs sm:text-base text-orange-100 max-w-xl mx-auto leading-relaxed">
             Get 100 free verified credits every day on our Free plan. Sign in to start exploring 10M+ decision makers right now.
           </p>
           <div className="pt-2">
             <button
               type="button"
               onClick={() => handleOpenAuth('free')}
-              className="px-9 py-4 text-sm font-extrabold text-orange-700 bg-white hover:bg-orange-50 rounded-xl shadow-xl transition-all cursor-pointer inline-flex items-center gap-2 transform hover:-translate-y-0.5"
+              className="px-7 sm:px-9 py-3.5 sm:py-4 text-xs sm:text-sm font-extrabold text-orange-700 bg-white hover:bg-orange-50 rounded-xl shadow-xl transition-all cursor-pointer inline-flex items-center gap-2 transform hover:-translate-y-0.5"
             >
               <span>{user ? 'Open Workspace Dashboard' : 'Get Started Free — 100 Credits/Day'}</span>
               <ArrowRight className="w-4 h-4" />
@@ -838,15 +851,16 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
       </section>
 
       {/* Footer */}
-      <footer className="bg-slate-950 text-slate-400 py-12 px-6 text-xs border-t border-slate-800">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
+      <footer className="bg-slate-950 text-slate-400 py-10 sm:py-12 px-4 sm:px-6 text-xs border-t border-slate-800 w-full">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left">
           <div className="flex items-center gap-2.5 text-white font-bold font-display text-base">
-            <span className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-xs" />
+            <span className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-xs shrink-0" />
             <span>LeadsArrow B2B Intelligence</span>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
             <a href="#features" className="hover:text-white transition-colors">Features</a>
+            <a href="#preview" className="hover:text-white transition-colors">10M+ Database</a>
             <a href="#pricing" className="hover:text-white transition-colors">Pricing Plans</a>
             <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
             <button
@@ -858,7 +872,7 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
             </button>
           </div>
 
-          <div className="text-slate-500">
+          <div className="text-slate-500 text-[11px] sm:text-xs">
             &copy; {new Date().getFullYear()} LeadsArrow Inc. All rights reserved.
           </div>
         </div>
