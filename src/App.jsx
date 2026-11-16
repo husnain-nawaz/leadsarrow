@@ -38,7 +38,6 @@ function WorkspaceContent({ activeView, setActiveView, onToggleLanding }) {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const filters = useSelector((state) => state.filters);
-  const { revealedLeadIds = [] } = useSelector((state) => state.leads);
   const [focusedSavedListId, setFocusedSavedListId] = useState(null);
   const isSuperAdmin = Boolean(user && (user.isSuperAdmin || user.role === 'superadmin' || user.email === 'alex@leadsarrow.io' || user.email === 'alex@nexuslead.io'));
 
@@ -51,7 +50,7 @@ function WorkspaceContent({ activeView, setActiveView, onToggleLanding }) {
 
   // Fetch B2B leads whenever any filter, sort, or pagination state changes in Redux
   useEffect(() => {
-    dispatch(fetchLeads({ ...filters, revealedLeadIds }));
+    dispatch(fetchLeads(filters));
   }, [
     dispatch,
     filters.searchQuery,
@@ -73,8 +72,7 @@ function WorkspaceContent({ activeView, setActiveView, onToggleLanding }) {
     filters.sortBy,
     filters.sortOrder,
     filters.page,
-    filters.pageSize,
-    revealedLeadIds.length
+    filters.pageSize
   ]);
 
   // Initial load of saved lists & real-time user profile sync

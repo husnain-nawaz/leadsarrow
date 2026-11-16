@@ -297,10 +297,30 @@ const authSlice = createSlice({
           });
         }
       }
+    },
+    updateUserState(state, action) {
+      if (action.payload) {
+        state.user = { ...state.user, ...action.payload };
+        persistAuthSession({
+          user: state.user,
+          token: state.token || getStoredToken(),
+          rememberMe: true
+        });
+      }
     }
   },
   extraReducers: (builder) => {
     builder
+      .addCase('leads/performRevealLead/fulfilled', (state, action) => {
+        if (action.payload?.user) {
+          state.user = { ...state.user, ...action.payload.user };
+          persistAuthSession({
+            user: state.user,
+            token: state.token || getStoredToken(),
+            rememberMe: true
+          });
+        }
+      })
       .addCase(updateCurrentUserProfile.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -416,7 +436,8 @@ export const {
   clearAuthError,
   syncFirebaseSession,
   decrementExportCredits,
-  setAccountDeactivated
+  setAccountDeactivated,
+  updateUserState
 } = authSlice.actions;
 
 export default authSlice.reducer;

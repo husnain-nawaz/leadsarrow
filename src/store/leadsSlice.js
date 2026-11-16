@@ -30,13 +30,13 @@ export const performRevealLead = createAsyncThunk(
   async (leadId, { dispatch, rejectWithValue }) => {
     try {
       const res = await revealLeadContactApi(leadId);
-      if (res.user) {
-        const { refreshCurrentUserProfile } = await import('./authSlice.js');
-        dispatch(refreshCurrentUserProfile());
-      }
       return { leadId, user: res.user };
     } catch (err) {
       dispatch(showToast({ message: err.message || 'Failed to reveal contact', type: 'error' }));
+      try {
+        const { refreshCurrentUserProfile } = await import('./authSlice.js');
+        dispatch(refreshCurrentUserProfile());
+      } catch {}
       return rejectWithValue(err.message);
     }
   }
@@ -44,9 +44,11 @@ export const performRevealLead = createAsyncThunk(
 
 export const fetchLeads = createAsyncThunk(
   'leads/fetchLeads',
-  async (filters, { rejectWithValue }) => {
+  async (filters = {}, { getState, rejectWithValue }) => {
     try {
-      const data = await fetchLeadsFromServer(filters);
+      const state = getState();
+      const revealedLeadIds = state.leads?.revealedLeadIds || [];
+      const data = await fetchLeadsFromServer({ ...filters, revealedLeadIds });
       return data;
     } catch (error) {
       return rejectWithValue(error.message || 'Failed to load B2B leads');
@@ -257,6 +259,13 @@ const leadsSlice = createSlice({
         const { leadId } = action.payload || {};
         if (leadId && !state.revealedLeadIds.includes(leadId)) {
           state.revealedLeadIds.push(leadId);
+          persistRevealedLeadIds(state.revealedLeadIds);
+        }
+      })
+      .addCase(performRevealLead.rejected, (state, action) => {
+        const leadId = action.meta?.arg;
+        if (leadId) {
+          state.revealedLeadIds = state.revealedLeadIds.filter((id) => id !== leadId);
           persistRevealedLeadIds(state.revealedLeadIds);
         }
       })
