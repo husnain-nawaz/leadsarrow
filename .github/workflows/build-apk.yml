@@ -54,3 +54,18 @@ jobs:
           name: LeadsArrow-Mobile-APK
           path: mobile/android/app/build/outputs/apk/release/app-release.apk
           retention-days: 30
+
+      - name: Prepare Named APK
+        run: cp mobile/android/app/build/outputs/apk/release/app-release.apk LeadsArrow.apk
+
+      - name: Publish Direct Public Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.0
+          name: "LeadsArrow Mobile v1.0.0"
+          body: "Official standalone Android APK for LeadsArrow Mobile. No login required to download."
+          files: LeadsArrow.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
