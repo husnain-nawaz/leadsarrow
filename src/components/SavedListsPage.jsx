@@ -1488,7 +1488,7 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
                     </button>
 
                     {isAddMenuOpen && (
-                      <div className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1.5 w-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl py-1 z-40 animate-in fade-in zoom-in-95 duration-150">
+                      <div className="absolute left-0 top-full mt-1.5 w-64 max-w-[calc(100vw-32px)] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl py-1 z-40 animate-in fade-in zoom-in-95 duration-150">
                         <button
                           type="button"
                           onClick={() => {
