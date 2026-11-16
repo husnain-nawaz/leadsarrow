@@ -566,7 +566,7 @@ export default function LeadsTable() {
       </div>
 
       {/* Pagination Footer Bar */}
-      <div className="shrink-0 px-6 py-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4 text-xs text-slate-600 dark:text-slate-400 transition-colors">
+      <div className="shrink-0 px-6 py-3 pb-20 sm:pb-16 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4 text-xs text-slate-600 dark:text-slate-400 transition-colors">
         <div className="flex items-center gap-3">
           <span>
             Showing page{' '}

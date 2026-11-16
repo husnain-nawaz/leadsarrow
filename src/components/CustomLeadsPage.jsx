@@ -27,7 +27,8 @@ import {
   CheckCircle2,
   X,
   Pencil,
-  Eye
+  Eye,
+  Bookmark
 } from 'lucide-react';
 import {
   setAddLeadModalOpen,
@@ -36,6 +37,12 @@ import {
   clearSelectedLeads,
   setActiveLead
 } from '../store/leadsSlice.js';
+import {
+  appendLeadsToSavedList,
+  incrementTargetListCount,
+  fetchSavedLists,
+  setSavedListsModalOpen
+} from '../store/savedListsSlice.js';
 import { showToast } from '../store/toastSlice.js';
 import TopLoadingBar from './TopLoadingBar.jsx';
 import { openAuthModal, openUpgradeModal } from '../store/authSlice.js';
@@ -57,6 +64,8 @@ export default function CustomLeadsPage() {
   const customLeadsVersion = useSelector((state) => state.leads.customLeadsVersion);
   const lastAddedCustomLead = useSelector((state) => state.leads.lastAddedCustomLead);
   const { selectedLeadIds = [] } = useSelector((state) => state.leads);
+  const { targetListForAdding } = useSelector((state) => state.savedLists);
+  const [isAddingToTarget, setIsAddingToTarget] = useState(false);
 
   // Check if current user is on Free Starter tier (max 5 active clusters)
   const isFreeUser =
@@ -581,12 +590,50 @@ export default function CustomLeadsPage() {
     executeCsvDownload();
   };
 
+  const handleAddSelectedToTargetList = async () => {
+    if (!targetListForAdding || !selectedClusterLeads.length) return;
+    setIsAddingToTarget(true);
+    try {
+      const idsToAdd = selectedClusterLeads.map((l) => l.id);
+      await dispatch(
+        appendLeadsToSavedList({
+          listId: targetListForAdding.id,
+          leadIds: idsToAdd
+        })
+      ).unwrap();
+      const count = idsToAdd.length;
+      dispatch(incrementTargetListCount(count));
+      const clusterIdSet = new Set(leads.map((l) => l.id));
+      const remaining = selectedLeadIds.filter((id) => !clusterIdSet.has(id));
+      dispatch(clearSelectedLeads());
+      if (remaining.length > 0) {
+        dispatch(selectAllCurrentPageLeads(remaining));
+      }
+      await dispatch(fetchSavedLists());
+      dispatch(
+        showToast({
+          message: `Added ${count} custom lead(s) to "${targetListForAdding.name}"!`,
+          type: 'success'
+        })
+      );
+    } catch (err) {
+      dispatch(
+        showToast({
+          message: err?.message || 'Failed to add custom leads to target list',
+          type: 'error'
+        })
+      );
+    } finally {
+      setIsAddingToTarget(false);
+    }
+  };
+
   const totalAllClusterLeads = useMemo(() => {
     return clusters.reduce((sum, c) => sum + (c.leadCount || 0), 0);
   }, [clusters]);
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 min-h-screen">
+    <div className="flex-1 flex flex-col min-w-0 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 min-h-screen pb-28">
       {/* Header Banner */}
       <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 py-3.5 transition-colors">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1035,14 +1082,40 @@ export default function CustomLeadsPage() {
                       {selectedClusterLeads.length} custom lead{selectedClusterLeads.length === 1 ? '' : 's'} selected in "{selectedCluster}"
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {targetListForAdding ? (
+                      <button
+                        type="button"
+                        disabled={isAddingToTarget}
+                        onClick={handleAddSelectedToTargetList}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-orange-600 text-white hover:bg-orange-700 active:scale-95 disabled:opacity-50 transition-colors shadow-xs cursor-pointer"
+                      >
+                        {isAddingToTarget ? (
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Plus className="w-3.5 h-3.5" />
+                        )}
+                        <span>
+                          Add ({selectedClusterLeads.length}) to "{targetListForAdding.name}"
+                        </span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => dispatch(setSavedListsModalOpen(true))}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-orange-50 dark:hover:bg-orange-950/40 hover:text-orange-600 border border-slate-200 dark:border-slate-700 transition-colors shadow-2xs cursor-pointer"
+                      >
+                        <Bookmark className="w-3.5 h-3.5 text-orange-500" />
+                        <span>Add to Saved List</span>
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={handleOpenExportConfirm}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-orange-600 text-white hover:bg-orange-700 transition-colors shadow-xs cursor-pointer active:scale-95"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 dark:bg-slate-700 text-white hover:bg-slate-700 dark:hover:bg-slate-600 transition-colors shadow-xs cursor-pointer active:scale-95"
                     >
                       <Download className="w-3.5 h-3.5" />
-                      <span>Export Selected CSV ({selectedClusterLeads.length})</span>
+                      <span>Export CSV ({selectedClusterLeads.length})</span>
                     </button>
                     <button
                       type="button"
