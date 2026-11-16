@@ -64,8 +64,26 @@ export default function CustomLeadsPage() {
   const customLeadsVersion = useSelector((state) => state.leads.customLeadsVersion);
   const lastAddedCustomLead = useSelector((state) => state.leads.lastAddedCustomLead);
   const { selectedLeadIds = [] } = useSelector((state) => state.leads);
-  const { targetListForAdding } = useSelector((state) => state.savedLists);
+  const { targetListForAdding, lists = [], firestoreLists = [] } = useSelector((state) => state.savedLists);
   const [isAddingToTarget, setIsAddingToTarget] = useState(false);
+
+  // Target list lead IDs set for preventing duplicate additions & showing disabled/dimmed state
+  const targetListLeadIds = useMemo(() => {
+    if (!targetListForAdding?.id) return new Set();
+    const liveList = (lists || []).find((l) => l.id === targetListForAdding.id) ||
+                     (firestoreLists || []).find((l) => l.id === targetListForAdding.id);
+    const ids = (liveList?.leadIds && liveList.leadIds.length > 0)
+      ? liveList.leadIds
+      : (targetListForAdding.leadIds || []);
+    return new Set(ids.map((id) => String(id)));
+  }, [targetListForAdding, lists, firestoreLists]);
+
+  // If in Target List Mode and lists not loaded yet, fetch saved lists
+  useEffect(() => {
+    if (targetListForAdding && (!lists || lists.length === 0)) {
+      dispatch(fetchSavedLists());
+    }
+  }, [targetListForAdding, lists, dispatch]);
 
   // Check if current user is on Free Starter tier (max 5 active clusters)
   const isFreeUser =
@@ -515,6 +533,12 @@ export default function CustomLeadsPage() {
     return leads.filter((l) => selectedLeadIds.includes(l.id));
   }, [leads, selectedLeadIds]);
 
+  // Selected leads that are not yet in the target list
+  const eligibleSelectedClusterLeads = useMemo(() => {
+    if (!targetListForAdding) return selectedClusterLeads;
+    return selectedClusterLeads.filter((l) => !targetListLeadIds.has(String(l.id)));
+  }, [selectedClusterLeads, targetListForAdding, targetListLeadIds]);
+
   const executeCsvDownload = () => {
     if (!selectedClusterLeads.length) return;
     const headers = [
@@ -591,32 +615,53 @@ export default function CustomLeadsPage() {
   };
 
   const handleAddSelectedToTargetList = async () => {
-    if (!targetListForAdding || !selectedClusterLeads.length) return;
+    const leadsToAdd = eligibleSelectedClusterLeads;
+    if (!targetListForAdding || !leadsToAdd.length) {
+      if (selectedClusterLeads.length > 0) {
+        dispatch(
+          showToast({
+            message: `Selected custom lead(s) are already added to "${targetListForAdding?.name}".`,
+            type: 'info'
+          })
+        );
+      }
+      return;
+    }
     setIsAddingToTarget(true);
     try {
-      const idsToAdd = selectedClusterLeads.map((l) => l.id);
-      await dispatch(
+      const idsToAdd = leadsToAdd.map((l) => l.id);
+      const action = await dispatch(
         appendLeadsToSavedList({
           listId: targetListForAdding.id,
           leadIds: idsToAdd
         })
-      ).unwrap();
-      const count = idsToAdd.length;
-      dispatch(incrementTargetListCount(count));
-      const clusterIdSet = new Set(leads.map((l) => l.id));
-      const remaining = selectedLeadIds.filter((id) => !clusterIdSet.has(id));
-      dispatch(clearSelectedLeads());
-      if (remaining.length > 0) {
-        dispatch(selectAllCurrentPageLeads(remaining));
-      }
-      await dispatch(fetchSavedLists());
-      if (typeof window !== 'undefined' && window.innerWidth >= 640) {
-        dispatch(
-          showToast({
-            message: `Added ${count} custom lead(s) to "${targetListForAdding.name}"!`,
-            type: 'success'
-          })
-        );
+      );
+      if (appendLeadsToSavedList.fulfilled.match(action)) {
+        const addedCount = action.payload?.addedCount !== undefined
+          ? action.payload.addedCount
+          : idsToAdd.length;
+        if (addedCount > 0) {
+          dispatch(incrementTargetListCount(addedCount));
+        }
+        const clusterIdSet = new Set(leads.map((l) => l.id));
+        const remaining = selectedLeadIds.filter((id) => !clusterIdSet.has(id));
+        dispatch(clearSelectedLeads());
+        if (remaining.length > 0) {
+          dispatch(selectAllCurrentPageLeads(remaining));
+        }
+        await dispatch(fetchSavedLists());
+        if (typeof window !== 'undefined' && window.innerWidth >= 640) {
+          dispatch(
+            showToast({
+              message: addedCount > 0
+                ? `Added ${addedCount} custom lead(s) to "${targetListForAdding.name}"!`
+                : `Selected leads are already in "${targetListForAdding.name}".`,
+              type: addedCount > 0 ? 'success' : 'info'
+            })
+          );
+        }
+      } else {
+        throw new Error(action.payload || 'Failed to add custom leads to target list');
       }
     } catch (err) {
       dispatch(
@@ -1088,9 +1133,9 @@ export default function CustomLeadsPage() {
                     {targetListForAdding ? (
                       <button
                         type="button"
-                        disabled={isAddingToTarget}
+                        disabled={isAddingToTarget || eligibleSelectedClusterLeads.length === 0}
                         onClick={handleAddSelectedToTargetList}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-orange-600 text-white hover:bg-orange-700 active:scale-95 disabled:opacity-50 transition-colors shadow-xs cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-orange-600 text-white hover:bg-orange-700 active:scale-95 disabled:opacity-50 transition-colors shadow-xs cursor-pointer disabled:cursor-not-allowed"
                       >
                         {isAddingToTarget ? (
                           <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -1098,7 +1143,9 @@ export default function CustomLeadsPage() {
                           <Plus className="w-3.5 h-3.5" />
                         )}
                         <span>
-                          Add ({selectedClusterLeads.length}) to "{targetListForAdding.name}"
+                          {eligibleSelectedClusterLeads.length > 0
+                            ? `Add (${eligibleSelectedClusterLeads.length}) to "${targetListForAdding.name}"`
+                            : `Already in "${targetListForAdding.name}"`}
                         </span>
                       </button>
                     ) : (
@@ -1221,13 +1268,30 @@ export default function CustomLeadsPage() {
                           <th className="py-3 px-3 w-10 text-center">
                             <input
                               type="checkbox"
-                              checked={paginatedLeads.length > 0 && paginatedLeads.every((l) => selectedLeadIds.includes(l.id))}
+                              checked={
+                                paginatedLeads.length > 0 &&
+                                paginatedLeads.filter((l) => !(Boolean(targetListForAdding) && targetListLeadIds.has(String(l.id)))).length > 0 &&
+                                paginatedLeads
+                                  .filter((l) => !(Boolean(targetListForAdding) && targetListLeadIds.has(String(l.id))))
+                                  .every((l) => selectedLeadIds.includes(l.id))
+                              }
+                              disabled={
+                                paginatedLeads.length === 0 ||
+                                (Boolean(targetListForAdding) && paginatedLeads.every((l) => targetListLeadIds.has(String(l.id))))
+                              }
                               onChange={() => {
-                                const pageIds = paginatedLeads.map((l) => l.id);
-                                dispatch(selectAllCurrentPageLeads(pageIds));
+                                const selectablePageIds = paginatedLeads
+                                  .filter((l) => !(Boolean(targetListForAdding) && targetListLeadIds.has(String(l.id))))
+                                  .map((l) => l.id);
+                                if (!selectablePageIds.length) return;
+                                dispatch(selectAllCurrentPageLeads(selectablePageIds));
                               }}
-                              className="w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-orange-600 focus:ring-orange-500 cursor-pointer"
-                              title="Select all on this page"
+                              className="w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-orange-600 focus:ring-orange-500 cursor-pointer disabled:cursor-not-allowed"
+                              title={
+                                Boolean(targetListForAdding) && paginatedLeads.every((l) => targetListLeadIds.has(String(l.id)))
+                                  ? `All leads on this page are already in "${targetListForAdding.name}"`
+                                  : 'Select all eligible leads on this page'
+                              }
                             />
                           </th>
                           <th className="py-3 px-4">Company & Domain</th>
@@ -1242,155 +1306,174 @@ export default function CustomLeadsPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-sans">
-                        {paginatedLeads.map((lead) => (
-                          <tr
-                            key={lead.id}
-                            onClick={() => dispatch(setActiveLead(lead))}
-                            className={`transition-colors cursor-pointer ${
-                              selectedLeadIds.includes(lead.id)
-                                ? 'bg-orange-50/50 dark:bg-orange-950/25'
-                                : 'hover:bg-slate-50/60 dark:hover:bg-slate-800/40'
-                            }`}
-                          >
-                            {/* Checkbox Column */}
-                            <td className="py-3.5 px-3 text-center" onClick={(e) => e.stopPropagation()}>
-                              <input
-                                type="checkbox"
-                                checked={selectedLeadIds.includes(lead.id)}
-                                onChange={() => dispatch(toggleSelectLead(lead.id))}
-                                className="w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-orange-600 focus:ring-orange-500 cursor-pointer"
-                              />
-                            </td>
+                        {paginatedLeads.map((lead) => {
+                          const isAlreadyInList = Boolean(targetListForAdding) && targetListLeadIds.has(String(lead.id));
+                          const isChecked = !isAlreadyInList && selectedLeadIds.includes(lead.id);
 
-                            {/* Column 1: Company & Sector */}
-                            <td className="py-3.5 px-4 min-w-[180px]">
-                              <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                                <span>{lead.companyName}</span>
-                                {lead.domain && (
-                                  <a
-                                    href={`https://${lead.domain.replace(/^https?:\/\//, '')}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 inline-flex items-center"
-                                    title="Visit domain"
+                          return (
+                            <tr
+                              key={lead.id}
+                              onClick={() => dispatch(setActiveLead(lead))}
+                              className={`transition-colors ${
+                                isAlreadyInList
+                                  ? 'opacity-50 bg-slate-50/50 dark:bg-slate-800/30 cursor-not-allowed hover:bg-slate-50/70 dark:hover:bg-slate-800/50'
+                                  : isChecked
+                                  ? 'bg-orange-50/50 dark:bg-orange-950/25 cursor-pointer'
+                                  : 'hover:bg-slate-50/60 dark:hover:bg-slate-800/40 cursor-pointer'
+                              }`}
+                              title={isAlreadyInList ? `Already added to target list "${targetListForAdding?.name}"` : undefined}
+                            >
+                              {/* Checkbox Column */}
+                              <td className="py-3.5 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                                <input
+                                  type="checkbox"
+                                  disabled={isAlreadyInList}
+                                  checked={isChecked}
+                                  onChange={() => !isAlreadyInList && dispatch(toggleSelectLead(lead.id))}
+                                  className="w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-orange-600 focus:ring-orange-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                                  title={isAlreadyInList ? `Already added to target list "${targetListForAdding?.name}"` : 'Select lead'}
+                                />
+                              </td>
+
+                              {/* Column 1: Company & Sector */}
+                              <td className="py-3.5 px-4 min-w-[180px]">
+                                <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                                  <span>{lead.companyName}</span>
+                                  {lead.domain && (
+                                    <a
+                                      href={`https://${lead.domain.replace(/^https?:\/\//, '')}`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 inline-flex items-center"
+                                      title="Visit domain"
+                                    >
+                                      <ExternalLink className="w-3 h-3" />
+                                    </a>
+                                  )}
+                                </div>
+                                <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                  <span>{lead.industry || 'Enterprise'}</span>
+                                  {lead.fundingStage && (
+                                    <span className="ml-1.5 px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-[10px] text-slate-600 dark:text-slate-300">
+                                      {lead.fundingStage}
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+
+                              {/* Column 2: Cluster / Group Pill */}
+                              <td className="py-3.5 px-4 min-w-[130px]">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedCluster(lead.clusterName || 'General');
+                                  }}
+                                  title={`Filter by cluster "${lead.clusterName || 'General'}"`}
+                                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-100/80 dark:bg-orange-950/70 text-orange-800 dark:text-orange-300 border border-orange-200 dark:border-orange-800/70 hover:bg-orange-200 transition-colors cursor-pointer"
+                                >
+                                  <Folder className="w-2.5 h-2.5 text-orange-600" />
+                                  <span>{lead.clusterName || 'General'}</span>
+                                </button>
+                              </td>
+
+                              {/* Column 3: Decision Maker */}
+                              <td className="py-3.5 px-4 min-w-[160px]">
+                                <div className="font-semibold text-slate-800 dark:text-slate-200">
+                                  {lead.contactName || '—'}
+                                </div>
+                                <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                  {lead.contactTitle || 'Decision Maker'}
+                                  {lead.seniority && (
+                                    <span className="ml-1 text-[10px] text-slate-400">
+                                      • {lead.seniority}
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+
+                              {/* Column 4: Direct Contact */}
+                              <td className="py-3.5 px-4 min-w-[190px]">
+                                <div className="font-mono text-[11px] text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                                  <Mail className="w-3 h-3 text-slate-400 shrink-0" />
+                                  <span className="truncate">{lead.contactEmail || '—'}</span>
+                                </div>
+                                <div className="font-mono text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5">
+                                  <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+                                  <span>{lead.contactPhone || '—'}</span>
+                                  <span className="ml-auto px-1.5 py-0.2 rounded bg-emerald-50 dark:bg-emerald-950/50 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/50">
+                                    Verified
+                                  </span>
+                                </div>
+                              </td>
+
+                              {/* Column 5: Employees */}
+                              <td className="py-3.5 px-4 font-mono text-[11px] text-slate-700 dark:text-slate-300">
+                                {lead.employeeRange || (lead.employeeCount ? `${lead.employeeCount}` : '51-200')}
+                              </td>
+
+                              {/* Column 6: Annual Revenue */}
+                              <td className="py-3.5 px-4 font-mono text-[11px] text-slate-700 dark:text-slate-300">
+                                {lead.revenueRange || '$10M - $50M'}
+                              </td>
+
+                              {/* Column 7: HQ Location */}
+                              <td className="py-3.5 px-4 text-[11px] text-slate-700 dark:text-slate-300 min-w-[140px]">
+                                <div className="flex items-center gap-1">
+                                  <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                                  <span>{lead.city ? `${lead.city}, ` : ''}{lead.country || 'USA'}</span>
+                                </div>
+                              </td>
+
+                              {/* Column 8: Intent */}
+                              <td className="py-3.5 px-4 text-center">
+                                {isAlreadyInList ? (
+                                  <span
+                                    className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700/60"
+                                    title={`Already in target list "${targetListForAdding?.name}"`}
                                   >
-                                    <ExternalLink className="w-3 h-3" />
-                                  </a>
-                                )}
-                              </div>
-                              <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                                <span>{lead.industry || 'Enterprise'}</span>
-                                {lead.fundingStage && (
-                                  <span className="ml-1.5 px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-[10px] text-slate-600 dark:text-slate-300">
-                                    {lead.fundingStage}
+                                    In List
+                                  </span>
+                                ) : (
+                                  <span className="inline-block px-2 py-0.5 rounded-full font-mono text-[11px] font-bold bg-orange-50 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800/60">
+                                    {lead.buyingIntentScore || 88}
                                   </span>
                                 )}
-                              </div>
-                            </td>
+                              </td>
 
-                            {/* Column 2: Cluster / Group Pill */}
-                            <td className="py-3.5 px-4 min-w-[130px]">
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedCluster(lead.clusterName || 'General');
-                                }}
-                                title={`Filter by cluster "${lead.clusterName || 'General'}"`}
-                                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-100/80 dark:bg-orange-950/70 text-orange-800 dark:text-orange-300 border border-orange-200 dark:border-orange-800/70 hover:bg-orange-200 transition-colors cursor-pointer"
-                              >
-                                <Folder className="w-2.5 h-2.5 text-orange-600" />
-                                <span>{lead.clusterName || 'General'}</span>
-                              </button>
-                            </td>
-
-                            {/* Column 3: Decision Maker */}
-                            <td className="py-3.5 px-4 min-w-[160px]">
-                              <div className="font-semibold text-slate-800 dark:text-slate-200">
-                                {lead.contactName || '—'}
-                              </div>
-                              <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                                {lead.contactTitle || 'Decision Maker'}
-                                {lead.seniority && (
-                                  <span className="ml-1 text-[10px] text-slate-400">
-                                    • {lead.seniority}
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-
-                            {/* Column 4: Direct Contact */}
-                            <td className="py-3.5 px-4 min-w-[190px]">
-                              <div className="font-mono text-[11px] text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                                <Mail className="w-3 h-3 text-slate-400 shrink-0" />
-                                <span className="truncate">{lead.contactEmail || '—'}</span>
-                              </div>
-                              <div className="font-mono text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5">
-                                <Phone className="w-3 h-3 text-slate-400 shrink-0" />
-                                <span>{lead.contactPhone || '—'}</span>
-                                <span className="ml-auto px-1.5 py-0.2 rounded bg-emerald-50 dark:bg-emerald-950/50 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/50">
-                                  Verified
-                                </span>
-                              </div>
-                            </td>
-
-                            {/* Column 5: Employees */}
-                            <td className="py-3.5 px-4 font-mono text-[11px] text-slate-700 dark:text-slate-300">
-                              {lead.employeeRange || (lead.employeeCount ? `${lead.employeeCount}` : '51-200')}
-                            </td>
-
-                            {/* Column 6: Annual Revenue */}
-                            <td className="py-3.5 px-4 font-mono text-[11px] text-slate-700 dark:text-slate-300">
-                              {lead.revenueRange || '$10M - $50M'}
-                            </td>
-
-                            {/* Column 7: HQ Location */}
-                            <td className="py-3.5 px-4 text-[11px] text-slate-700 dark:text-slate-300 min-w-[140px]">
-                              <div className="flex items-center gap-1">
-                                <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                                <span>{lead.city ? `${lead.city}, ` : ''}{lead.country || 'USA'}</span>
-                              </div>
-                            </td>
-
-                            {/* Column 8: Intent */}
-                            <td className="py-3.5 px-4 text-center">
-                              <span className="inline-block px-2 py-0.5 rounded-full font-mono text-[11px] font-bold bg-orange-50 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800/60">
-                                {lead.buyingIntentScore || 88}
-                              </span>
-                            </td>
-
-                            {/* Column 9: Actions */}
-                            <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
-                              <div className="flex items-center justify-end gap-1">
-                                <button
-                                  type="button"
-                                  onClick={() => dispatch(setActiveLead(lead))}
-                                  title={`View lead dossier for "${lead.companyName || ''}"`}
-                                  className="p-1.5 text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/40 rounded-md transition-colors cursor-pointer"
-                                >
-                                  <Eye className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setEditingLeadTarget(lead)}
-                                  title={`Edit lead "${lead.companyName || ''}"`}
-                                  className="p-1.5 text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/40 rounded-md transition-colors cursor-pointer"
-                                >
-                                  <Pencil className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteClick(lead.id, lead.companyName)}
-                                  title="Delete from custom leads"
-                                  className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-md transition-colors cursor-pointer"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
+                              {/* Column 9: Actions */}
+                              <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex items-center justify-end gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => dispatch(setActiveLead(lead))}
+                                    title={`View lead dossier for "${lead.companyName || ''}"`}
+                                    className="p-1.5 text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/40 rounded-md transition-colors cursor-pointer"
+                                  >
+                                    <Eye className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingLeadTarget(lead)}
+                                    title={`Edit lead "${lead.companyName || ''}"`}
+                                    className="p-1.5 text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/40 rounded-md transition-colors cursor-pointer"
+                                  >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteClick(lead.id, lead.companyName)}
+                                    title="Delete from custom leads"
+                                    className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-md transition-colors cursor-pointer"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>

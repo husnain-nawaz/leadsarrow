@@ -61,7 +61,7 @@ export default function AddLeadsToSavedListModal({
   const [serverTotal, setServerTotal] = useState(0);
 
   const existingLeadIds = useMemo(() => {
-    return new Set(Array.isArray(targetList?.leadIds) ? targetList.leadIds : []);
+    return new Set(Array.isArray(targetList?.leadIds) ? targetList.leadIds.map((id) => String(id)) : []);
   }, [targetList]);
 
   const performSearch = useCallback(async (query, tab, pageNum = 1, pageSizeNum = 10, cluster = 'all') => {
@@ -484,7 +484,7 @@ export default function AddLeadsToSavedListModal({
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-sans">
                 {displayedLeads.map((lead) => {
-                  const isAlreadyInList = existingLeadIds.has(lead.id);
+                  const isAlreadyInList = existingLeadIds.has(String(lead.id));
                   const isChecked = selectedIds.includes(lead.id);
 
                   return (

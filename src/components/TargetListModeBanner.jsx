@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   Bookmark,
@@ -25,9 +25,26 @@ import { showToast } from '../store/toastSlice.js';
 
 export default function TargetListModeBanner({ activeView, setActiveView, onReturnToList }) {
   const dispatch = useDispatch();
-  const { targetListForAdding } = useSelector((state) => state.savedLists);
+  const { targetListForAdding, lists = [], firestoreLists = [] } = useSelector((state) => state.savedLists);
   const { selectedLeadIds = [] } = useSelector((state) => state.leads);
   const [isAdding, setIsAdding] = useState(false);
+
+  // Set of lead IDs already in the target list
+  const targetListLeadIds = useMemo(() => {
+    if (!targetListForAdding?.id) return new Set();
+    const liveList = (lists || []).find((l) => l.id === targetListForAdding.id) ||
+                     (firestoreLists || []).find((l) => l.id === targetListForAdding.id);
+    const ids = (liveList?.leadIds && liveList.leadIds.length > 0)
+      ? liveList.leadIds
+      : (targetListForAdding.leadIds || []);
+    return new Set(ids.map((id) => String(id)));
+  }, [targetListForAdding, lists, firestoreLists]);
+
+  // Selected lead IDs that are eligible to be added (excluding already in list)
+  const eligibleSelectedIds = useMemo(() => {
+    if (!targetListForAdding) return selectedLeadIds;
+    return selectedLeadIds.filter((id) => !targetListLeadIds.has(String(id)));
+  }, [selectedLeadIds, targetListForAdding, targetListLeadIds]);
 
   // If not in Target List Mode and no leads are selected, do not render anything
   if (!targetListForAdding && (!selectedLeadIds.length || (activeView !== 'finder' && activeView !== 'custom'))) {
@@ -35,27 +52,47 @@ export default function TargetListModeBanner({ activeView, setActiveView, onRetu
   }
 
   const handleAddSelected = async () => {
-    if (!selectedLeadIds.length || !targetListForAdding) return;
-    setIsAdding(true);
-    try {
-      await dispatch(
-        appendLeadsToSavedList({
-          listId: targetListForAdding.id,
-          leadIds: selectedLeadIds
-        })
-      ).unwrap();
-      const count = selectedLeadIds.length;
-      dispatch(incrementTargetListCount(count));
-      dispatch(clearSelectedLeads());
-      await dispatch(fetchSavedLists());
-      // Skip success toast on small screens to avoid taking space and covering the dock
-      if (typeof window !== 'undefined' && window.innerWidth >= 640) {
+    if (!eligibleSelectedIds.length || !targetListForAdding) {
+      if (selectedLeadIds.length > 0) {
         dispatch(
           showToast({
-            message: `Added ${count} lead(s) to "${targetListForAdding.name}"!`,
-            type: 'success'
+            message: `Selected lead(s) are already in "${targetListForAdding?.name}".`,
+            type: 'info'
           })
         );
+      }
+      return;
+    }
+    setIsAdding(true);
+    try {
+      const action = await dispatch(
+        appendLeadsToSavedList({
+          listId: targetListForAdding.id,
+          leadIds: eligibleSelectedIds
+        })
+      );
+      if (appendLeadsToSavedList.fulfilled.match(action)) {
+        const addedCount = action.payload?.addedCount !== undefined
+          ? action.payload.addedCount
+          : eligibleSelectedIds.length;
+        if (addedCount > 0) {
+          dispatch(incrementTargetListCount(addedCount));
+        }
+        dispatch(clearSelectedLeads());
+        await dispatch(fetchSavedLists());
+        // Skip success toast on small screens to avoid taking space and covering the dock
+        if (typeof window !== 'undefined' && window.innerWidth >= 640) {
+          dispatch(
+            showToast({
+              message: addedCount > 0
+                ? `Added ${addedCount} lead(s) to "${targetListForAdding.name}"!`
+                : `Selected leads are already in "${targetListForAdding.name}".`,
+              type: addedCount > 0 ? 'success' : 'info'
+            })
+          );
+        }
+      } else {
+        throw new Error(action.payload || 'Failed to add leads to target list');
       }
     } catch (err) {
       dispatch(
@@ -116,16 +153,20 @@ export default function TargetListModeBanner({ activeView, setActiveView, onRetu
               {selectedLeadIds.length > 0 && (
                 <button
                   type="button"
-                  disabled={isAdding}
+                  disabled={isAdding || eligibleSelectedIds.length === 0}
                   onClick={handleAddSelected}
-                  className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-bold text-orange-700 bg-white hover:bg-orange-50 active:scale-95 rounded-lg shadow-sm transition-all cursor-pointer whitespace-nowrap"
+                  className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-bold text-orange-700 bg-white hover:bg-orange-50 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed rounded-lg shadow-sm transition-all cursor-pointer whitespace-nowrap"
                 >
                   {isAdding ? (
                     <RefreshCw className="w-3.5 h-3.5 animate-spin text-orange-600" />
                   ) : (
                     <Plus className="w-3.5 h-3.5 text-orange-600" />
                   )}
-                  <span>Add {selectedLeadIds.length} Selected</span>
+                  <span>
+                    {eligibleSelectedIds.length > 0
+                      ? `Add ${eligibleSelectedIds.length} Selected`
+                      : 'Already in List'}
+                  </span>
                 </button>
               )}
 
@@ -189,9 +230,9 @@ export default function TargetListModeBanner({ activeView, setActiveView, onRetu
                 <div className="flex items-center gap-1.5 shrink-0">
                   <button
                     type="button"
-                    disabled={isAdding}
+                    disabled={isAdding || eligibleSelectedIds.length === 0}
                     onClick={handleAddSelected}
-                    className="inline-flex items-center justify-center gap-1.5 px-3.5 sm:px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-500 active:scale-95 disabled:opacity-50 rounded-xl shadow-lg shadow-orange-950/40 transition-all cursor-pointer whitespace-nowrap"
+                    className="inline-flex items-center justify-center gap-1.5 px-3.5 sm:px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-500 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-lg shadow-orange-950/40 transition-all cursor-pointer whitespace-nowrap"
                   >
                     {isAdding ? (
                       <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -199,7 +240,9 @@ export default function TargetListModeBanner({ activeView, setActiveView, onRetu
                       <Plus className="w-4 h-4" />
                     )}
                     <span>
-                      Add {selectedLeadIds.length} to "{targetListForAdding.name}"
+                      {eligibleSelectedIds.length > 0
+                        ? `Add ${eligibleSelectedIds.length} to "${targetListForAdding.name}"`
+                        : `Already in "${targetListForAdding.name}"`}
                     </span>
                   </button>
 

@@ -797,7 +797,8 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
       setTargetListForAdding({
         id: selectedList.id,
         name: selectedList.name,
-        leadCount: selectedList.leadCount || (selectedList.leadIds ? selectedList.leadIds.length : 0)
+        leadCount: selectedList.leadCount || (selectedList.leadIds ? selectedList.leadIds.length : 0),
+        leadIds: Array.isArray(selectedList.leadIds) ? selectedList.leadIds : []
       })
     );
     if (setActiveView) {

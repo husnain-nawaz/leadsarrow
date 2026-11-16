@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   ArrowUpDown,
@@ -63,9 +63,21 @@ export default function LeadsTable() {
   } = useSelector((state) => state.leads);
   const filters = useSelector((state) => state.filters);
   const { sortBy, sortOrder } = filters;
+  const { targetListForAdding, lists = [], firestoreLists = [] } = useSelector((state) => state.savedLists);
   const [copiedKey, setCopiedKey] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Target list lead IDs set for preventing duplicate additions & showing disabled/dimmed state in Lead Finder
+  const targetListLeadIds = useMemo(() => {
+    if (!targetListForAdding?.id) return new Set();
+    const liveList = (lists || []).find((l) => l.id === targetListForAdding.id) ||
+                     (firestoreLists || []).find((l) => l.id === targetListForAdding.id);
+    const ids = (liveList?.leadIds && liveList.leadIds.length > 0)
+      ? liveList.leadIds
+      : (targetListForAdding.leadIds || []);
+    return new Set(ids.map((id) => String(id)));
+  }, [targetListForAdding, lists, firestoreLists]);
 
   const handleConfirmDeleteLead = async () => {
     if (!deleteTarget) return;
@@ -145,8 +157,14 @@ export default function LeadsTable() {
   if (filters.onlyCustom) activeFilterTags.push('New Leads Only');
 
   const pageIds = items.map((l) => l.id);
+  const selectablePageIds = useMemo(() => {
+    if (!targetListForAdding) return pageIds;
+    return items.filter((l) => !targetListLeadIds.has(String(l.id))).map((l) => l.id);
+  }, [items, pageIds, targetListForAdding, targetListLeadIds]);
+
   const allCurrentSelected =
-    pageIds.length > 0 && pageIds.every((id) => selectedLeadIds.includes(id));
+    selectablePageIds.length > 0 &&
+    selectablePageIds.every((id) => selectedLeadIds.includes(id));
 
   const handleSort = (column) => {
     if (sortBy === column) {
@@ -223,8 +241,14 @@ export default function LeadsTable() {
                 <input
                   type="checkbox"
                   checked={allCurrentSelected}
-                  onChange={() => dispatch(selectAllCurrentPageLeads(pageIds))}
-                  className="w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-orange-600 focus:ring-orange-500 cursor-pointer"
+                  disabled={selectablePageIds.length === 0}
+                  onChange={() => dispatch(selectAllCurrentPageLeads(selectablePageIds))}
+                  className="w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-orange-600 focus:ring-orange-500 cursor-pointer disabled:cursor-not-allowed"
+                  title={
+                    Boolean(targetListForAdding) && selectablePageIds.length === 0
+                      ? `All leads on this page are already in "${targetListForAdding.name}"`
+                      : 'Select all eligible leads on this page'
+                  }
                 />
               </th>
               <th className="py-2.5 px-3 bg-slate-50 dark:bg-slate-900">
@@ -360,6 +384,8 @@ export default function LeadsTable() {
             ) : (
               items.map((lead) => {
                 const isSelected = selectedLeadIds.includes(lead.id);
+                const isAlreadyInList = Boolean(targetListForAdding) && targetListLeadIds.has(String(lead.id));
+                const isChecked = !isAlreadyInList && isSelected;
                 const isRevealed = Boolean(
                   lead.isCustom ||
                   String(lead.id || '').startsWith('custom_') ||
@@ -373,11 +399,14 @@ export default function LeadsTable() {
                   <tr
                     key={lead.id}
                     onClick={() => dispatch(setActiveLead(lead))}
-                    className={`group transition-colors cursor-pointer ${
-                      isSelected
-                        ? 'bg-orange-50/50 dark:bg-orange-950/30 hover:bg-orange-50 dark:hover:bg-orange-950/50'
-                        : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/60'
+                    className={`group transition-colors ${
+                      isAlreadyInList
+                        ? 'opacity-50 bg-slate-50/50 dark:bg-slate-800/30 cursor-not-allowed hover:bg-slate-50/70 dark:hover:bg-slate-800/50'
+                        : isChecked
+                        ? 'bg-orange-50/50 dark:bg-orange-950/30 hover:bg-orange-50 dark:hover:bg-orange-950/50 cursor-pointer'
+                        : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/60 cursor-pointer'
                     }`}
+                    title={isAlreadyInList ? `Already added to target list "${targetListForAdding?.name}"` : undefined}
                   >
                     {/* Checkbox */}
                     <td
@@ -386,9 +415,11 @@ export default function LeadsTable() {
                     >
                       <input
                         type="checkbox"
-                        checked={isSelected}
-                        onChange={() => dispatch(toggleSelectLead(lead.id))}
-                        className="w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-orange-600 focus:ring-orange-500 cursor-pointer"
+                        disabled={isAlreadyInList}
+                        checked={isChecked}
+                        onChange={() => !isAlreadyInList && dispatch(toggleSelectLead(lead.id))}
+                        className="w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-orange-600 focus:ring-orange-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                        title={isAlreadyInList ? `Already added to target list "${targetListForAdding?.name}"` : 'Select lead'}
                       />
                     </td>
 
@@ -518,26 +549,35 @@ export default function LeadsTable() {
                     {/* Buying Intent Score */}
                     <td className="py-2.5 pl-3 pr-6 align-middle text-right font-mono tabular-nums">
                       <div className="flex items-center justify-end gap-2">
-                        <div>
-                          <div
-                            className={`font-semibold ${
-                              lead.buyingIntentScore >= 80
-                                ? 'text-emerald-700 dark:text-emerald-400'
-                                : lead.buyingIntentScore >= 65
-                                ? 'text-orange-600 dark:text-orange-400'
-                                : 'text-slate-700 dark:text-slate-300'
-                            }`}
+                        {isAlreadyInList ? (
+                          <span
+                            className="inline-block px-2.5 py-1 rounded-full text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700/60"
+                            title={`Already in target list "${targetListForAdding?.name}"`}
                           >
-                            {lead.buyingIntentScore} / 100
+                            In List
+                          </span>
+                        ) : (
+                          <div>
+                            <div
+                              className={`font-semibold ${
+                                lead.buyingIntentScore >= 80
+                                  ? 'text-emerald-700 dark:text-emerald-400'
+                                  : lead.buyingIntentScore >= 65
+                                  ? 'text-orange-600 dark:text-orange-400'
+                                  : 'text-slate-700 dark:text-slate-300'
+                              }`}
+                            >
+                              {lead.buyingIntentScore} / 100
+                            </div>
+                            <div className="text-[10px] text-slate-400 dark:text-slate-500 font-sans">
+                              {lead.buyingIntentScore >= 80
+                                ? 'High Intent'
+                                : lead.buyingIntentScore >= 65
+                                ? 'Active Research'
+                                : 'Baseline'}
+                            </div>
                           </div>
-                          <div className="text-[10px] text-slate-400 dark:text-slate-500 font-sans">
-                            {lead.buyingIntentScore >= 80
-                              ? 'High Intent'
-                              : lead.buyingIntentScore >= 65
-                              ? 'Active Research'
-                              : 'Baseline'}
-                          </div>
-                        </div>
+                        )}
                         {isSuperAdmin && (
                           <button
                             type="button"

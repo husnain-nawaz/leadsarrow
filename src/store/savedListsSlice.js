@@ -298,6 +298,14 @@ const savedListsSlice = createSlice({
         if (fsIdx >= 0) {
           state.firestoreLists[fsIdx] = { ...state.firestoreLists[fsIdx], ...updated };
         }
+        if (state.targetListForAdding && state.targetListForAdding.id === updated.id) {
+          const newIds = Array.isArray(updated.leadIds) ? updated.leadIds : state.targetListForAdding.leadIds || [];
+          state.targetListForAdding = {
+            ...state.targetListForAdding,
+            leadCount: updated.leadCount ?? newIds.length,
+            leadIds: newIds
+          };
+        }
       })
       .addCase(removeLeadFromSavedList.fulfilled, (state, action) => {
         const updated = action.payload;
@@ -309,6 +317,14 @@ const savedListsSlice = createSlice({
         const fsIdx = state.firestoreLists.findIndex((l) => l.id === updated.id);
         if (fsIdx >= 0) {
           state.firestoreLists[fsIdx] = { ...state.firestoreLists[fsIdx], ...updated };
+        }
+        if (state.targetListForAdding && state.targetListForAdding.id === updated.id) {
+          const newIds = Array.isArray(updated.leadIds) ? updated.leadIds : (state.targetListForAdding.leadIds || []);
+          state.targetListForAdding = {
+            ...state.targetListForAdding,
+            leadCount: updated.leadCount ?? newIds.length,
+            leadIds: newIds
+          };
         }
       })
       .addCase(removeBatchLeadsFromSavedList.fulfilled, (state, action) => {
