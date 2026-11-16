@@ -610,12 +610,14 @@ export default function CustomLeadsPage() {
         dispatch(selectAllCurrentPageLeads(remaining));
       }
       await dispatch(fetchSavedLists());
-      dispatch(
-        showToast({
-          message: `Added ${count} custom lead(s) to "${targetListForAdding.name}"!`,
-          type: 'success'
-        })
-      );
+      if (typeof window !== 'undefined' && window.innerWidth >= 640) {
+        dispatch(
+          showToast({
+            message: `Added ${count} custom lead(s) to "${targetListForAdding.name}"!`,
+            type: 'success'
+          })
+        );
+      }
     } catch (err) {
       dispatch(
         showToast({

@@ -48,12 +48,15 @@ export default function TargetListModeBanner({ activeView, setActiveView, onRetu
       dispatch(incrementTargetListCount(count));
       dispatch(clearSelectedLeads());
       await dispatch(fetchSavedLists());
-      dispatch(
-        showToast({
-          message: `Added ${count} lead(s) to "${targetListForAdding.name}"!`,
-          type: 'success'
-        })
-      );
+      // Skip success toast on small screens to avoid taking space and covering the dock
+      if (typeof window !== 'undefined' && window.innerWidth >= 640) {
+        dispatch(
+          showToast({
+            message: `Added ${count} lead(s) to "${targetListForAdding.name}"!`,
+            type: 'success'
+          })
+        );
+      }
     } catch (err) {
       dispatch(
         showToast({
@@ -176,14 +179,11 @@ export default function TargetListModeBanner({ activeView, setActiveView, onRetu
               <>
                 <div className="flex items-center gap-2 min-w-0 pl-1">
                   <Bookmark className="w-4 h-4 text-orange-400 shrink-0" />
-                  <div className="min-w-0 hidden xs:block">
+                  <div className="min-w-0 hidden sm:block">
                     <div className="text-xs font-semibold text-white truncate max-w-[120px] sm:max-w-[160px]">
                       Target: <span className="font-mono text-orange-300">"{targetListForAdding.name}"</span>
                     </div>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 font-mono font-bold text-xs shrink-0 border border-orange-500/30">
-                    {selectedLeadIds.length} Selected
-                  </span>
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0">

@@ -28,12 +28,17 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
   const [avatarError, setAvatarError] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [isCreditsPopoverOpen, setIsCreditsPopoverOpen] = useState(false);
   const profileDropdownRef = useRef(null);
+  const creditsPopoverRef = useRef(null);
 
   useEffect(() => {
     function handleClickOutside(e) {
       if (profileDropdownRef.current && !profileDropdownRef.current.contains(e.target)) {
         setIsProfileDropdownOpen(false);
+      }
+      if (creditsPopoverRef.current && !creditsPopoverRef.current.contains(e.target)) {
+        setIsCreditsPopoverOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -213,30 +218,96 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
 
           {user ? (
             <>
-              {/* Unified Credits & Plan Badge */}
-              <div
-                title={`Plan: ${userPlanName} · ${
-                  isUnlimited
-                    ? 'Unlimited Daily Credits (No daily limits)'
-                    : `${user.creditsRemaining ?? 100} / ${user.dailyCreditsLimit || 100} credits available · Full daily refill in ${getTimeUntilReset(user.nextCreditResetAt)} (Refills every 24 hours)`
-                }`}
-                className={`px-2 sm:px-2.5 py-1 rounded-lg text-xs font-bold border flex items-center gap-1 sm:gap-1.5 shrink-0 ${
-                  isUnlimited
-                    ? 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800'
-                    : 'bg-orange-50 dark:bg-orange-950/40 text-orange-800 dark:text-orange-300 border-orange-200 dark:border-orange-800/60'
-                }`}
-              >
-                <Zap className="w-3.5 h-3.5 text-orange-600 shrink-0" />
-                <span>
-                  {isUnlimited ? (
-                    'Unlimited'
-                  ) : (
-                    <>
-                      <strong>{user.creditsRemaining ?? 100}</strong>
-                      <span className="text-[10px] opacity-75 font-normal hidden sm:inline"> / {user.dailyCreditsLimit || 100}</span>
-                    </>
-                  )}
-                </span>
+              {/* Unified Credits & Plan Badge (Icon only on small screens, expands on tap/click) */}
+              <div className="relative shrink-0" ref={creditsPopoverRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsCreditsPopoverOpen((prev) => !prev)}
+                  title={`Plan: ${userPlanName} · ${
+                    isUnlimited
+                      ? 'Unlimited Daily Credits (No daily limits)'
+                      : `${user.creditsRemaining ?? 100} / ${user.dailyCreditsLimit || 100} credits available · Refills every 24 hours`
+                  }`}
+                  className={`p-1.5 sm:px-2.5 sm:py-1 rounded-lg text-xs font-bold border flex items-center justify-center gap-1 sm:gap-1.5 shrink-0 cursor-pointer transition-all active:scale-95 ${
+                    isUnlimited
+                      ? 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/60'
+                      : 'bg-orange-50 dark:bg-orange-950/40 text-orange-800 dark:text-orange-300 border-orange-200 dark:border-orange-800/60 hover:bg-orange-100 dark:hover:bg-orange-900/60'
+                  }`}
+                  aria-label="View plan credits and details"
+                >
+                  <Zap className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400 shrink-0 fill-current" />
+                  <span className="hidden sm:inline">
+                    {isUnlimited ? (
+                      'Unlimited'
+                    ) : (
+                      <>
+                        <strong>{user.creditsRemaining ?? 100}</strong>
+                        <span className="text-[10px] opacity-75 font-normal"> / {user.dailyCreditsLimit || 100}</span>
+                      </>
+                    )}
+                  </span>
+                </button>
+
+                {/* Popover on click for small screens */}
+                {isCreditsPopoverOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-64 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl z-50 text-slate-900 dark:text-slate-100 text-left animate-in fade-in slide-in-from-top-2 duration-150 sm:hidden">
+                    <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+                      <div className="flex items-center gap-1.5 font-bold text-xs text-slate-900 dark:text-white">
+                        <Zap className="w-3.5 h-3.5 text-orange-500 fill-current shrink-0" />
+                        <span>Credit Allowance</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsCreditsPopoverOpen(false)}
+                        className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-md cursor-pointer"
+                        aria-label="Close"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    <div className="py-2.5 space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-500 dark:text-slate-400 font-medium">Active Plan:</span>
+                        <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300">
+                          {userPlanName}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-500 dark:text-slate-400 font-medium">Daily Credits:</span>
+                        <span className="font-mono font-bold text-slate-900 dark:text-white">
+                          {isUnlimited
+                            ? 'Unlimited (Uncapped)'
+                            : `${user.creditsRemaining ?? 100} / ${user.dailyCreditsLimit || 100}`}
+                        </span>
+                      </div>
+
+                      {!isUnlimited && (
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight pt-0.5">
+                          Full daily refresh in{' '}
+                          <span className="font-semibold text-slate-700 dark:text-slate-300">
+                            {getTimeUntilReset(user.nextCreditResetAt)}
+                          </span>
+                          .
+                        </div>
+                      )}
+                    </div>
+
+                    {!isUnlimited && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsCreditsPopoverOpen(false);
+                          dispatch(openUpgradeModal());
+                        }}
+                        className="w-full mt-1 py-1.5 px-3 text-xs font-bold text-white bg-orange-600 hover:bg-orange-500 rounded-lg shadow-sm transition-colors text-center cursor-pointer"
+                      >
+                        Upgrade for More Credits →
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Upgrade Button (Only for non-unlimited plans) */}

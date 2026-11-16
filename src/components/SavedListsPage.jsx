@@ -731,12 +731,14 @@ export default function SavedListsPage({ setActiveView, initialSelectedListId })
           leadIds: selectedLeadIds
         })
       ).unwrap();
-      dispatch(
-        showToast({
-          message: `Successfully added ${selectedLeadIds.length} lead(s) to "${selectedList.name}"!`,
-          type: 'success'
-        })
-      );
+      if (typeof window !== 'undefined' && window.innerWidth >= 640) {
+        dispatch(
+          showToast({
+            message: `Successfully added ${selectedLeadIds.length} lead(s) to "${selectedList.name}"!`,
+            type: 'success'
+          })
+        );
+      }
       await dispatch(fetchSavedLists());
       const updatedList = {
         ...selectedList,

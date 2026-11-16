@@ -60,7 +60,7 @@ export default function GlobalToast() {
     <div
       role="status"
       aria-live="polite"
-      className="fixed bottom-5 right-5 z-[9999] max-w-xs sm:max-w-sm pointer-events-auto animate-in fade-in slide-in-from-bottom-3 duration-200"
+      className="fixed top-4 inset-x-3 sm:inset-x-auto sm:top-auto sm:bottom-5 sm:right-5 z-[9999] max-w-xs sm:max-w-sm mx-auto sm:mx-0 pointer-events-auto animate-in fade-in slide-in-from-top-3 sm:slide-in-from-bottom-3 duration-200"
     >
       <div
         className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-white/95 dark:bg-slate-900/95 border ${activeConfig.border} shadow-xl text-slate-800 dark:text-slate-100 text-xs font-semibold backdrop-blur-md transition-all`}
