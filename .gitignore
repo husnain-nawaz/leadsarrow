@@ -10,4 +10,6 @@ coverage/
 firebase-applet-config.json
 *.ps1
 *.mjs
+temp_extract/
+xl/
 =

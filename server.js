@@ -23,10 +23,6 @@ var __decorateClass = (decorators, target, key, kind) => {
 };
 
 // server/entities/Lead.ts
-var Lead_exports = {};
-__export(Lead_exports, {
-  Lead: () => Lead
-});
 import { Entity, PrimaryColumn, Column, Index, CreateDateColumn } from "typeorm";
 var Lead;
 var init_Lead = __esm({
@@ -309,10 +305,6 @@ var init_UserLogin = __esm({
 });
 
 // server/entities/SavedList.ts
-var SavedList_exports = {};
-__export(SavedList_exports, {
-  SavedList: () => SavedList
-});
 import {
   Entity as Entity5,
   PrimaryColumn as PrimaryColumn4,
@@ -552,958 +544,29 @@ var init_dataSource = __esm({
   }
 });
 
-// server/leadsData.ts
-var leadsData_exports = {};
-__export(leadsData_exports, {
-  FILTER_TAXONOMY: () => FILTER_TAXONOMY,
-  batchInsertLeads: () => batchInsertLeads,
-  fetchLeadsByIds: () => fetchLeadsByIds,
-  insertSingleLead: () => insertSingleLead,
-  invalidateGlobalMetricsCache: () => invalidateGlobalMetricsCache,
-  queryLeadsDatabase: () => queryLeadsDatabase
-});
-function parseArrayParam(param) {
-  if (!param) return [];
-  if (Array.isArray(param)) return param.filter(Boolean);
-  return String(param).split(/[|,]/).map((s) => s.trim()).filter(Boolean);
-}
-function mapEntityToLead(entity) {
-  let tech = [];
-  if (entity.techStack) {
-    if (Array.isArray(entity.techStack)) tech = entity.techStack;
-    else if (typeof entity.techStack === "string") {
-      try {
-        tech = JSON.parse(entity.techStack);
-      } catch {
-        tech = entity.techStack.split(/[,;|]/).map((s) => s.trim()).filter(Boolean);
-      }
-    }
-  }
-  return {
-    id: entity.id,
-    companyName: entity.companyName,
-    domain: entity.domain,
-    industry: entity.industry,
-    employeeRange: entity.employeeRange,
-    employeeCount: Number(entity.employeeCount) || 100,
-    revenueRange: entity.revenueRange,
-    annualRevenueUsd: Number(entity.annualRevenueUsd) || 0,
-    country: entity.country,
-    city: entity.city,
-    contactName: entity.contactName,
-    contactTitle: entity.contactTitle,
-    seniority: entity.seniority,
-    department: entity.department,
-    contactEmail: entity.contactEmail,
-    contactPhone: entity.contactPhone,
-    linkedinUrl: entity.linkedinUrl,
-    verificationStatus: entity.verificationStatus,
-    fundingStage: entity.fundingStage,
-    techStack: tech,
-    buyingIntentScore: Number(entity.buyingIntentScore) || 80,
-    foundedYear: Number(entity.foundedYear) || 2018,
-    hasDirectPhone: Boolean(entity.hasDirectPhone),
-    isCustom: Boolean(entity.isCustom && entity.source === "manual_lead_entry"),
-    isRecent: Boolean(entity.isRecent),
-    source: entity.source,
-    createdAt: entity.createdAt ? new Date(entity.createdAt).toISOString() : (/* @__PURE__ */ new Date()).toISOString()
-  };
-}
-function mapCustomRowToLead(row) {
-  let tech = [];
-  if (row.tech_stack) {
-    if (Array.isArray(row.tech_stack)) tech = row.tech_stack;
-    else if (typeof row.tech_stack === "string") {
-      try {
-        tech = JSON.parse(row.tech_stack);
-      } catch {
-        tech = row.tech_stack.split(/[,;|]/).map((s) => s.trim()).filter(Boolean);
-      }
-    }
-  }
-  return {
-    id: row.id,
-    companyName: row.company_name,
-    domain: row.domain,
-    industry: row.industry,
-    employeeRange: row.employee_range,
-    employeeCount: Number(row.employee_count) || 120,
-    revenueRange: row.revenue_range,
-    annualRevenueUsd: Number(row.annual_revenue_usd) || 24e6,
-    country: row.country,
-    city: row.city,
-    contactName: row.contact_name,
-    contactTitle: row.contact_title,
-    seniority: row.seniority,
-    department: row.department,
-    contactEmail: row.contact_email,
-    contactPhone: row.contact_phone,
-    linkedinUrl: row.linkedin_url || "",
-    verificationStatus: row.verification_status || "Verified",
-    fundingStage: row.funding_stage || "Series B",
-    techStack: tech.length > 0 ? tech : ["AWS", "Salesforce"],
-    buyingIntentScore: Number(row.buying_intent_score) || 88,
-    foundedYear: Number(row.founded_year) || 2021,
-    hasDirectPhone: Boolean(row.has_direct_phone),
-    isCustom: true,
-    isRecent: true,
-    source: row.source || "manual_custom",
-    createdAt: row.created_at ? new Date(row.created_at).toISOString() : (/* @__PURE__ */ new Date()).toISOString()
-  };
-}
-function invalidateGlobalMetricsCache() {
-  cachedGlobals.timestamp = 0;
-}
-async function getGlobalMetricsAndFacets(ds) {
-  const now = Date.now();
-  if (now - cachedGlobals.timestamp < CACHE_TTL_MS && cachedGlobals.timestamp > 0) {
-    return cachedGlobals;
-  }
-  try {
-    let totalDatabaseRecords = 0;
-    try {
-      const ds1 = await getPrimaryDataSource();
-      if (ds1) {
-        const rawCount1 = await ds1.query("SELECT COUNT(*) as cnt FROM leads;");
-        totalDatabaseRecords += Number(rawCount1[0]?.cnt) || 1843e3;
-      } else {
-        totalDatabaseRecords += 1843e3;
-      }
-    } catch (_) {
-      totalDatabaseRecords += 1843e3;
-    }
-    try {
-      const ds2 = await getSecondaryDataSource();
-      if (ds2) {
-        const rawCount2 = await ds2.query("SELECT COUNT(*) as cnt FROM leads;");
-        totalDatabaseRecords += Number(rawCount2[0]?.cnt) || 4365787;
-      } else {
-        totalDatabaseRecords += 4365787;
-      }
-    } catch (_) {
-      totalDatabaseRecords += 4365787;
-    }
-    try {
-      const ds3 = await getTertiaryDataSource();
-      if (ds3) {
-        const rawCount3 = await ds3.query("SELECT COUNT(*) as cnt FROM leads;");
-        totalDatabaseRecords += Number(rawCount3[0]?.cnt) || 4154641;
-      } else {
-        totalDatabaseRecords += 4154641;
-      }
-    } catch (_) {
-      totalDatabaseRecords += 4154641;
-    }
-    try {
-      const ds4 = await getDataSource();
-      if (ds4) {
-        const rawCount4 = await ds4.query("SELECT COUNT(*) as cnt FROM leads;");
-        totalDatabaseRecords += Number(rawCount4[0]?.cnt) || 0;
-      }
-    } catch (_) {
-    }
-    if (totalDatabaseRecords < 1e7) {
-      totalDatabaseRecords = 10363428;
-    }
-    cachedGlobals.totalDatabaseRecords = totalDatabaseRecords;
-    cachedGlobals.verifiedRatio = totalDatabaseRecords > 0 ? 100 : 0;
-    cachedGlobals.avgIntentScore = totalDatabaseRecords > 0 ? 88 : 0;
-    cachedGlobals.timestamp = Date.now();
-  } catch (err) {
-    console.error("Failed to update leads count:", err.message);
-    cachedGlobals.totalDatabaseRecords = 10363428;
-  }
-  return cachedGlobals;
-}
-async function queryLeadsDatabase(params = {}, userId) {
-  const ds = await getLeadsReadDataSource();
-  const leadRepo = ds.getRepository(Lead);
-  const globals = await getGlobalMetricsAndFacets(ds);
-  const {
-    q = "",
-    industries,
-    employeeRanges,
-    revenueRanges,
-    countries,
-    seniorities,
-    departments,
-    verificationStatuses,
-    fundingStages,
-    techStack,
-    minIntentScore = 0,
-    hasVerifiedEmail = false,
-    hasDirectPhone = false,
-    onlyCustom = false,
-    onlyRevealed = false,
-    savedListLeadIds,
-    sortBy = "buying_intent_score",
-    sortOrder = "desc",
-    page = 1,
-    pageSize = 25
-  } = params;
-  const indArr = parseArrayParam(industries);
-  const empArr = parseArrayParam(employeeRanges);
-  const revArr = parseArrayParam(revenueRanges);
-  const countryArr = parseArrayParam(countries);
-  const senArr = parseArrayParam(seniorities);
-  const deptArr = parseArrayParam(departments);
-  const verArr = parseArrayParam(verificationStatuses);
-  const fundArr = parseArrayParam(fundingStages);
-  const techArr = parseArrayParam(techStack);
-  const minScore = Number(minIntentScore) || 0;
-  const searchLower = String(q || "").trim();
-  const safePage = Math.max(1, Number(page) || 1);
-  const safePageSize = Math.min(100, Math.max(10, Number(pageSize) || 25));
-  const offset = (safePage - 1) * safePageSize;
-  if (String(onlyCustom) === "true" || onlyCustom === true) {
-    if (!userId) {
-      return {
-        leads: [],
-        pagination: {
-          page: 1,
-          pageSize: safePageSize,
-          totalCatalogRows: 0,
-          totalPages: 1,
-          estimatedGlobalMatches: 0,
-          totalDatabaseRecords: 0
-        },
-        metrics: {
-          verifiedRatio: 100,
-          avgIntentScore: 88,
-          activeFiltersCount: 1
-        },
-        facets: {}
-      };
-    }
-    try {
-      const ds4 = await getDataSource();
-      let whereClause = "WHERE user_id = ?";
-      const sqlParams = [userId];
-      if (searchLower) {
-        whereClause += " AND (company_name LIKE ? OR contact_name LIKE ? OR domain LIKE ? OR contact_email LIKE ?)";
-        sqlParams.push(`%${searchLower}%`, `%${searchLower}%`, `%${searchLower}%`, `%${searchLower}%`);
-      }
-      if (indArr.length > 0) {
-        whereClause += ` AND industry IN (${indArr.map(() => "?").join(",")})`;
-        sqlParams.push(...indArr);
-      }
-      if (minScore > 0) {
-        whereClause += " AND buying_intent_score >= ?";
-        sqlParams.push(minScore);
-      }
-      const countRows = await ds4.query(
-        `SELECT COUNT(*) as total FROM custom_leads ${whereClause}`,
-        sqlParams
-      );
-      const totalMatches2 = Number(countRows[0]?.total || 0);
-      const rawRows = await ds4.query(
-        `SELECT * FROM custom_leads ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-        [...sqlParams, safePageSize, offset]
-      );
-      const customLeads = (rawRows || []).map(mapCustomRowToLead);
-      return {
-        leads: customLeads,
-        pagination: {
-          page: safePage,
-          pageSize: safePageSize,
-          totalCatalogRows: totalMatches2,
-          totalPages: Math.max(1, Math.ceil(totalMatches2 / safePageSize)),
-          estimatedGlobalMatches: totalMatches2,
-          totalDatabaseRecords: totalMatches2
-        },
-        metrics: {
-          verifiedRatio: 100,
-          avgIntentScore: customLeads.length > 0 ? Math.round(customLeads.reduce((s, l) => s + (l.buyingIntentScore || 88), 0) / customLeads.length) : 88,
-          activeFiltersCount: 1
-        },
-        facets: {}
-      };
-    } catch (e) {
-      console.error("Failed to query private custom_leads from DB4:", e.message);
-      return {
-        leads: [],
-        pagination: {
-          page: 1,
-          pageSize: safePageSize,
-          totalCatalogRows: 0,
-          totalPages: 1,
-          estimatedGlobalMatches: 0,
-          totalDatabaseRecords: 0
-        },
-        metrics: { verifiedRatio: 100, avgIntentScore: 88, activeFiltersCount: 1 },
-        facets: {}
-      };
-    }
-  }
-  const qb = leadRepo.createQueryBuilder("lead");
-  let hasWhere = false;
-  if (searchLower) {
-    qb.andWhere("lead.company_name LIKE :search", { search: `${searchLower}%` });
-    hasWhere = true;
-  }
-  if (indArr.length > 0) {
-    qb.andWhere("lead.industry IN (:...industries)", { industries: indArr });
-    hasWhere = true;
-  }
-  if (empArr.length > 0) {
-    qb.andWhere("lead.employee_range IN (:...employeeRanges)", { employeeRanges: empArr });
-    hasWhere = true;
-  }
-  if (revArr.length > 0) {
-    const expandedRevs = /* @__PURE__ */ new Set();
-    for (const r of revArr) {
-      expandedRevs.add(r);
-      expandedRevs.add(r.replace(/\$([0-9]+)\s*-\s*\$([0-9]+)/, "$$$1 - $2"));
-      expandedRevs.add(r.replace(/\$([0-9]+)\s*-\s*([0-9]+)/, "$$$1 - $$$2"));
-      if (r === "> $1B") {
-        expandedRevs.add("1B+");
-        expandedRevs.add("> 1B");
-      }
-      if (r === "$500M - $1B") {
-        expandedRevs.add("$500M - 1B");
-      }
-      if (r === "$250 - $500M") {
-        expandedRevs.add("$250 - 500M");
-      }
-      if (r === "$100 - $250M") {
-        expandedRevs.add("$100 - 250M");
-      }
-      if (r === "$50 - $100M") {
-        expandedRevs.add("$50 - 100M");
-      }
-      if (r === "$10 - $50M") {
-        expandedRevs.add("$10 - 50M");
-      }
-      if (r === "$1 - $10M") {
-        expandedRevs.add("$1 - 10M");
-      }
-      if (r === "$0 - $1M") {
-        expandedRevs.add("$0 - 1M");
-        expandedRevs.add("< $1M");
-      }
-    }
-    qb.andWhere("lead.revenue_range IN (:...revenueRanges)", { revenueRanges: Array.from(expandedRevs) });
-    hasWhere = true;
-  }
-  if (countryArr.length > 0) {
-    const expandedCountries = /* @__PURE__ */ new Set();
-    for (const c of countryArr) {
-      expandedCountries.add(c);
-      if (c === "USA" || c === "United States") {
-        expandedCountries.add("USA");
-        expandedCountries.add("United States");
-      }
-    }
-    qb.andWhere("lead.country IN (:...countries)", { countries: Array.from(expandedCountries) });
-    hasWhere = true;
-  }
-  if (senArr.length > 0) {
-    const expandedSeniorities = /* @__PURE__ */ new Set();
-    for (const s of senArr) {
-      expandedSeniorities.add(s);
-      if (s === "C-Level / Founder" || s === "C-Level") {
-        expandedSeniorities.add("C-Level / Founder");
-        expandedSeniorities.add("C-Level");
-        expandedSeniorities.add("Founder");
-        expandedSeniorities.add("Owner");
-      }
-      if (s === "VP" || s === "Vice President") {
-        expandedSeniorities.add("VP");
-        expandedSeniorities.add("Vice President");
-      }
-    }
-    qb.andWhere("lead.seniority IN (:...seniorities)", { seniorities: Array.from(expandedSeniorities) });
-    hasWhere = true;
-  }
-  if (deptArr.length > 0) {
-    qb.andWhere("lead.department IN (:...departments)", { departments: deptArr });
-    hasWhere = true;
-  }
-  if (verArr.length > 0) {
-    qb.andWhere("lead.verification_status IN (:...verificationStatuses)", { verificationStatuses: verArr });
-    hasWhere = true;
-  }
-  if (fundArr.length > 0) {
-    qb.andWhere("lead.funding_stage IN (:...fundingStages)", { fundingStages: fundArr });
-    hasWhere = true;
-  }
-  if (techArr.length > 0) {
-    const techSubClauses = techArr.map((_, i) => `JSON_CONTAINS(lead.tech_stack, JSON_QUOTE(:tech_${i}))`);
-    const paramsObj = {};
-    techArr.forEach((t, i) => {
-      paramsObj[`tech_${i}`] = t;
-    });
-    qb.andWhere(`(${techSubClauses.join(" OR ")})`, paramsObj);
-    hasWhere = true;
-  }
-  if (minScore > 0) {
-    qb.andWhere("lead.buying_intent_score >= :minScore", { minScore });
-    hasWhere = true;
-  }
-  if (String(hasVerifiedEmail) === "true") {
-    qb.andWhere("lead.verification_status = 'Verified'");
-    hasWhere = true;
-  }
-  if (String(hasDirectPhone) === "true") {
-    qb.andWhere("lead.has_direct_phone = 1");
-    hasWhere = true;
-  }
-  const savedIdsArr = parseArrayParam(savedListLeadIds);
-  if (savedIdsArr.length > 0) {
-    qb.andWhere("lead.id IN (:...savedIdsArr)", { savedIdsArr });
-    hasWhere = true;
-  }
-  if (String(onlyRevealed) === "true" || onlyRevealed === true) {
-    let revealedIds = [];
-    if (userId) {
-      try {
-        const ds4 = await getDataSource();
-        const revealedRows = await ds4.query(
-          'SELECT lead_id FROM user_revealed_leads WHERE user_id = ? OR user_id = "usr_superadmin"',
-          [userId]
-        );
-        revealedIds = (revealedRows || []).map((r) => String(r.lead_id)).filter(Boolean);
-      } catch (err) {
-        console.error("Error querying user_revealed_leads in queryLeadsDatabase:", err.message);
-      }
-    }
-    const clientRevealed = parseArrayParam(params.revealedIds || params.revealedLeadIds);
-    if (clientRevealed.length > 0) {
-      revealedIds = Array.from(/* @__PURE__ */ new Set([...revealedIds, ...clientRevealed]));
-    }
-    if (revealedIds.length === 0) {
-      return {
-        leads: [],
-        pagination: {
-          page: 1,
-          pageSize: safePageSize,
-          totalCatalogRows: 0,
-          totalPages: 1,
-          estimatedGlobalMatches: 0,
-          totalDatabaseRecords: 0
-        },
-        metrics: {
-          verifiedRatio: 100,
-          avgIntentScore: 90,
-          activeFiltersCount: 1
-        },
-        facets: {}
-      };
-    }
-    const allRevealedLeads = await fetchLeadsByIds(revealedIds, userId);
-    let filtered = allRevealedLeads;
-    if (searchLower) {
-      const qLower = searchLower.toLowerCase();
-      filtered = filtered.filter(
-        (l) => (l.companyName || "").toLowerCase().includes(qLower) || (l.contactName || "").toLowerCase().includes(qLower) || (l.domain || "").toLowerCase().includes(qLower) || (l.contactEmail || "").toLowerCase().includes(qLower) || (l.city || "").toLowerCase().includes(qLower) || (l.industry || "").toLowerCase().includes(qLower)
-      );
-    }
-    if (indArr.length > 0) {
-      filtered = filtered.filter((l) => indArr.includes(l.industry));
-    }
-    if (empArr.length > 0) {
-      filtered = filtered.filter((l) => empArr.includes(l.employeeRange) || empArr.includes(String(l.employeeCount)));
-    }
-    if (revArr.length > 0) {
-      filtered = filtered.filter((l) => revArr.some((r) => (l.revenueRange || "").includes(r)));
-    }
-    if (countryArr.length > 0) {
-      filtered = filtered.filter((l) => countryArr.includes(l.country));
-    }
-    if (senArr.length > 0) {
-      filtered = filtered.filter((l) => senArr.includes(l.seniority));
-    }
-    if (deptArr.length > 0) {
-      filtered = filtered.filter((l) => deptArr.includes(l.department));
-    }
-    if (verArr.length > 0) {
-      filtered = filtered.filter((l) => verArr.includes(l.verificationStatus));
-    }
-    if (fundArr.length > 0) {
-      filtered = filtered.filter((l) => fundArr.includes(l.fundingStage));
-    }
-    if (minScore > 0) {
-      filtered = filtered.filter((l) => (l.buyingIntentScore || 0) >= minScore);
-    }
-    if (String(hasVerifiedEmail) === "true" || hasVerifiedEmail === true) {
-      filtered = filtered.filter((l) => Boolean(l.contactEmail));
-    }
-    if (String(hasDirectPhone) === "true" || hasDirectPhone === true) {
-      filtered = filtered.filter((l) => Boolean(l.contactPhone));
-    }
-    if (sortBy === "buying_intent_score" || sortBy === "intent" || sortBy === "buyingIntentScore") {
-      filtered.sort((a, b) => sortOrder === "asc" ? (a.buyingIntentScore || 0) - (b.buyingIntentScore || 0) : (b.buyingIntentScore || 0) - (a.buyingIntentScore || 0));
-    } else if (sortBy === "company_name" || sortBy === "company" || sortBy === "companyName") {
-      filtered.sort((a, b) => sortOrder === "asc" ? (a.companyName || "").localeCompare(b.companyName || "") : (b.companyName || "").localeCompare(a.companyName || ""));
-    } else if (sortBy === "employee_count" || sortBy === "employees" || sortBy === "employeeCount") {
-      filtered.sort((a, b) => sortOrder === "asc" ? (a.employeeCount || 0) - (b.employeeCount || 0) : (b.employeeCount || 0) - (a.employeeCount || 0));
-    }
-    const totalCount = filtered.length;
-    const startIndex = (safePage - 1) * safePageSize;
-    const pageLeads = filtered.slice(startIndex, startIndex + safePageSize);
-    return {
-      leads: pageLeads.map((l) => ({ ...l, isRevealed: 1 })),
-      pagination: {
-        page: safePage,
-        pageSize: safePageSize,
-        totalCatalogRows: totalCount,
-        totalPages: Math.ceil(totalCount / safePageSize) || 1,
-        estimatedGlobalMatches: totalCount,
-        totalDatabaseRecords: totalCount
-      },
-      metrics: {
-        verifiedRatio: 100,
-        avgIntentScore: totalCount > 0 ? Math.round(filtered.reduce((acc, l) => acc + (l.buyingIntentScore || 88), 0) / totalCount) : 90,
-        activeFiltersCount: 1
-      },
-      facets: {}
-    };
-  }
-  const isUnfiltered = !hasWhere;
-  let totalMatches = 0;
-  if (isUnfiltered) {
-    totalMatches = globals.totalDatabaseRecords;
-  } else {
-    try {
-      const countQb = qb.clone().select("COUNT(lead.id)", "count");
-      const countRes = await countQb.getRawOne();
-      totalMatches = Number(countRes?.count || 0);
-    } catch (err) {
-      console.warn("Count query fallback error:", err.message);
-      totalMatches = 0;
-    }
-  }
-  const sortMap = {
-    companyName: "lead.company_name",
-    company_name: "lead.company_name",
-    annualRevenueUsd: "lead.annual_revenue_usd",
-    annual_revenue_usd: "lead.annual_revenue_usd",
-    employeeCount: "lead.employee_count",
-    employee_count: "lead.employee_count",
-    buyingIntentScore: "lead.buying_intent_score",
-    buying_intent_score: "lead.buying_intent_score",
-    createdAt: "lead.created_at",
-    created_at: "lead.created_at"
-  };
-  const sortCol = sortMap[sortBy] || "lead.buying_intent_score";
-  const sortDirection = String(sortOrder).toLowerCase() === "asc" ? "ASC" : "DESC";
-  let leads = [];
-  try {
-    if (isUnfiltered && offset < 5e4 && sortBy === "buying_intent_score") {
-      const rawEntities = await ds.query(
-        `SELECT id, company_name, domain, industry, employee_range, employee_count,
-                revenue_range, annual_revenue_usd, country, city, contact_name,
-                contact_title, seniority, department, contact_email, contact_phone,
-                linkedin_url, verification_status, funding_stage, tech_stack,
-                buying_intent_score, founded_year, has_direct_phone, is_custom,
-                is_recent, source, created_at
-         FROM leads
-         LIMIT ? OFFSET ?`,
-        [safePageSize, offset]
-      );
-      leads = (rawEntities || []).map((e) => ({
-        id: e.id,
-        companyName: e.company_name,
-        domain: e.domain,
-        industry: e.industry,
-        employeeRange: e.employee_range,
-        employeeCount: Number(e.employee_count) || 100,
-        revenueRange: e.revenue_range,
-        annualRevenueUsd: Number(e.annual_revenue_usd) || 0,
-        country: e.country,
-        city: e.city,
-        contactName: e.contact_name,
-        contactTitle: e.contact_title,
-        seniority: e.seniority,
-        department: e.department,
-        contactEmail: e.contact_email,
-        contactPhone: e.contact_phone,
-        linkedinUrl: e.linkedin_url,
-        verificationStatus: e.verification_status,
-        fundingStage: e.funding_stage,
-        techStack: Array.isArray(e.tech_stack) ? e.tech_stack : typeof e.tech_stack === "string" ? JSON.parse(e.tech_stack || "[]") : ["AWS"],
-        buyingIntentScore: Number(e.buying_intent_score) || 88,
-        foundedYear: Number(e.founded_year) || 2020,
-        hasDirectPhone: Boolean(e.has_direct_phone),
-        isCustom: Boolean(e.is_custom && e.source === "manual_lead_entry"),
-        isRecent: Boolean(e.is_recent),
-        source: e.source,
-        createdAt: e.created_at
-      }));
-    } else if (isUnfiltered && totalMatches > 0 && offset > totalMatches / 2) {
-      const revOffset = Math.max(0, totalMatches - safePage * safePageSize);
-      const revTake = Math.min(safePageSize, totalMatches - offset);
-      const revDirection = sortDirection === "DESC" ? "ASC" : "DESC";
-      const idRows = await leadRepo.createQueryBuilder("lead").select("lead.id", "id").orderBy(sortCol, revDirection).addOrderBy("lead.id", "ASC").skip(revOffset).take(revTake).getRawMany();
-      if (idRows.length > 0) {
-        const idList = idRows.map((r) => r.id);
-        const fullEntities = await leadRepo.createQueryBuilder("lead").where("lead.id IN (:...idList)", { idList }).getMany();
-        const entityMap = new Map(fullEntities.map((e) => [e.id, e]));
-        const orderedEntities = idRows.reverse().map((r) => entityMap.get(r.id)).filter(Boolean);
-        leads = orderedEntities.map(mapEntityToLead);
-      }
-    } else {
-      const idQb = qb.clone().select("lead.id", "id");
-      const activeFilterCount = (indArr.length > 0 ? 1 : 0) + (empArr.length > 0 ? 1 : 0) + (revArr.length > 0 ? 1 : 0) + (countryArr.length > 0 ? 1 : 0) + (senArr.length > 0 ? 1 : 0) + (deptArr.length > 0 ? 1 : 0) + (fundArr.length > 0 ? 1 : 0) + (minScore > 0 ? 1 : 0);
-      if (activeFilterCount >= 1) {
-        if (revArr.length > 0) {
-          idQb.useIndex("idx_rev_emp_ind");
-        } else if (indArr.length > 0 && empArr.length > 0) {
-          idQb.useIndex("idx_ind_emp_score");
-        } else if (indArr.length > 0) {
-          idQb.useIndex("idx_cov_leads");
-        } else if (deptArr.length > 0) {
-          idQb.useIndex("idx_cov_dept");
-        } else if (empArr.length > 0) {
-          idQb.useIndex("idx_cov_emp_rev");
-        } else if (senArr.length > 0) {
-          idQb.useIndex("idx_cov_sen_score");
-        }
-      }
-      if (safePage <= 5 && sortBy === "buying_intent_score") {
-        qb.skip(offset).take(safePageSize);
-        const entities = await qb.getMany();
-        leads = entities.map(mapEntityToLead);
-      } else {
-        const idRows = await idQb.orderBy(sortCol, sortDirection).addOrderBy("lead.id", "ASC").skip(offset).take(safePageSize).getRawMany();
-        if (idRows.length > 0) {
-          const idList = idRows.map((r) => r.id);
-          const fullEntities = await leadRepo.createQueryBuilder("lead").where("lead.id IN (:...idList)", { idList }).getMany();
-          const entityMap = new Map(fullEntities.map((e) => [e.id, e]));
-          const orderedEntities = idRows.map((r) => entityMap.get(r.id)).filter(Boolean);
-          leads = orderedEntities.map(mapEntityToLead);
-        }
-      }
-    }
-  } catch (err) {
-    console.warn("Optimized deferred pagination fallback:", err.message);
-    qb.orderBy(sortCol, sortDirection).addOrderBy("lead.id", "ASC").skip(offset).take(safePageSize);
-    const entities = await qb.getMany();
-    leads = entities.map(mapEntityToLead);
-  }
-  const verifiedRatio = leads.length > 0 ? Math.round(leads.filter((l) => l.verificationStatus === "Verified").length / leads.length * 100) : globals.verifiedRatio;
-  let avgIntentScore = globals.avgIntentScore;
-  if (minScore > 0) {
-    const intentHistogram = {
-      72: 39460,
-      73: 39737,
-      74: 39898,
-      75: 39935,
-      76: 39758,
-      77: 40070,
-      78: 39739,
-      79: 40162,
-      80: 39773,
-      81: 39787,
-      82: 39477,
-      83: 39851,
-      84: 39940,
-      85: 40028,
-      86: 39852,
-      87: 39541,
-      88: 39699,
-      89: 39815,
-      90: 39887,
-      91: 40026,
-      92: 39962,
-      93: 39586,
-      94: 39816,
-      95: 39809,
-      96: 39986,
-      97: 40089
-    };
-    let scoreSum = 0;
-    let scoreCount = 0;
-    for (let s = minScore; s <= 100; s++) {
-      if (intentHistogram[s]) {
-        scoreSum += s * intentHistogram[s];
-        scoreCount += intentHistogram[s];
-      }
-    }
-    avgIntentScore = scoreCount > 0 ? Math.round(scoreSum / scoreCount) : 95;
-  } else if (leads.length > 0) {
-    avgIntentScore = Math.round(leads.reduce((sum, l) => sum + (l.buyingIntentScore || 0), 0) / leads.length);
-  }
-  const totalDatabaseRecords = globals.totalDatabaseRecords || totalMatches;
-  const facets = {
-    industries: {},
-    employeeRanges: {},
-    revenueRanges: {},
-    countries: {},
-    seniorities: {},
-    departments: {},
-    verificationStatuses: {},
-    fundingStages: {},
-    techStack: {}
-  };
-  return {
-    leads,
-    pagination: {
-      page: safePage,
-      pageSize: safePageSize,
-      totalCatalogRows: totalMatches,
-      totalPages: Math.max(1, Math.ceil(totalMatches / safePageSize)),
-      estimatedGlobalMatches: totalMatches,
-      totalDatabaseRecords
-    },
-    metrics: {
-      verifiedRatio,
-      avgIntentScore,
-      activeFiltersCount: (searchLower ? 1 : 0) + indArr.length + empArr.length + revArr.length + countryArr.length + senArr.length + deptArr.length + verArr.length + fundArr.length + techArr.length + (minScore > 0 ? 1 : 0) + (String(hasVerifiedEmail) === "true" ? 1 : 0) + (String(hasDirectPhone) === "true" ? 1 : 0) + (String(onlyRevealed) === "true" || onlyRevealed === true ? 1 : 0)
-    },
-    facets
-  };
-}
-async function batchInsertLeads(newLeads = []) {
-  if (!Array.isArray(newLeads) || newLeads.length === 0) {
-    throw new Error("No leads provided to ingest.");
-  }
-  const ds = await getLeadsDataSource();
-  const leadRepo = ds.getRepository(Lead);
-  let insertedCount = 0;
-  const BATCH_CHUNK_SIZE = 1e3;
-  for (let c = 0; c < newLeads.length; c += BATCH_CHUNK_SIZE) {
-    const chunk = newLeads.slice(c, c + BATCH_CHUNK_SIZE);
-    const entities = chunk.map((item, idx) => {
-      const globalIdx = c + idx;
-      const id = item.id || `lead_${Date.now()}_${globalIdx}_${Math.random().toString(36).substring(2, 7)}`;
-      const domain = String(item.domain || "example.com").trim();
-      const safeTrim = (v, maxLen, fallback = "") => {
-        if (v === null || v === void 0) return fallback.slice(0, maxLen);
-        const s = String(v).replace(/\0/g, "").trim();
-        return (s || fallback).slice(0, maxLen);
-      };
-      return leadRepo.create({
-        id,
-        companyName: safeTrim(item.companyName || item.company, 255, "Enterprise Company"),
-        domain: safeTrim(item.domain, 255, "example.com"),
-        industry: safeTrim(item.industry, 128, "Enterprise Software & SaaS"),
-        employeeRange: safeTrim(item.employeeRange, 64, "51-200"),
-        employeeCount: Number(item.employeeCount) || 150,
-        revenueRange: safeTrim(item.revenueRange, 64, "$10M - $50M"),
-        annualRevenueUsd: Number(item.annualRevenueUsd) || 25e6,
-        country: safeTrim(item.country, 128, "United States"),
-        city: safeTrim(item.city, 128, "San Francisco, CA"),
-        contactName: safeTrim(item.contactName || item.name, 255, "Decision Maker"),
-        contactTitle: safeTrim(item.contactTitle || item.title, 255, "Director of Operations"),
-        seniority: safeTrim(item.seniority, 64, "Director"),
-        department: safeTrim(item.department, 128, "Executive Leadership"),
-        contactEmail: safeTrim(item.contactEmail || item.email, 255, `contact_${globalIdx}@example.com`),
-        contactPhone: safeTrim(item.contactPhone || item.phone, 64, "+1 (555) 019-2831"),
-        linkedinUrl: safeTrim(item.linkedinUrl || `https://linkedin.com/company/${domain.replace(/\.[^/.]+$/, "")}`, 255, ""),
-        verificationStatus: safeTrim(item.verificationStatus, 32, "Verified"),
-        fundingStage: safeTrim(item.fundingStage, 64, "Series B"),
-        techStack: Array.isArray(item.techStack) ? item.techStack : typeof item.techStack === "string" ? item.techStack.split(/[,;|]/).map((s) => s.trim()).filter(Boolean) : ["AWS", "Salesforce"],
-        buyingIntentScore: Number(item.buyingIntentScore) || Math.floor(Math.random() * 25 + 75),
-        hasDirectPhone: item.hasDirectPhone !== void 0 ? item.hasDirectPhone ? 1 : 0 : 1,
-        isCustom: 1,
-        isRecent: 1,
-        source: safeTrim(item.source, 64, "mysql_b2b_database"),
-        createdAt: item.createdAt ? new Date(item.createdAt) : /* @__PURE__ */ new Date()
-      });
-    });
-    await leadRepo.save(entities, { chunk: 500 });
-    insertedCount += entities.length;
-  }
-  const totalRecords = await leadRepo.count();
-  return {
-    insertedCount,
-    totalRecords
-  };
-}
-async function insertSingleLead(lead) {
-  const res = await batchInsertLeads([lead]);
-  return { ...lead, id: lead.id || `lead_${Date.now()}` };
-}
-async function fetchLeadsByIds(ids, userId) {
-  if (!Array.isArray(ids) || ids.length === 0) return [];
-  const cleanIds = Array.from(new Set(ids.map((id) => String(id).trim()).filter(Boolean)));
-  if (cleanIds.length === 0) return [];
-  const foundMap = /* @__PURE__ */ new Map();
-  let remainingIds = [...cleanIds];
-  const queryDsForIds = async (ds) => {
-    if (!ds || !remainingIds.length) return;
-    try {
-      const repo = ds.getRepository(Lead);
-      const CHUNK_SIZE = 500;
-      for (let i = 0; i < remainingIds.length; i += CHUNK_SIZE) {
-        const chunk = remainingIds.slice(i, i + CHUNK_SIZE);
-        const entities = await repo.createQueryBuilder("lead").where("lead.id IN (:...chunk)", { chunk }).getMany();
-        if (entities && entities.length > 0) {
-          for (const ent of entities) {
-            const mapped = mapEntityToLead(ent);
-            mapped.isCustom = 0;
-            mapped.isCore = 1;
-            mapped.source = "core";
-            foundMap.set(mapped.id, mapped);
-          }
-        }
-      }
-      remainingIds = cleanIds.filter((id) => !foundMap.has(id));
-    } catch (err) {
-      console.warn("Error reading from datasource shard in fetchLeadsByIds:", err.message);
-    }
-  };
-  try {
-    const ds2 = await getSecondaryDataSource();
-    await queryDsForIds(ds2);
-  } catch (_) {
-  }
-  if (remainingIds.length > 0) {
-    try {
-      const ds3 = await getTertiaryDataSource();
-      await queryDsForIds(ds3);
-    } catch (_) {
-    }
-  }
-  if (remainingIds.length > 0) {
-    try {
-      const ds1 = await getPrimaryDataSource();
-      await queryDsForIds(ds1);
-    } catch (_) {
-    }
-  }
-  if (remainingIds.length > 0) {
-    try {
-      const ds4 = await getDataSource();
-      const CHUNK_SIZE = 500;
-      for (let i = 0; i < remainingIds.length; i += CHUNK_SIZE) {
-        const chunk = remainingIds.slice(i, i + CHUNK_SIZE);
-        const placeholders = chunk.map(() => "?").join(",");
-        const params = [...chunk];
-        let queryStr = `SELECT * FROM custom_leads WHERE id IN (${placeholders})`;
-        if (userId) {
-          queryStr += ` AND (user_id = ? OR user_id = 'usr_superadmin' OR user_id IS NULL OR user_id = '')`;
-          params.push(userId);
-        }
-        const customRows = await ds4.query(queryStr, params);
-        if (customRows && customRows.length > 0) {
-          for (const row of customRows) {
-            const mapped = mapCustomRowToLead(row);
-            mapped.isCustom = 1;
-            mapped.isCore = 0;
-            mapped.source = "manual_custom_lead";
-            foundMap.set(mapped.id, mapped);
-          }
-        }
-      }
-      remainingIds = cleanIds.filter((id) => !foundMap.has(id));
-    } catch (err) {
-      console.warn("Error reading custom_leads from DB4 in fetchLeadsByIds:", err.message);
-    }
-  }
-  const results = [];
-  for (const id of cleanIds) {
-    if (foundMap.has(id)) {
-      results.push(foundMap.get(id));
-    }
-  }
-  return results;
-}
-var FILTER_TAXONOMY, cachedGlobals, CACHE_TTL_MS;
-var init_leadsData = __esm({
-  "server/leadsData.ts"() {
-    init_dataSource();
-    init_Lead();
-    FILTER_TAXONOMY = {
-      industries: [
-        "Business Services",
-        "Real Estate & Construction",
-        "Retail",
-        "Manufacturing",
-        "Media & Entertainment",
-        "Software & Internet",
-        "Healthcare",
-        "Financial Services",
-        "Non-Profit",
-        "Computers & Electronics",
-        "Travel, Recreation, and Leisure",
-        "Education",
-        "Telecommunications",
-        "Consumer Services",
-        "Transportation & Storage",
-        "Wholesale & Distribution",
-        "Enterprise Software & SaaS",
-        "Energy & Utilities",
-        "Government",
-        "Agriculture & Mining"
-      ],
-      employeeRanges: [
-        "0 - 25",
-        "25 - 100",
-        "100 - 250",
-        "250 - 1000",
-        "1K - 10K",
-        "10K - 50K",
-        "50K - 100K",
-        "> 100K"
-      ],
-      revenueRanges: [
-        "$0 - $1M",
-        "$1 - $10M",
-        "$10 - $50M",
-        "$50 - $100M",
-        "$100 - $250M",
-        "$250 - $500M",
-        "$500M - $1B",
-        "> $1B"
-      ],
-      countries: ["USA", "Canada"],
-      seniorities: ["C-Level / Founder", "VP", "Director", "Senior Manager", "Manager"],
-      departments: [
-        "Executive Leadership",
-        "Marketing & Growth",
-        "Sales & Revenue",
-        "Operations & Supply Chain",
-        "Engineering & Technical",
-        "Finance & Procurement",
-        "Information Security",
-        "Product Management"
-      ],
-      techStackOptions: [],
-      fundingStages: ["Series B", "Public / IPO", "Series C+"]
-    };
-    cachedGlobals = {
-      timestamp: 0,
-      totalDatabaseRecords: 10363428,
-      avgIntentScore: 88,
-      verifiedRatio: 100,
-      facets: {
-        industries: {},
-        countries: {}
-      }
-    };
-    CACHE_TTL_MS = 5 * 60 * 1e3;
-  }
-});
+// server.ts
+import "reflect-metadata";
+
+// server/app.ts
+import express from "express";
+import { createServer as createViteServer } from "vite";
+import path from "path";
 
 // server/auth.ts
-var auth_exports = {};
-__export(auth_exports, {
-  PLAN_LIMITS: () => PLAN_LIMITS,
-  checkAndReplenishDailyCredits: () => checkAndReplenishDailyCredits,
-  decrementUserCreditsInDb: () => decrementUserCreditsInDb,
-  ensureSuperAdminSeed: () => ensureSuperAdminSeed,
-  getAdminStats: () => getAdminStats,
-  getAllUsersForAdmin: () => getAllUsersForAdmin,
-  getUserWithHistory: () => getUserWithHistory,
-  issueJwtToken: () => issueJwtToken,
-  loginJwtUser: () => loginJwtUser,
-  loginOrSyncGoogleUser: () => loginOrSyncGoogleUser,
-  optionalAuthMiddleware: () => optionalAuthMiddleware,
-  recordLoginSession: () => recordLoginSession,
-  registerJwtUser: () => registerJwtUser,
-  requireJwtMiddleware: () => requireJwtMiddleware,
-  requireSuperAdminMiddleware: () => requireSuperAdminMiddleware,
-  runGlobalDailyCreditReplenishmentSweep: () => runGlobalDailyCreditReplenishmentSweep,
-  sanitizeUser: () => sanitizeUser,
-  updateSelfProfile: () => updateSelfProfile,
-  updateUserByAdmin: () => updateUserByAdmin,
-  upgradeUserPlan: () => upgradeUserPlan,
-  verifyJwtTokenAsync: () => verifyJwtTokenAsync
-});
+init_dataSource();
+init_User();
+init_UserPurchase();
+init_UserLogin();
+init_Lead();
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+var JWT_SECRET = process.env.JWT_SECRET || "leadsarrow-b2b-enterprise-jwt-secret-key-2026";
+var PLAN_LIMITS = {
+  free: { name: "Free Starter", limit: 100, price: 0, status: "free" },
+  starter: { name: "Growth Starter", limit: 2e3, price: 10, status: "paid" },
+  pro: { name: "Scale Pro", limit: 1e4, price: 39, status: "paid" },
+  unlimited: { name: "Enterprise Unlimited", limit: 999999, price: 79, status: "paid" }
+};
 async function checkAndReplenishDailyCredits(user) {
   if (!user) return user;
   const now = Date.now();
@@ -2174,6 +1237,11 @@ async function updateUserByAdmin(userId, updates = {}) {
   }
   return await getUserWithHistory(user.id);
 }
+var cachedClusterVolume = {
+  timestamp: 0,
+  count: 10363428
+};
+var FIVE_MIN_MS = 5 * 60 * 1e3;
 async function getAdminStats() {
   const ds = await getDataSource();
   const userRepo = ds.getRepository(User);
@@ -2247,1508 +1315,2420 @@ async function getAdminStats() {
     }
   };
 }
-var JWT_SECRET, PLAN_LIMITS, cachedClusterVolume, FIVE_MIN_MS;
-var init_auth = __esm({
-  "server/auth.ts"() {
-    init_dataSource();
-    init_User();
-    init_UserPurchase();
-    init_UserLogin();
-    init_Lead();
-    JWT_SECRET = process.env.JWT_SECRET || "leadsarrow-b2b-enterprise-jwt-secret-key-2026";
-    PLAN_LIMITS = {
-      free: { name: "Free Starter", limit: 100, price: 0, status: "free" },
-      starter: { name: "Growth Starter", limit: 2e3, price: 10, status: "paid" },
-      pro: { name: "Scale Pro", limit: 1e4, price: 39, status: "paid" },
-      unlimited: { name: "Enterprise Unlimited", limit: 999999, price: 79, status: "paid" }
-    };
-    cachedClusterVolume = {
-      timestamp: 0,
-      count: 10363428
-    };
-    FIVE_MIN_MS = 5 * 60 * 1e3;
+
+// server/routes/index.ts
+import { Router as Router6 } from "express";
+
+// server/routes/authRoutes.ts
+import { Router } from "express";
+var router = Router();
+router.post("/register", async (req, res) => {
+  try {
+    const result = await registerJwtUser(req.body || {}, req);
+    res.status(201).json(result);
+  } catch (error) {
+    res.status(400).json({ error: error.message || "Registration failed" });
   }
 });
-
-// server.ts
-init_dataSource();
-init_leadsData();
-init_auth();
-import "reflect-metadata";
-import express from "express";
-import { createServer as createViteServer } from "vite";
-import path from "path";
-async function startServer() {
-  const app = express();
-  const PORT = 3e3;
+router.post("/login", async (req, res) => {
   try {
-    await initDatabaseSchema();
-    await ensureSuperAdminSeed();
-    await runGlobalDailyCreditReplenishmentSweep();
-    setInterval(() => {
-      runGlobalDailyCreditReplenishmentSweep().catch((e) => console.error("[Daily Credit Sweep Error]:", e.message));
-    }, 15 * 60 * 1e3);
-    console.log("MySQL B2B_database initialized, Superadmin account secured, and 24h Daily Credit replenishment job active.");
-  } catch (err) {
-    console.error("Failed to initialize MySQL:", err.message);
+    const result = await loginJwtUser(req.body || {}, req);
+    res.json(result);
+  } catch (error) {
+    res.status(401).json({ error: error.message || "Invalid credentials" });
   }
-  app.use(express.json({ limit: "500mb" }));
-  app.use(express.urlencoded({ limit: "500mb", extended: true }));
-  app.use(optionalAuthMiddleware);
-  app.post("/api/auth/register", async (req, res) => {
-    try {
-      const result = await registerJwtUser(req.body || {}, req);
-      res.status(201).json(result);
-    } catch (error) {
-      res.status(400).json({ error: error.message || "Registration failed" });
+});
+router.post("/google", async (req, res) => {
+  try {
+    const result = await loginOrSyncGoogleUser(req.body || {}, req);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ error: error.message || "Google authentication sync failed" });
+  }
+});
+router.get("/me", optionalAuthMiddleware, (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: "Authentication required. Please sign in." });
+  }
+  res.json({ user: req.user });
+});
+router.put("/profile", requireJwtMiddleware, async (req, res) => {
+  try {
+    const result = await updateSelfProfile(req.user.id, req.body || {});
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ error: error.message || "Profile update failed" });
+  }
+});
+router.post("/upgrade-plan", requireJwtMiddleware, async (req, res) => {
+  try {
+    const { planId } = req.body || {};
+    const result = await upgradeUserPlan(req.user.id || req.user.email, planId);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ error: error.message || "Plan upgrade failed" });
+  }
+});
+router.post("/decrement-credits", requireJwtMiddleware, async (req, res) => {
+  try {
+    const { amount } = req.body || {};
+    const countToDecrement = Math.max(1, Number(amount) || 1);
+    const updatedUser = await decrementUserCreditsInDb(req.user.id, countToDecrement);
+    res.json({ success: true, user: updatedUser });
+  } catch (error) {
+    res.status(400).json({ error: error.message || "Failed to decrement credits" });
+  }
+});
+var authRoutes_default = router;
+
+// server/routes/customLeadsRoutes.ts
+import { Router as Router2 } from "express";
+init_dataSource();
+var router2 = Router2();
+router2.get("/", requireJwtMiddleware, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required to view your custom leads." });
     }
-  });
-  app.post("/api/auth/login", async (req, res) => {
-    try {
-      const result = await loginJwtUser(req.body || {}, req);
-      res.json(result);
-    } catch (error) {
-      res.status(401).json({ error: error.message || "Invalid credentials" });
-    }
-  });
-  app.post("/api/auth/google", async (req, res) => {
-    try {
-      const result = await loginOrSyncGoogleUser(req.body || {}, req);
-      res.json(result);
-    } catch (error) {
-      res.status(400).json({ error: error.message || "Google authentication sync failed" });
-    }
-  });
-  app.get("/api/auth/me", optionalAuthMiddleware, (req, res) => {
-    if (!req.user) {
-      return res.status(401).json({ error: "Authentication required. Please sign in." });
-    }
-    res.json({ user: req.user });
-  });
-  app.put("/api/auth/profile", requireJwtMiddleware, async (req, res) => {
-    try {
-      const result = await updateSelfProfile(req.user.id, req.body || {});
-      res.json(result);
-    } catch (error) {
-      res.status(400).json({ error: error.message || "Profile update failed" });
-    }
-  });
-  app.post("/api/auth/upgrade-plan", requireJwtMiddleware, async (req, res) => {
-    try {
-      const { planId } = req.body || {};
-      const result = await upgradeUserPlan(req.user.id || req.user.email, planId);
-      res.json(result);
-    } catch (error) {
-      res.status(400).json({ error: error.message || "Plan upgrade failed" });
-    }
-  });
-  app.post("/api/auth/decrement-credits", requireJwtMiddleware, async (req, res) => {
-    try {
-      const amount = Number(req.body?.amount) || 1;
-      const updatedUser = await decrementUserCreditsInDb(req.user.id, amount);
-      res.json({ success: true, user: updatedUser });
-    } catch (error) {
-      res.status(400).json({ error: error.message || "Failed to decrement credits" });
-    }
-  });
-  app.get("/api/leads/revealed", requireJwtMiddleware, async (req, res) => {
-    try {
-      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
-      const rows = await ds.query(
-        "SELECT lead_id FROM user_revealed_leads WHERE user_id = ?",
-        [req.user.id]
-      );
-      const leadIds = (rows || []).map((r) => String(r.lead_id));
-      res.json({ success: true, leadIds });
-    } catch (err) {
-      res.status(500).json({ error: err.message || "Failed to fetch revealed leads" });
-    }
-  });
-  app.post("/api/leads/reveal", requireJwtMiddleware, async (req, res) => {
-    try {
-      const leadId = String(req.body?.leadId || "").trim();
-      if (!leadId) {
-        return res.status(400).json({ error: "leadId is required" });
+    const q = String(req.query.q || "").trim();
+    const requestedCluster = String(req.query.cluster || "").trim();
+    const ds = await getDataSource();
+    const clusterRows = await ds.query(
+      `SELECT id, name, description, created_at FROM custom_clusters WHERE user_id = ? ORDER BY created_at DESC`,
+      [userId]
+    );
+    const countByCluster = await ds.query(
+      `SELECT cluster_name, COUNT(*) as cnt FROM custom_leads WHERE user_id = ? AND cluster_name IS NOT NULL AND cluster_name != '' GROUP BY cluster_name`,
+      [userId]
+    );
+    const countMap = {};
+    (countByCluster || []).forEach((r) => {
+      if (r.cluster_name) {
+        countMap[r.cluster_name] = Number(r.cnt) || 0;
       }
-      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
-      const existing = await ds.query(
-        "SELECT lead_id FROM user_revealed_leads WHERE user_id = ? AND lead_id = ?",
-        [req.user.id, leadId]
-      );
-      let user = req.user;
-      const isAlreadyRevealed = existing && existing.length > 0;
-      if (!isAlreadyRevealed) {
-        const isUnlimited = user?.planId === "unlimited" || user?.role === "superadmin" || user?.isSuperAdmin;
-        if (!isUnlimited && (user.creditsRemaining ?? 100) <= 0) {
-          return res.status(403).json({ error: "Insufficient credits remaining. Please upgrade plan." });
-        }
-        user = await decrementUserCreditsInDb(req.user.id, 1);
-        await ds.query(
-          "INSERT IGNORE INTO user_revealed_leads (user_id, lead_id) VALUES (?, ?)",
-          [req.user.id, leadId]
-        );
-      }
-      res.json({
-        success: true,
-        leadId,
-        alreadyRevealed: isAlreadyRevealed,
-        user
-      });
-    } catch (err) {
-      res.status(500).json({ error: err.message || "Failed to reveal lead" });
-    }
-  });
-  app.get("/api/admin/users", requireSuperAdminMiddleware, async (_req, res) => {
-    try {
-      const users = await getAllUsersForAdmin();
-      res.json({ users });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.put("/api/admin/users/:id", requireSuperAdminMiddleware, async (req, res) => {
-    try {
-      const updated = await updateUserByAdmin(req.params.id, req.body || {});
-      res.json({ user: updated });
-    } catch (err) {
-      res.status(400).json({ error: err.message });
-    }
-  });
-  app.get("/api/admin/stats", requireSuperAdminMiddleware, async (_req, res) => {
-    try {
-      const stats = await getAdminStats();
-      res.json(stats);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/admin/leads/batch", requireSuperAdminMiddleware, async (req, res) => {
-    try {
-      const { leads, source, createList, listName } = req.body || {};
-      const result = await batchInsertLeads(
-        (leads || []).map((l) => ({ ...l, source: source || "superadmin_import" }))
-      );
-      let savedList = null;
-      if (createList || listName) {
-        try {
-          const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
-          const listRepo = ds.getRepository((await Promise.resolve().then(() => (init_SavedList(), SavedList_exports))).SavedList);
-          const name = String(listName || `Imported List (${(/* @__PURE__ */ new Date()).toLocaleDateString()})`).trim();
-          const targetIds = (leads || []).map((l) => l.id).filter(Boolean);
-          const newList = listRepo.create({
-            id: `list_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-            userId: req.user?.id ? String(req.user.id) : null,
-            name,
-            description: `Imported via ${source || "spreadsheet"} on ${(/* @__PURE__ */ new Date()).toLocaleString()}`,
-            leadIds: targetIds,
-            filterSummary: `${result.insertedCount.toLocaleString()} Imported B2B Accounts`,
-            leadCount: result.insertedCount
-          });
-          savedList = await listRepo.save(newList);
-        } catch (listErr) {
-          console.warn("Could not auto-create list for imported leads:", listErr);
-        }
-      }
-      res.status(201).json({ ...result, list: savedList });
-    } catch (err) {
-      res.status(400).json({ error: err.message });
-    }
-  });
-  app.delete("/api/admin/leads/:id", requireSuperAdminMiddleware, async (req, res) => {
-    try {
-      const targetId = req.params.id;
-      if (!targetId) {
-        return res.status(400).json({ error: "Lead ID required" });
-      }
-      const { getDatabase2DataSource } = await import("./server/db.ts");
-      const ds2 = await getDatabase2DataSource();
-      const leadRepo = ds2.getRepository((await Promise.resolve().then(() => (init_Lead(), Lead_exports))).Lead);
-      const existing = await leadRepo.findOne({ where: { id: targetId } });
-      if (!existing) {
-        const ds1 = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
-        await ds1.query("DELETE FROM custom_leads WHERE id = ?", [targetId]).catch(() => {
-        });
-        return res.json({
-          success: true,
-          deleted: true,
-          id: targetId,
-          message: "Lead was not found in core database or was already removed."
-        });
-      }
-      await leadRepo.delete(targetId);
-      try {
-        const ds3 = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
-        await ds3.query(
-          `UPDATE saved_lists 
-           SET lead_ids = JSON_REMOVE(lead_ids, JSON_UNQUOTE(JSON_SEARCH(lead_ids, 'one', ?))),
-               lead_count = GREATEST(0, lead_count - 1)
-           WHERE JSON_SEARCH(lead_ids, 'one', ?) IS NOT NULL`,
-          [targetId, targetId]
-        ).catch(() => {
-        });
-      } catch (listErr) {
-        console.warn("Saved lists cleanup warning:", listErr);
-      }
-      try {
-        const { invalidateGlobalMetricsCache: invalidateGlobalMetricsCache2 } = await Promise.resolve().then(() => (init_leadsData(), leadsData_exports));
-        if (typeof invalidateGlobalMetricsCache2 === "function") {
-          invalidateGlobalMetricsCache2();
-        }
-      } catch {
-      }
-      console.log(`[CORE DATABASE DELETION] Superadmin (${req.user?.email || "superadmin"}) permanently deleted core lead: ${targetId} (${existing.companyName}). Reflected across all accounts.`);
-      res.json({
-        success: true,
-        deleted: true,
-        id: targetId,
-        companyName: existing.companyName,
-        message: "Lead permanently deleted from the core database. This change is reflected platform-wide for all accounts."
-      });
-    } catch (err) {
-      console.error("Failed to delete core database lead:", err);
-      res.status(500).json({ error: err.message || "Failed to delete core database lead" });
-    }
-  });
-  const activeIngestionJobs = /* @__PURE__ */ new Map();
-  app.get("/api/admin/leads/upload-progress/:jobId", requireSuperAdminMiddleware, (req, res) => {
-    const job = activeIngestionJobs.get(req.params.jobId);
-    if (!job) {
-      return res.status(404).json({ error: "Ingestion task not found" });
-    }
-    res.json(job);
-  });
-  app.post("/api/admin/leads/upload-cancel/:jobId", requireSuperAdminMiddleware, (req, res) => {
-    const job = activeIngestionJobs.get(req.params.jobId);
-    if (job) {
-      job.cancelRequested = true;
-      job.status = "cancelled";
-      return res.json({ success: true, message: "Ingestion cancellation requested." });
-    }
-    res.status(404).json({ error: "Task not found" });
-  });
-  app.post("/api/admin/leads/upload-stream", requireSuperAdminMiddleware, async (req, res) => {
-    try {
-      const { fileName, fileBase64, createList, listName } = req.body || {};
-      if (!fileBase64) {
-        return res.status(400).json({ error: "No file data received" });
-      }
-      const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-      const job = {
-        jobId,
-        fileName: fileName || "spreadsheet.xlsx",
-        status: "parsing",
-        processedRows: 0,
-        totalRows: 0,
-        percent: 0,
-        insertedCount: 0,
-        startTime: Date.now()
+    });
+    const seenClusterNames = /* @__PURE__ */ new Set();
+    const clusters = (clusterRows || []).filter((row) => row.name && String(row.name).trim()).map((row) => {
+      const trimmedName = String(row.name).trim();
+      seenClusterNames.add(trimmedName);
+      return {
+        id: row.id,
+        name: trimmedName,
+        description: row.description || "",
+        leadCount: countMap[trimmedName] || 0,
+        createdAt: row.created_at ? new Date(row.created_at).toISOString() : (/* @__PURE__ */ new Date()).toISOString()
       };
-      activeIngestionJobs.set(jobId, job);
-      res.status(202).json({
-        success: true,
-        jobId,
-        message: "Ingestion started in background. You can continue working in other tabs."
-      });
-      (async () => {
-        try {
-          console.log(`[FILE STREAM INGESTION ${jobId}] Processing: ${fileName}...`);
-          let pureBase64 = fileBase64;
-          const commaIdx = fileBase64.indexOf(",");
-          if (commaIdx !== -1 && commaIdx < 100) {
-            pureBase64 = fileBase64.slice(commaIdx + 1);
-          }
-          const buffer = Buffer.from(pureBase64, "base64");
-          const clean = (val) => {
-            if (val === null || val === void 0) return "";
-            let s = String(val).trim().replace(/^["']|["']$/g, "");
-            s = s.replace(/\0/g, "").trim();
-            return s;
-          };
-          const cleanField = (val, maxLen, fallback = "") => {
-            const s = clean(val);
-            if (!s) return fallback.slice(0, maxLen);
-            return s.slice(0, maxLen);
-          };
-          const rowsToInsert = [];
-          const isZipArchive = buffer.length > 4 && buffer[0] === 80 && buffer[1] === 75;
-          const isExcel = isZipArchive || String(fileName || "").endsWith(".xlsx") || String(fileName || "").endsWith(".xls");
-          if (isExcel) {
-            const XLSX = await import("xlsx");
-            const workbook = XLSX.read(buffer, {
-              type: "buffer",
-              cellFormula: false,
-              cellHTML: false,
-              cellText: false
-            });
-            let activeSheet = null;
-            for (const name of workbook.SheetNames) {
-              const sheet = workbook.Sheets[name];
-              if (sheet && sheet["!ref"]) {
-                activeSheet = sheet;
-                break;
-              }
-            }
-            if (!activeSheet) {
-              activeSheet = workbook.Sheets[workbook.SheetNames[0]];
-            }
-            const rawMatrix = XLSX.utils.sheet_to_json(activeSheet, { header: 1, defval: "" });
-            if (rawMatrix.length < 2) {
-              throw new Error("Spreadsheet does not contain data rows or headers.");
-            }
-            const rawHeaders = (rawMatrix[0] || []).map((h) => clean(h).toLowerCase());
-            job.totalRows = rawMatrix.length - 1;
-            job.status = "ingesting";
-            for (let r = 1; r < rawMatrix.length; r++) {
-              if (job.cancelRequested) {
-                console.log(`[INGESTION ${jobId}] Ingestion cancelled by user at row ${r}`);
-                job.status = "cancelled";
-                return;
-              }
-              const rowArr = rawMatrix[r] || [];
-              const rowObj = {};
-              for (let col = 0; col < rawHeaders.length; col++) {
-                const key = rawHeaders[col];
-                if (key) rowObj[key] = clean(rowArr[col]);
-              }
-              const company = cleanField(
-                rowObj.company || rowObj.companyname || rowObj["company name"] || rowObj.organization || rowObj.business || rowObj.account || rowArr[0],
-                255,
-                `Enterprise #${r}`
-              );
-              const domain = cleanField(
-                rowObj.domain || rowObj.website || rowObj.url || rowObj["website domain"],
-                255,
-                company ? `${company.toLowerCase().replace(/[^a-z0-9]/g, "")}.com` : "company.io"
-              );
-              const industry = cleanField(rowObj.industry || rowObj.sector || rowObj.category, 128, "Business Services");
-              const contactName = cleanField(
-                rowObj.name || rowObj.contact || rowObj.contactname || rowObj["contact name"] || (rowObj["first name"] ? `${clean(rowObj["first name"])} ${clean(rowObj["last name"] || "")}`.trim() : ""),
-                255,
-                "Executive Decision Maker"
-              );
-              const contactTitle = cleanField(rowObj.title || rowObj.jobtitle || rowObj["job title"] || rowObj.role, 255, "Director of Operations");
-              const contactEmail = cleanField(rowObj.email || rowObj.workemail || rowObj["contact email"] || rowObj["work email"], 255, `contact_${r}@${domain}`);
-              const contactPhone = cleanField(rowObj.phone || rowObj.mobile || rowObj.directphone || rowObj["direct phone"], 64, "+1 (555) 019-3829");
-              rowsToInsert.push({
-                companyName: company,
-                domain,
-                industry,
-                contactName,
-                contactTitle,
-                contactEmail,
-                contactPhone,
-                country: cleanField(rowObj.country || rowObj.nation, 128, "USA"),
-                city: cleanField(rowObj.city || rowObj.location, 128, "San Francisco, CA"),
-                employeeRange: cleanField(rowObj.employees || rowObj.employeerange || rowObj["employee range"], 64, "51-200"),
-                employeeCount: Number(clean(rowObj.employeecount || rowObj["employee count"] || rowObj.size)) || 150,
-                revenueRange: cleanField(rowObj.revenue || rowObj.revenuerange || rowObj["revenue range"], 64, "$10M - $50M"),
-                annualRevenueUsd: Number(clean(rowObj.annualrevenue || rowObj["annual revenue"])) || 25e6,
-                fundingStage: cleanField(rowObj.funding || rowObj.fundingstage, 64, "Series B"),
-                buyingIntentScore: Number(clean(rowObj.intent || rowObj.intentscore)) || 90,
-                techStack: ["AWS", "Salesforce"]
-              });
-            }
-          } else {
-            let isBinary = false;
-            for (let b = 0; b < Math.min(100, buffer.length); b++) {
-              if (buffer[b] === 0) {
-                isBinary = true;
-                break;
-              }
-            }
-            if (isBinary) {
-              throw new Error("Uploaded CSV file appears to be binary or corrupted. If this was an Excel (.xlsx) file renamed to .csv, please keep the original .xlsx extension.");
-            }
-            const textContent = buffer.toString("utf8");
-            const lines = textContent.split(/\r?\n/).filter(Boolean);
-            if (lines.length < 2) {
-              throw new Error("CSV file does not contain enough rows.");
-            }
-            const delimiter = lines[0].includes("	") ? "	" : ",";
-            const headers = lines[0].split(delimiter).map((h) => clean(h).toLowerCase());
-            job.totalRows = lines.length - 1;
-            job.status = "ingesting";
-            for (let i = 1; i < lines.length; i++) {
-              if (job.cancelRequested) {
-                job.status = "cancelled";
-                return;
-              }
-              const cols = lines[i].split(delimiter);
-              const rowObj = {};
-              headers.forEach((h, idx) => {
-                rowObj[h] = clean(cols[idx]);
-              });
-              const company = cleanField(rowObj.company || rowObj.companyname || cols[0], 255, `Enterprise #${i}`);
-              const domain = cleanField(rowObj.domain || rowObj.website, 255, "company.io");
-              rowsToInsert.push({
-                companyName: company,
-                domain,
-                industry: cleanField(rowObj.industry, 128, "Business Services"),
-                contactName: cleanField(rowObj.name || rowObj.contact, 255, "Executive Decision Maker"),
-                contactTitle: cleanField(rowObj.title, 255, "Director of Operations"),
-                contactEmail: cleanField(rowObj.email, 255, `contact_${i}@${domain}`),
-                contactPhone: cleanField(rowObj.phone, 64, "+1 (555) 019-3829"),
-                country: cleanField(rowObj.country, 128, "USA"),
-                city: cleanField(rowObj.city, 128, "San Francisco, CA"),
-                employeeRange: cleanField(rowObj.employees, 64, "51-200"),
-                revenueRange: cleanField(rowObj.revenue, 64, "$10M - $50M"),
-                fundingStage: "Series B",
-                buyingIntentScore: 88,
-                techStack: ["AWS", "Salesforce"]
-              });
-            }
-          }
-          if (rowsToInsert.length === 0) {
-            throw new Error("Zero valid lead records found in uploaded file.");
-          }
-          console.log(`[INGESTION ${jobId}] Inserting ${rowsToInsert.length.toLocaleString()} leads in chunks to MySQL...`);
-          const CHUNK = 1e3;
-          let totalInserted = 0;
-          for (let c = 0; c < rowsToInsert.length; c += CHUNK) {
-            if (job.cancelRequested) {
-              job.status = "cancelled";
-              console.log(`[INGESTION ${jobId}] Aborted during SQL insertion.`);
-              return;
-            }
-            const currentChunk = rowsToInsert.slice(c, c + CHUNK);
-            const resBatch = await batchInsertLeads(
-              currentChunk.map((l) => ({ ...l, source: fileName || "spreadsheet" }))
-            );
-            totalInserted += resBatch.insertedCount;
-            job.processedRows = Math.min(job.totalRows, c + currentChunk.length);
-            job.insertedCount = totalInserted;
-            job.percent = Math.min(100, Math.round(job.processedRows / job.totalRows * 100));
-          }
-          let savedList = null;
-          if (createList || listName) {
-            try {
-              const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
-              const listRepo = ds.getRepository((await Promise.resolve().then(() => (init_SavedList(), SavedList_exports))).SavedList);
-              const name = String(listName || fileName?.replace(/\.[^/.]+$/, "") || `Imported List (${(/* @__PURE__ */ new Date()).toLocaleDateString()})`).trim();
-              const targetIds = rowsToInsert.map((l) => l.id).filter(Boolean);
-              const newList = listRepo.create({
-                id: `list_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-                userId: req.user?.id ? String(req.user.id) : null,
-                name,
-                description: `Imported from ${fileName || "spreadsheet"} (${totalInserted.toLocaleString()} leads)`,
-                leadIds: targetIds,
-                filterSummary: `${totalInserted.toLocaleString()} Leads from ${fileName || "File"}`,
-                leadCount: totalInserted
-              });
-              savedList = await listRepo.save(newList);
-              job.list = savedList;
-            } catch (listErr) {
-              console.warn("Could not auto-create list for imported leads:", listErr);
-            }
-          }
-          job.status = "completed";
-          job.percent = 100;
-          console.log(`[INGESTION ${jobId}] Finished successfully! ${totalInserted.toLocaleString()} records committed to MySQL.`);
-        } catch (err) {
-          console.error(`[INGESTION ${jobId}] Failed:`, err);
-          job.status = "error";
-          job.error = err.message || "Processing failed";
-        }
-      })();
-    } catch (err) {
-      console.error("File stream ingestion error:", err);
-      res.status(500).json({ error: err.message || "Server failed to process high-capacity file upload" });
-    }
-  });
-  app.get("/api/leads/taxonomy", (_req, res) => {
-    res.json(FILTER_TAXONOMY);
-  });
-  const landingPreviewCache = /* @__PURE__ */ new Map();
-  app.get("/api/leads/landing-preview", async (req, res) => {
-    try {
-      const clientIp = String(
-        req.headers["x-forwarded-for"] || req.headers["x-real-ip"] || req.socket.remoteAddress || "unknown"
-      ).split(",")[0].trim();
-      const now = Date.now();
-      const THIRTY_MINUTES_MS = 30 * 60 * 1e3;
-      const cached = landingPreviewCache.get(clientIp);
-      if (cached && now - cached.timestamp < THIRTY_MINUTES_MS) {
-        return res.json({
-          leads: cached.leads,
-          clientIp,
-          nextRotationInMs: THIRTY_MINUTES_MS - (now - cached.timestamp)
+    });
+    Object.keys(countMap).forEach((name) => {
+      const trimmed = String(name || "").trim();
+      if (trimmed && !seenClusterNames.has(trimmed)) {
+        seenClusterNames.add(trimmed);
+        clusters.push({
+          id: `cls_${Buffer.from(userId + "_" + trimmed).toString("base64").replace(/[^a-zA-Z0-9]/g, "").slice(0, 32)}`,
+          name: trimmed,
+          description: `${trimmed} cluster`,
+          leadCount: countMap[trimmed],
+          createdAt: (/* @__PURE__ */ new Date()).toISOString()
         });
       }
-      const randOffset = Math.floor(Math.random() * 3e6);
-      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getTertiaryDataSource();
-      const rawLeads = await ds.query(
-        `SELECT id, company_name, domain, industry, employee_range,
-                annual_revenue_usd, revenue_range, country, city,
-                contact_name, contact_title, contact_email, contact_phone,
-                buying_intent_score, verification_status
-         FROM leads 
-         WHERE contact_email IS NOT NULL AND company_name IS NOT NULL
-         LIMIT 20 OFFSET ?`,
-        [randOffset]
-      );
-      const formatted = (rawLeads || []).map((l) => ({
-        id: l.id,
-        companyName: l.company_name,
-        domain: l.domain,
-        industry: l.industry || "Business Services",
-        employeeRange: l.employee_range || "51-200",
-        contactName: l.contact_name || "Executive Contact",
-        contactTitle: l.contact_title || "Director of Operations",
-        contactEmail: l.contact_email,
-        contactPhone: l.contact_phone,
-        buyingIntentScore: Number(l.buying_intent_score) || 88,
-        verificationStatus: l.verification_status || "Verified"
-      }));
-      landingPreviewCache.set(clientIp, {
-        timestamp: now,
-        leads: formatted
-      });
-      if (landingPreviewCache.size > 1e4) {
-        for (const [ip, entry] of landingPreviewCache.entries()) {
-          if (now - entry.timestamp > THIRTY_MINUTES_MS) {
-            landingPreviewCache.delete(ip);
-          }
-        }
-      }
-      res.json({
-        leads: formatted,
-        clientIp,
-        nextRotationInMs: THIRTY_MINUTES_MS
-      });
-    } catch (err) {
-      console.error("Landing preview error:", err.message);
-      res.status(500).json({ error: "Failed to fetch preview leads" });
+    });
+    clusters.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    let activeCluster = requestedCluster && requestedCluster !== "all" ? requestedCluster : null;
+    if (!requestedCluster && clusters.length > 0) {
+      activeCluster = clusters[0].name;
     }
-  });
-  app.get("/api/leads", optionalAuthMiddleware, async (req, res) => {
-    const tStart = Date.now();
-    try {
-      const userId = req.user?.id ? String(req.user.id) : null;
-      const result = await queryLeadsDatabase(req.query, userId);
-      const elapsed = Date.now() - tStart;
-      console.log(`[QUERY MONITOR] ${elapsed}ms | Filters: ${JSON.stringify(req.query)}`);
-      res.json(result);
-    } catch (error) {
-      const elapsed = Date.now() - tStart;
-      console.error(`[QUERY MONITOR ERROR] ${elapsed}ms:`, error);
-      res.status(500).json({ error: "Failed to execute B2B database query" });
+    let whereClause = "WHERE user_id = ?";
+    const sqlParams = [userId];
+    if (requestedCluster === "all") {
+    } else if (activeCluster) {
+      whereClause += " AND cluster_name = ?";
+      sqlParams.push(activeCluster);
+    } else {
+      whereClause += " AND 1 = 0";
     }
-  });
-  app.post("/api/leads/by-ids", async (req, res) => {
-    try {
-      const { ids } = req.body || {};
-      let userId = req.user?.id ? String(req.user.id) : null;
-      if (!userId && req.headers.authorization?.startsWith("Bearer ")) {
-        const token = req.headers.authorization.slice(7);
-        try {
-          const u = await (await Promise.resolve().then(() => (init_auth(), auth_exports))).verifyJwtTokenAsync(token);
-          if (u) userId = String(u.id);
-        } catch (_) {
-        }
-      }
-      const leads = await fetchLeadsByIds(ids || [], userId);
-      res.json({ leads });
-    } catch (err) {
-      console.error("Error fetching leads by IDs:", err);
-      res.status(500).json({ error: "Failed to fetch leads by IDs" });
+    if (q) {
+      whereClause += " AND (company_name LIKE ? OR contact_name LIKE ? OR domain LIKE ? OR contact_email LIKE ?)";
+      sqlParams.push(`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`);
     }
-  });
-  app.get("/api/leads/custom", requireJwtMiddleware, async (req, res) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) {
-        return res.status(401).json({ error: "Authentication required to view your custom leads." });
+    const countRows = await ds.query(
+      `SELECT COUNT(*) as total FROM custom_leads ${whereClause}`,
+      sqlParams
+    );
+    const total = Number(countRows[0]?.total || 0);
+    const rawRows = await ds.query(
+      `SELECT * FROM custom_leads ${whereClause} ORDER BY created_at DESC`,
+      sqlParams
+    );
+    const leads = (rawRows || []).map((row) => ({
+      id: row.id,
+      clusterName: row.cluster_name,
+      companyName: row.company_name,
+      domain: row.domain,
+      industry: row.industry,
+      employeeRange: row.employee_range,
+      employeeCount: Number(row.employee_count) || 120,
+      revenueRange: row.revenue_range,
+      annualRevenueUsd: Number(row.annual_revenue_usd) || 24e6,
+      country: row.country,
+      city: row.city,
+      contactName: row.contact_name,
+      contactTitle: row.contact_title,
+      seniority: row.seniority,
+      department: row.department,
+      contactEmail: row.contact_email,
+      contactPhone: row.contact_phone,
+      linkedinUrl: row.linkedin_url || "",
+      verificationStatus: row.verification_status || "Verified",
+      fundingStage: row.funding_stage || "Series B",
+      buyingIntentScore: Number(row.buying_intent_score) || 88,
+      foundedYear: Number(row.founded_year) || 2021,
+      hasDirectPhone: Boolean(row.has_direct_phone),
+      isCustom: true,
+      source: row.source || "manual_custom_lead",
+      createdAt: row.created_at ? new Date(row.created_at).toISOString() : (/* @__PURE__ */ new Date()).toISOString()
+    }));
+    res.json({
+      leads,
+      total,
+      clusters,
+      activeCluster,
+      owner: {
+        id: req.user.id,
+        name: req.user.name,
+        email: req.user.email
       }
-      const q = String(req.query.q || "").trim();
-      const requestedCluster = String(req.query.cluster || "").trim();
-      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
-      const clusterRows = await ds.query(
-        `SELECT id, name, description, created_at FROM custom_clusters WHERE user_id = ? ORDER BY created_at DESC`,
+    });
+  } catch (err) {
+    console.error("Failed to fetch private custom leads:", err);
+    res.status(500).json({ error: err.message || "Failed to fetch custom leads" });
+  }
+});
+router2.post("/clusters", requireJwtMiddleware, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Authentication required" });
+    const name = String(req.body?.name || "").trim();
+    const description = String(req.body?.description || "").trim();
+    if (!name) return res.status(400).json({ error: "Cluster name is required" });
+    const ds = await getDataSource();
+    const userPlan = (req.user?.planId || req.user?.plan || "free").toLowerCase();
+    const userRole = (req.user?.role || "").toLowerCase();
+    const isPaidOrSuperadmin = userRole === "superadmin" || userPlan.includes("growth") || userPlan.includes("scale") || userPlan.includes("unlimited") || userPlan.includes("pro") || userPlan.includes("starter");
+    if (!isPaidOrSuperadmin) {
+      const countRes = await ds.query(
+        "SELECT COUNT(*) as count FROM custom_clusters WHERE user_id = ?",
         [userId]
       );
-      const countByCluster = await ds.query(
-        `SELECT cluster_name, COUNT(*) as cnt FROM custom_leads WHERE user_id = ? AND cluster_name IS NOT NULL AND cluster_name != '' GROUP BY cluster_name`,
+      const existingCount = Number(countRes[0]?.count || 0);
+      if (existingCount >= 5) {
+        return res.status(403).json({
+          error: "Free accounts are limited to 5 clusters total. Delete an existing cluster or upgrade your plan to create more."
+        });
+      }
+    } else {
+      const lifetimeRes = await ds.query(
+        "SELECT COUNT(*) as count FROM custom_clusters WHERE user_id = ?",
         [userId]
       );
-      const countMap = {};
-      (countByCluster || []).forEach((r) => {
-        if (r.cluster_name) {
-          countMap[r.cluster_name] = Number(r.cnt) || 0;
-        }
-      });
-      const seenClusterNames = /* @__PURE__ */ new Set();
-      const clusters = (clusterRows || []).filter((row) => row.name && String(row.name).trim()).map((row) => {
-        const trimmedName = String(row.name).trim();
-        seenClusterNames.add(trimmedName);
-        return {
-          id: row.id,
-          name: trimmedName,
-          description: row.description || "",
-          leadCount: countMap[trimmedName] || 0,
-          createdAt: row.created_at ? new Date(row.created_at).toISOString() : (/* @__PURE__ */ new Date()).toISOString()
-        };
-      });
-      Object.keys(countMap).forEach((name) => {
-        const trimmed = String(name || "").trim();
-        if (trimmed && !seenClusterNames.has(trimmed)) {
-          seenClusterNames.add(trimmed);
-          clusters.push({
-            id: `cls_${Buffer.from(userId + "_" + trimmed).toString("base64").replace(/[^a-zA-Z0-9]/g, "").slice(0, 32)}`,
-            name: trimmed,
-            description: `${trimmed} cluster`,
-            leadCount: countMap[trimmed],
-            createdAt: (/* @__PURE__ */ new Date()).toISOString()
-          });
-        }
-      });
-      clusters.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      let activeCluster = requestedCluster && requestedCluster !== "all" ? requestedCluster : null;
-      if (!requestedCluster && clusters.length > 0) {
-        activeCluster = clusters[0].name;
+      if (Number(lifetimeRes[0]?.count || 0) >= 1e3) {
+        return res.status(403).json({
+          error: "Lifetime limit reached: You have reached the maximum limit of 1,000 clusters for this account."
+        });
       }
+      const dailyRes = await ds.query(
+        "SELECT COUNT(*) as count FROM custom_clusters WHERE user_id = ? AND created_at >= CURDATE()",
+        [userId]
+      );
+      if (Number(dailyRes[0]?.count || 0) >= 50) {
+        return res.status(403).json({
+          error: "Daily limit reached: You can create up to 50 clusters per day on your plan. This resets daily at midnight."
+        });
+      }
+    }
+    const clusterId = `cls_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    await ds.query(
+      `INSERT INTO custom_clusters (id, user_id, name, description, created_at)
+       VALUES (?, ?, ?, ?, NOW())
+       ON DUPLICATE KEY UPDATE description = VALUES(description)`,
+      [clusterId, userId, name, description || `${name} lead cluster`]
+    );
+    res.status(201).json({
+      success: true,
+      cluster: {
+        id: clusterId,
+        name,
+        description,
+        leadCount: 0
+      }
+    });
+  } catch (err) {
+    res.status(400).json({ error: err.message || "Could not create cluster" });
+  }
+});
+router2.delete("/clusters/:name", requireJwtMiddleware, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Authentication required" });
+    const clusterName = decodeURIComponent(req.params.name);
+    const ds = await getDataSource();
+    await ds.query(
+      "DELETE FROM custom_leads WHERE user_id = ? AND cluster_name = ?",
+      [userId, clusterName]
+    );
+    await ds.query(
+      "DELETE FROM custom_clusters WHERE user_id = ? AND name = ?",
+      [userId, clusterName]
+    );
+    res.json({ success: true, deletedCluster: clusterName });
+  } catch (err) {
+    res.status(500).json({ error: err.message || "Could not delete cluster" });
+  }
+});
+router2.put("/clusters/:name", requireJwtMiddleware, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Authentication required" });
+    const oldName = decodeURIComponent(req.params.name).trim();
+    const newName = String(req.body?.name || "").trim();
+    const description = String(req.body?.description || "").trim();
+    if (!newName) {
+      return res.status(400).json({ error: "New cluster name is required" });
+    }
+    const ds = await getDataSource();
+    const checkRows = await ds.query(
+      "SELECT id, name FROM custom_clusters WHERE user_id = ? AND name = ?",
+      [userId, oldName]
+    );
+    if (checkRows && checkRows.length > 0) {
+      await ds.query(
+        "UPDATE custom_clusters SET name = ?, description = ? WHERE user_id = ? AND name = ?",
+        [newName, description || `${newName} lead cluster`, userId, oldName]
+      );
+    } else {
+      const clusterId = `cls_${Buffer.from(userId + "_" + newName).toString("base64").replace(/[^a-zA-Z0-9]/g, "").slice(0, 32)}`;
+      await ds.query(
+        "INSERT INTO custom_clusters (id, user_id, name, description, created_at) VALUES (?, ?, ?, ?, NOW())",
+        [clusterId, userId, newName, description || `${newName} lead cluster`]
+      ).catch(() => {
+      });
+    }
+    await ds.query(
+      "UPDATE custom_leads SET cluster_name = ? WHERE user_id = ? AND cluster_name = ?",
+      [newName, userId, oldName]
+    );
+    res.json({
+      success: true,
+      oldName,
+      cluster: {
+        name: newName,
+        description: description || `${newName} lead cluster`
+      },
+      message: `Cluster renamed from "${oldName}" to "${newName}".`
+    });
+  } catch (err) {
+    console.error("Failed to rename custom cluster:", err);
+    res.status(500).json({ error: err.message || "Could not rename cluster" });
+  }
+});
+router2.post("/", requireJwtMiddleware, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required to create custom leads." });
+    }
+    const body = req.body || {};
+    const ds = await getDataSource();
+    const customId = body.id || `custom_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const safeTrim = (v, maxLen, fallback = "") => {
+      if (v === null || v === void 0) return fallback.slice(0, maxLen);
+      const s = String(v).replace(/\0/g, "").trim();
+      return (s || fallback).slice(0, maxLen);
+    };
+    const clusterName = safeTrim(body.clusterName || body.cluster, 128, "");
+    if (!clusterName) {
+      return res.status(400).json({ error: "A valid cluster name is required. Every custom lead must belong to a cluster." });
+    }
+    const userParam = String(userId);
+    const emailParam = req.user?.email ? String(req.user.email) : userParam;
+    const targetEmail = safeTrim(body.contactEmail, 255, "").toLowerCase();
+    const targetCompany = safeTrim(body.companyName, 255, "").toLowerCase();
+    const targetContact = safeTrim(body.contactName, 255, "").toLowerCase();
+    if (targetEmail) {
+      const existingByEmail = await ds.query(
+        `SELECT id, company_name, contact_name, cluster_name FROM custom_leads 
+         WHERE (user_id = ? OR user_id = ?) AND LOWER(contact_email) = ? LIMIT 1`,
+        [userParam, emailParam, targetEmail]
+      );
+      if (existingByEmail && existingByEmail.length > 0) {
+        return res.status(409).json({
+          error: `Duplicate lead prevented: A custom lead with email "${targetEmail}" (${existingByEmail[0].company_name || "Business"}) already exists in your cluster "${existingByEmail[0].cluster_name}".`
+        });
+      }
+    }
+    if (targetCompany && targetContact) {
+      const existingByName = await ds.query(
+        `SELECT id, cluster_name FROM custom_leads 
+         WHERE (user_id = ? OR user_id = ?) AND LOWER(company_name) = ? AND LOWER(contact_name) = ? LIMIT 1`,
+        [userParam, emailParam, targetCompany, targetContact]
+      );
+      if (existingByName && existingByName.length > 0) {
+        return res.status(409).json({
+          error: `Duplicate lead prevented: "${body.contactName}" at "${body.companyName}" already exists in your cluster "${existingByName[0].cluster_name}".`
+        });
+      }
+    }
+    const userPlan = (req.user?.planId || req.user?.plan || "free").toLowerCase();
+    const userRole = (req.user?.role || "").toLowerCase();
+    const isPaidOrSuperadmin = userRole === "superadmin" || userPlan.includes("growth") || userPlan.includes("scale") || userPlan.includes("unlimited") || userPlan.includes("pro") || userPlan.includes("starter");
+    const clusterLeadCountRes = await ds.query(
+      "SELECT COUNT(*) as count FROM custom_leads WHERE (user_id = ? OR user_id = ?) AND cluster_name = ?",
+      [userParam, emailParam, clusterName]
+    );
+    const currentClusterCount = Number(clusterLeadCountRes[0]?.count || 0);
+    const maxLeadsPerCluster = isPaidOrSuperadmin ? 5e3 : 1e3;
+    if (currentClusterCount >= maxLeadsPerCluster) {
+      return res.status(403).json({
+        error: isPaidOrSuperadmin ? `Cluster limit reached: Each cluster can hold a maximum of 5,000 custom leads.` : `Free plan limit: A cluster can contain a maximum of 1,000 custom leads. Upgrade to a paid plan to store up to 5,000 leads per cluster.`
+      });
+    }
+    const techStackJson = JSON.stringify(
+      Array.isArray(body.techStack) ? body.techStack : String(body.techStack || "AWS, Salesforce").split(/[,;|]/).map((s) => s.trim()).filter(Boolean)
+    );
+    const intentScore = body.buyingIntentScore !== void 0 && body.buyingIntentScore !== null && !isNaN(Number(body.buyingIntentScore)) ? Math.max(0, Math.min(100, Math.round(Number(body.buyingIntentScore)))) : 88;
+    await ds.query(
+      `INSERT INTO custom_leads (
+        id, user_id, cluster_name, company_name, domain, industry, employee_range, employee_count,
+        revenue_range, annual_revenue_usd, country, city, contact_name, contact_title,
+        seniority, department, contact_email, contact_phone, linkedin_url,
+        verification_status, funding_stage, tech_stack, buying_intent_score,
+        founded_year, has_direct_phone, source, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [
+        customId,
+        userId,
+        clusterName,
+        safeTrim(body.companyName, 255, "My Custom Business"),
+        safeTrim(body.domain, 255, "business.io"),
+        safeTrim(body.industry, 255, "Enterprise Software & SaaS"),
+        safeTrim(body.employeeRange, 100, "51-200"),
+        Number(body.employeeCount) || 120,
+        safeTrim(body.revenueRange, 100, "$10M - $50M"),
+        Number(body.annualRevenueUsd) || 24e6,
+        safeTrim(body.country, 100, "United States"),
+        safeTrim(body.city, 255, "San Francisco, CA"),
+        safeTrim(body.contactName, 255, "Executive Contact"),
+        safeTrim(body.contactTitle, 255, "VP of Operations"),
+        safeTrim(body.seniority, 100, "VP"),
+        safeTrim(body.department, 100, "Operations & Supply Chain"),
+        safeTrim(body.contactEmail, 255, "contact@business.io"),
+        safeTrim(body.contactPhone, 100, "+1 (415) 555-0142"),
+        safeTrim(body.linkedinUrl, 500, ""),
+        safeTrim(body.verificationStatus, 50, "Verified"),
+        safeTrim(body.fundingStage, 100, "Series B"),
+        techStackJson,
+        intentScore,
+        Number(body.foundedYear) || 2021,
+        body.hasDirectPhone !== void 0 ? body.hasDirectPhone ? 1 : 0 : 1,
+        "manual_custom_lead"
+      ]
+    );
+    const clusterId = `cls_${Buffer.from(userId + "_" + clusterName).toString("base64").replace(/[^a-zA-Z0-9]/g, "").slice(0, 32)}`;
+    await ds.query(
+      `INSERT IGNORE INTO custom_clusters (id, user_id, name, description, created_at) VALUES (?, ?, ?, ?, NOW())`,
+      [clusterId, userId, clusterName, `${clusterName} lead cluster`]
+    ).catch(() => {
+    });
+    res.status(201).json({
+      success: true,
+      lead: {
+        id: customId,
+        clusterName,
+        companyName: safeTrim(body.companyName, 255, "My Custom Business"),
+        domain: safeTrim(body.domain, 255, "business.io"),
+        industry: safeTrim(body.industry, 255, "Enterprise Software & SaaS"),
+        employeeRange: safeTrim(body.employeeRange, 100, "51-200"),
+        employeeCount: Number(body.employeeCount) || 120,
+        revenueRange: safeTrim(body.revenueRange, 100, "$10M - $50M"),
+        annualRevenueUsd: Number(body.annualRevenueUsd) || 24e6,
+        country: safeTrim(body.country, 100, "United States"),
+        city: safeTrim(body.city, 255, "San Francisco, CA"),
+        contactName: safeTrim(body.contactName, 255, "Executive Contact"),
+        contactTitle: safeTrim(body.contactTitle, 255, "VP of Operations"),
+        seniority: safeTrim(body.seniority, 100, "VP"),
+        department: safeTrim(body.department, 100, "Operations & Supply Chain"),
+        contactEmail: safeTrim(body.contactEmail, 255, "contact@business.io"),
+        contactPhone: safeTrim(body.contactPhone, 100, "+1 (415) 555-0142"),
+        verificationStatus: safeTrim(body.verificationStatus, 50, "Verified"),
+        fundingStage: safeTrim(body.fundingStage, 100, "Series B"),
+        buyingIntentScore: Number(body.buyingIntentScore) || 88,
+        isCustom: true,
+        createdAt: (/* @__PURE__ */ new Date()).toISOString()
+      },
+      message: `Custom lead added to cluster "${clusterName}".`
+    });
+  } catch (error) {
+    res.status(400).json({ error: error.message || "Could not add custom lead" });
+  }
+});
+router2.delete("/:id", requireJwtMiddleware, async (req, res) => {
+  try {
+    const targetId = req.params.id;
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    const ds = await getDataSource();
+    const userParam = String(userId);
+    const emailParam = req.user?.email ? String(req.user.email) : userParam;
+    const result = await ds.query(
+      "DELETE FROM custom_leads WHERE id = ? AND (user_id = ? OR user_id = ?)",
+      [targetId, userParam, emailParam]
+    );
+    const deleted = (result?.affectedRows || 0) > 0;
+    res.json({ deleted, id: targetId });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+router2.put("/:id", requireJwtMiddleware, async (req, res) => {
+  try {
+    const targetId = req.params.id;
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    const body = req.body || {};
+    const ds = await getDataSource();
+    const safeTrim = (v, maxLen, fallback = "") => {
+      if (v === null || v === void 0) return fallback.slice(0, maxLen);
+      const s = String(v).replace(/\0/g, "").trim();
+      return (s || fallback).slice(0, maxLen);
+    };
+    const userParam = String(userId);
+    const emailParam = req.user?.email ? String(req.user.email) : userParam;
+    const existing = await ds.query(
+      "SELECT id, cluster_name FROM custom_leads WHERE id = ? AND (user_id = ? OR user_id = ?)",
+      [targetId, userParam, emailParam]
+    );
+    if (!existing || existing.length === 0) {
+      return res.status(404).json({ error: "Custom lead not found or not owned by your profile." });
+    }
+    const targetEmail = safeTrim(body.contactEmail, 255, "").toLowerCase();
+    if (targetEmail) {
+      const existingOther = await ds.query(
+        `SELECT id, company_name, cluster_name FROM custom_leads 
+         WHERE (user_id = ? OR user_id = ?) AND LOWER(contact_email) = ? AND id != ? LIMIT 1`,
+        [userParam, emailParam, targetEmail, targetId]
+      );
+      if (existingOther && existingOther.length > 0) {
+        return res.status(409).json({
+          error: `Duplicate email: Another custom lead with email "${targetEmail}" already exists in your cluster "${existingOther[0].cluster_name}".`
+        });
+      }
+    }
+    const clusterName = safeTrim(body.clusterName || body.cluster, 128, existing[0].cluster_name || "General");
+    const userPlan = (req.user?.planId || req.user?.plan || "free").toLowerCase();
+    const userRole = (req.user?.role || "").toLowerCase();
+    const isPaidOrSuperadmin = userRole === "superadmin" || userPlan.includes("growth") || userPlan.includes("scale") || userPlan.includes("unlimited") || userPlan.includes("pro") || userPlan.includes("starter");
+    const clusterLeadCountRes = await ds.query(
+      "SELECT COUNT(*) as count FROM custom_leads WHERE (user_id = ? OR user_id = ?) AND cluster_name = ?",
+      [userParam, emailParam, clusterName]
+    );
+    const currentClusterCount = Number(clusterLeadCountRes[0]?.count || 0);
+    const maxLeadsPerCluster = isPaidOrSuperadmin ? 5e3 : 1e3;
+    if (currentClusterCount >= maxLeadsPerCluster) {
+      return res.status(403).json({
+        error: isPaidOrSuperadmin ? `Cluster limit reached: Each cluster can hold a maximum of 5,000 custom leads.` : `Free plan limit: A cluster can contain a maximum of 1,000 custom leads. Upgrade to a paid plan to store up to 5,000 leads per cluster.`
+      });
+    }
+    const techStackJson = JSON.stringify(
+      Array.isArray(body.techStack) ? body.techStack : String(body.techStack || "AWS, Salesforce").split(/[,;|]/).map((s) => s.trim()).filter(Boolean)
+    );
+    await ds.query(
+      `UPDATE custom_leads SET
+        cluster_name = ?,
+        company_name = ?,
+        domain = ?,
+        industry = ?,
+        employee_range = ?,
+        employee_count = ?,
+        revenue_range = ?,
+        annual_revenue_usd = ?,
+        country = ?,
+        city = ?,
+        contact_name = ?,
+        contact_title = ?,
+        seniority = ?,
+        department = ?,
+        contact_email = ?,
+        contact_phone = ?,
+        linkedin_url = ?,
+        verification_status = ?,
+        funding_stage = ?,
+        tech_stack = ?,
+        buying_intent_score = ?,
+        founded_year = ?,
+        has_direct_phone = ?
+      WHERE id = ? AND (user_id = ? OR user_id = ?)`,
+      [
+        clusterName,
+        safeTrim(body.companyName, 255, "My Custom Business"),
+        safeTrim(body.domain, 255, "business.io"),
+        safeTrim(body.industry, 255, "Enterprise Software & SaaS"),
+        safeTrim(body.employeeRange, 100, "51-200"),
+        Number(body.employeeCount) || 120,
+        safeTrim(body.revenueRange, 100, "$10M - $50M"),
+        Number(body.annualRevenueUsd) || 24e6,
+        safeTrim(body.country, 100, "United States"),
+        safeTrim(body.city, 255, "San Francisco, CA"),
+        safeTrim(body.contactName, 255, "Executive Contact"),
+        safeTrim(body.contactTitle, 255, "VP of Operations"),
+        safeTrim(body.seniority, 100, "VP"),
+        safeTrim(body.department, 100, "Operations & Supply Chain"),
+        safeTrim(body.contactEmail, 255, "contact@business.io"),
+        safeTrim(body.contactPhone, 100, "+1 (415) 555-0142"),
+        safeTrim(body.linkedinUrl, 500, ""),
+        safeTrim(body.verificationStatus, 50, "Verified"),
+        safeTrim(body.fundingStage, 100, "Series B"),
+        techStackJson,
+        Number(body.buyingIntentScore) || 88,
+        Number(body.foundedYear) || 2021,
+        body.hasDirectPhone !== void 0 ? body.hasDirectPhone ? 1 : 0 : 1,
+        targetId,
+        userParam,
+        emailParam
+      ]
+    );
+    const clusterId = `cls_${Buffer.from(userId + "_" + clusterName).toString("base64").replace(/[^a-zA-Z0-9]/g, "").slice(0, 32)}`;
+    await ds.query(
+      "INSERT IGNORE INTO custom_clusters (id, user_id, name, description, created_at) VALUES (?, ?, ?, ?, NOW())",
+      [clusterId, userId, clusterName, `${clusterName} lead cluster`]
+    ).catch(() => {
+    });
+    res.json({
+      success: true,
+      lead: {
+        id: targetId,
+        clusterName,
+        companyName: safeTrim(body.companyName, 255, "My Custom Business"),
+        domain: safeTrim(body.domain, 255, "business.io"),
+        industry: safeTrim(body.industry, 255, "Enterprise Software & SaaS"),
+        employeeRange: safeTrim(body.employeeRange, 100, "51-200"),
+        employeeCount: Number(body.employeeCount) || 120,
+        revenueRange: safeTrim(body.revenueRange, 100, "$10M - $50M"),
+        annualRevenueUsd: Number(body.annualRevenueUsd) || 24e6,
+        country: safeTrim(body.country, 100, "United States"),
+        city: safeTrim(body.city, 255, "San Francisco, CA"),
+        contactName: safeTrim(body.contactName, 255, "Executive Contact"),
+        contactTitle: safeTrim(body.contactTitle, 255, "VP of Operations"),
+        seniority: safeTrim(body.seniority, 100, "VP"),
+        department: safeTrim(body.department, 100, "Operations & Supply Chain"),
+        contactEmail: safeTrim(body.contactEmail, 255, "contact@business.io"),
+        contactPhone: safeTrim(body.contactPhone, 100, "+1 (415) 555-0142"),
+        verificationStatus: safeTrim(body.verificationStatus, 50, "Verified"),
+        fundingStage: safeTrim(body.fundingStage, 100, "Series B"),
+        buyingIntentScore: Number(body.buyingIntentScore) || 88,
+        isCustom: true
+      },
+      message: "Custom lead updated successfully."
+    });
+  } catch (err) {
+    console.error("Failed to update custom lead:", err);
+    res.status(500).json({ error: err.message || "Could not update custom lead" });
+  }
+});
+var customLeadsRoutes_default = router2;
+
+// server/routes/leadsRoutes.ts
+import { Router as Router3 } from "express";
+init_dataSource();
+
+// server/leadsData.ts
+init_dataSource();
+init_Lead();
+var FILTER_TAXONOMY = {
+  industries: [
+    "Business Services",
+    "Real Estate & Construction",
+    "Retail",
+    "Manufacturing",
+    "Media & Entertainment",
+    "Software & Internet",
+    "Healthcare",
+    "Financial Services",
+    "Non-Profit",
+    "Computers & Electronics",
+    "Travel, Recreation, and Leisure",
+    "Education",
+    "Telecommunications",
+    "Consumer Services",
+    "Transportation & Storage",
+    "Wholesale & Distribution",
+    "Enterprise Software & SaaS",
+    "Energy & Utilities",
+    "Government",
+    "Agriculture & Mining"
+  ],
+  employeeRanges: [
+    "0 - 25",
+    "25 - 100",
+    "100 - 250",
+    "250 - 1000",
+    "1K - 10K",
+    "10K - 50K",
+    "50K - 100K",
+    "> 100K"
+  ],
+  revenueRanges: [
+    "$0 - $1M",
+    "$1 - $10M",
+    "$10 - $50M",
+    "$50 - $100M",
+    "$100 - $250M",
+    "$250 - $500M",
+    "$500M - $1B",
+    "> $1B"
+  ],
+  countries: ["USA", "Canada"],
+  seniorities: ["C-Level / Founder", "VP", "Director", "Senior Manager", "Manager"],
+  departments: [
+    "Executive Leadership",
+    "Marketing & Growth",
+    "Sales & Revenue",
+    "Operations & Supply Chain",
+    "Engineering & Technical",
+    "Finance & Procurement",
+    "Information Security",
+    "Product Management"
+  ],
+  techStackOptions: [],
+  fundingStages: ["Series B", "Public / IPO", "Series C+"]
+};
+function parseArrayParam(param) {
+  if (!param) return [];
+  if (Array.isArray(param)) return param.filter(Boolean);
+  return String(param).split(/[|,]/).map((s) => s.trim()).filter(Boolean);
+}
+function mapEntityToLead(entity) {
+  let tech = [];
+  if (entity.techStack) {
+    if (Array.isArray(entity.techStack)) tech = entity.techStack;
+    else if (typeof entity.techStack === "string") {
+      try {
+        tech = JSON.parse(entity.techStack);
+      } catch {
+        tech = entity.techStack.split(/[,;|]/).map((s) => s.trim()).filter(Boolean);
+      }
+    }
+  }
+  return {
+    id: entity.id,
+    companyName: entity.companyName,
+    domain: entity.domain,
+    industry: entity.industry,
+    employeeRange: entity.employeeRange,
+    employeeCount: Number(entity.employeeCount) || 100,
+    revenueRange: entity.revenueRange,
+    annualRevenueUsd: Number(entity.annualRevenueUsd) || 0,
+    country: entity.country,
+    city: entity.city,
+    contactName: entity.contactName,
+    contactTitle: entity.contactTitle,
+    seniority: entity.seniority,
+    department: entity.department,
+    contactEmail: entity.contactEmail,
+    contactPhone: entity.contactPhone,
+    linkedinUrl: entity.linkedinUrl,
+    verificationStatus: entity.verificationStatus,
+    fundingStage: entity.fundingStage,
+    techStack: tech,
+    buyingIntentScore: Number(entity.buyingIntentScore) || 80,
+    foundedYear: Number(entity.foundedYear) || 2018,
+    hasDirectPhone: Boolean(entity.hasDirectPhone),
+    isCustom: Boolean(entity.isCustom && entity.source === "manual_lead_entry"),
+    isRecent: Boolean(entity.isRecent),
+    source: entity.source,
+    createdAt: entity.createdAt ? new Date(entity.createdAt).toISOString() : (/* @__PURE__ */ new Date()).toISOString()
+  };
+}
+function mapCustomRowToLead(row) {
+  let tech = [];
+  if (row.tech_stack) {
+    if (Array.isArray(row.tech_stack)) tech = row.tech_stack;
+    else if (typeof row.tech_stack === "string") {
+      try {
+        tech = JSON.parse(row.tech_stack);
+      } catch {
+        tech = row.tech_stack.split(/[,;|]/).map((s) => s.trim()).filter(Boolean);
+      }
+    }
+  }
+  return {
+    id: row.id,
+    companyName: row.company_name,
+    domain: row.domain,
+    industry: row.industry,
+    employeeRange: row.employee_range,
+    employeeCount: Number(row.employee_count) || 120,
+    revenueRange: row.revenue_range,
+    annualRevenueUsd: Number(row.annual_revenue_usd) || 24e6,
+    country: row.country,
+    city: row.city,
+    contactName: row.contact_name,
+    contactTitle: row.contact_title,
+    seniority: row.seniority,
+    department: row.department,
+    contactEmail: row.contact_email,
+    contactPhone: row.contact_phone,
+    linkedinUrl: row.linkedin_url || "",
+    verificationStatus: row.verification_status || "Verified",
+    fundingStage: row.funding_stage || "Series B",
+    techStack: tech.length > 0 ? tech : ["AWS", "Salesforce"],
+    buyingIntentScore: Number(row.buying_intent_score) || 88,
+    foundedYear: Number(row.founded_year) || 2021,
+    hasDirectPhone: Boolean(row.has_direct_phone),
+    isCustom: true,
+    isRecent: true,
+    source: row.source || "manual_custom",
+    createdAt: row.created_at ? new Date(row.created_at).toISOString() : (/* @__PURE__ */ new Date()).toISOString()
+  };
+}
+function invalidateGlobalMetricsCache() {
+  cachedGlobals.timestamp = 0;
+}
+var cachedGlobals = {
+  timestamp: 0,
+  totalDatabaseRecords: 10363428,
+  avgIntentScore: 88,
+  verifiedRatio: 100,
+  facets: {
+    industries: {},
+    countries: {}
+  }
+};
+var CACHE_TTL_MS = 5 * 60 * 1e3;
+async function getGlobalMetricsAndFacets(ds) {
+  const now = Date.now();
+  if (now - cachedGlobals.timestamp < CACHE_TTL_MS && cachedGlobals.timestamp > 0) {
+    return cachedGlobals;
+  }
+  try {
+    let totalDatabaseRecords = 0;
+    try {
+      const ds1 = await getPrimaryDataSource();
+      if (ds1) {
+        const rawCount1 = await ds1.query("SELECT COUNT(*) as cnt FROM leads;");
+        totalDatabaseRecords += Number(rawCount1[0]?.cnt) || 1843e3;
+      } else {
+        totalDatabaseRecords += 1843e3;
+      }
+    } catch (_) {
+      totalDatabaseRecords += 1843e3;
+    }
+    try {
+      const ds2 = await getSecondaryDataSource();
+      if (ds2) {
+        const rawCount2 = await ds2.query("SELECT COUNT(*) as cnt FROM leads;");
+        totalDatabaseRecords += Number(rawCount2[0]?.cnt) || 4365787;
+      } else {
+        totalDatabaseRecords += 4365787;
+      }
+    } catch (_) {
+      totalDatabaseRecords += 4365787;
+    }
+    try {
+      const ds3 = await getTertiaryDataSource();
+      if (ds3) {
+        const rawCount3 = await ds3.query("SELECT COUNT(*) as cnt FROM leads;");
+        totalDatabaseRecords += Number(rawCount3[0]?.cnt) || 4154641;
+      } else {
+        totalDatabaseRecords += 4154641;
+      }
+    } catch (_) {
+      totalDatabaseRecords += 4154641;
+    }
+    try {
+      const ds4 = await getDataSource();
+      if (ds4) {
+        const rawCount4 = await ds4.query("SELECT COUNT(*) as cnt FROM leads;");
+        totalDatabaseRecords += Number(rawCount4[0]?.cnt) || 0;
+      }
+    } catch (_) {
+    }
+    if (totalDatabaseRecords < 1e7) {
+      totalDatabaseRecords = 10363428;
+    }
+    cachedGlobals.totalDatabaseRecords = totalDatabaseRecords;
+    cachedGlobals.verifiedRatio = totalDatabaseRecords > 0 ? 100 : 0;
+    cachedGlobals.avgIntentScore = totalDatabaseRecords > 0 ? 88 : 0;
+    cachedGlobals.timestamp = Date.now();
+  } catch (err) {
+    console.error("Failed to update leads count:", err.message);
+    cachedGlobals.totalDatabaseRecords = 10363428;
+  }
+  return cachedGlobals;
+}
+async function queryLeadsDatabase(params = {}, userId) {
+  const ds = await getLeadsReadDataSource();
+  const leadRepo = ds.getRepository(Lead);
+  const globals = await getGlobalMetricsAndFacets(ds);
+  const {
+    q = "",
+    industries,
+    employeeRanges,
+    revenueRanges,
+    countries,
+    seniorities,
+    departments,
+    verificationStatuses,
+    fundingStages,
+    techStack,
+    minIntentScore = 0,
+    hasVerifiedEmail = false,
+    hasDirectPhone = false,
+    onlyCustom = false,
+    onlyRevealed = false,
+    savedListLeadIds,
+    sortBy = "buying_intent_score",
+    sortOrder = "desc",
+    page = 1,
+    pageSize = 25
+  } = params;
+  const indArr = parseArrayParam(industries);
+  const empArr = parseArrayParam(employeeRanges);
+  const revArr = parseArrayParam(revenueRanges);
+  const countryArr = parseArrayParam(countries);
+  const senArr = parseArrayParam(seniorities);
+  const deptArr = parseArrayParam(departments);
+  const verArr = parseArrayParam(verificationStatuses);
+  const fundArr = parseArrayParam(fundingStages);
+  const techArr = parseArrayParam(techStack);
+  const minScore = Number(minIntentScore) || 0;
+  const searchLower = String(q || "").trim();
+  const safePage = Math.max(1, Number(page) || 1);
+  const safePageSize = Math.min(100, Math.max(10, Number(pageSize) || 25));
+  const offset = (safePage - 1) * safePageSize;
+  if (String(onlyCustom) === "true" || onlyCustom === true) {
+    if (!userId) {
+      return {
+        leads: [],
+        pagination: {
+          page: 1,
+          pageSize: safePageSize,
+          totalCatalogRows: 0,
+          totalPages: 1,
+          estimatedGlobalMatches: 0,
+          totalDatabaseRecords: 0
+        },
+        metrics: {
+          verifiedRatio: 100,
+          avgIntentScore: 88,
+          activeFiltersCount: 1
+        },
+        facets: {}
+      };
+    }
+    try {
+      const ds4 = await getDataSource();
       let whereClause = "WHERE user_id = ?";
       const sqlParams = [userId];
-      if (requestedCluster === "all") {
-      } else if (activeCluster) {
-        whereClause += " AND cluster_name = ?";
-        sqlParams.push(activeCluster);
-      } else {
-        whereClause += " AND 1 = 0";
-      }
-      if (q) {
+      if (searchLower) {
         whereClause += " AND (company_name LIKE ? OR contact_name LIKE ? OR domain LIKE ? OR contact_email LIKE ?)";
-        sqlParams.push(`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`);
+        sqlParams.push(`%${searchLower}%`, `%${searchLower}%`, `%${searchLower}%`, `%${searchLower}%`);
       }
-      const countRows = await ds.query(
+      if (indArr.length > 0) {
+        whereClause += ` AND industry IN (${indArr.map(() => "?").join(",")})`;
+        sqlParams.push(...indArr);
+      }
+      if (minScore > 0) {
+        whereClause += " AND buying_intent_score >= ?";
+        sqlParams.push(minScore);
+      }
+      const countRows = await ds4.query(
         `SELECT COUNT(*) as total FROM custom_leads ${whereClause}`,
         sqlParams
       );
-      const total = Number(countRows[0]?.total || 0);
-      const rawRows = await ds.query(
-        `SELECT * FROM custom_leads ${whereClause} ORDER BY created_at DESC`,
-        sqlParams
+      const totalMatches2 = Number(countRows[0]?.total || 0);
+      const rawRows = await ds4.query(
+        `SELECT * FROM custom_leads ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+        [...sqlParams, safePageSize, offset]
       );
-      const leads = (rawRows || []).map((row) => ({
-        id: row.id,
-        clusterName: row.cluster_name,
-        companyName: row.company_name,
-        domain: row.domain,
-        industry: row.industry,
-        employeeRange: row.employee_range,
-        employeeCount: Number(row.employee_count) || 120,
-        revenueRange: row.revenue_range,
-        annualRevenueUsd: Number(row.annual_revenue_usd) || 24e6,
-        country: row.country,
-        city: row.city,
-        contactName: row.contact_name,
-        contactTitle: row.contact_title,
-        seniority: row.seniority,
-        department: row.department,
-        contactEmail: row.contact_email,
-        contactPhone: row.contact_phone,
-        linkedinUrl: row.linkedin_url || "",
-        verificationStatus: row.verification_status || "Verified",
-        fundingStage: row.funding_stage || "Series B",
-        buyingIntentScore: Number(row.buying_intent_score) || 88,
-        foundedYear: Number(row.founded_year) || 2021,
-        hasDirectPhone: Boolean(row.has_direct_phone),
-        isCustom: true,
-        source: row.source || "manual_custom_lead",
-        createdAt: row.created_at ? new Date(row.created_at).toISOString() : (/* @__PURE__ */ new Date()).toISOString()
-      }));
-      res.json({
-        leads,
-        total,
-        clusters,
-        activeCluster,
-        owner: {
-          id: req.user.id,
-          name: req.user.name,
-          email: req.user.email
-        }
-      });
-    } catch (err) {
-      console.error("Failed to fetch private custom leads:", err);
-      res.status(500).json({ error: err.message || "Failed to fetch custom leads" });
+      const customLeads = (rawRows || []).map(mapCustomRowToLead);
+      return {
+        leads: customLeads,
+        pagination: {
+          page: safePage,
+          pageSize: safePageSize,
+          totalCatalogRows: totalMatches2,
+          totalPages: Math.max(1, Math.ceil(totalMatches2 / safePageSize)),
+          estimatedGlobalMatches: totalMatches2,
+          totalDatabaseRecords: totalMatches2
+        },
+        metrics: {
+          verifiedRatio: 100,
+          avgIntentScore: customLeads.length > 0 ? Math.round(customLeads.reduce((s, l) => s + (l.buyingIntentScore || 88), 0) / customLeads.length) : 88,
+          activeFiltersCount: 1
+        },
+        facets: {}
+      };
+    } catch (e) {
+      console.error("Failed to query private custom_leads from DB4:", e.message);
+      return {
+        leads: [],
+        pagination: {
+          page: 1,
+          pageSize: safePageSize,
+          totalCatalogRows: 0,
+          totalPages: 1,
+          estimatedGlobalMatches: 0,
+          totalDatabaseRecords: 0
+        },
+        metrics: { verifiedRatio: 100, avgIntentScore: 88, activeFiltersCount: 1 },
+        facets: {}
+      };
     }
-  });
-  app.post("/api/leads/custom/clusters", requireJwtMiddleware, async (req, res) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) return res.status(401).json({ error: "Authentication required" });
-      const name = String(req.body?.name || "").trim();
-      const description = String(req.body?.description || "").trim();
-      if (!name) return res.status(400).json({ error: "Cluster name is required" });
-      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
-      const userPlan = (req.user?.planId || req.user?.plan || "free").toLowerCase();
-      const userRole = (req.user?.role || "").toLowerCase();
-      const isPaidOrSuperadmin = userRole === "superadmin" || userPlan.includes("growth") || userPlan.includes("scale") || userPlan.includes("unlimited") || userPlan.includes("pro") || userPlan.includes("starter");
-      if (!isPaidOrSuperadmin) {
-        const countRes = await ds.query(
-          "SELECT COUNT(*) as count FROM custom_clusters WHERE user_id = ?",
+  }
+  const qb = leadRepo.createQueryBuilder("lead");
+  let hasWhere = false;
+  if (searchLower) {
+    qb.andWhere("lead.company_name LIKE :search", { search: `${searchLower}%` });
+    hasWhere = true;
+  }
+  if (indArr.length > 0) {
+    qb.andWhere("lead.industry IN (:...industries)", { industries: indArr });
+    hasWhere = true;
+  }
+  if (empArr.length > 0) {
+    qb.andWhere("lead.employee_range IN (:...employeeRanges)", { employeeRanges: empArr });
+    hasWhere = true;
+  }
+  if (revArr.length > 0) {
+    const expandedRevs = /* @__PURE__ */ new Set();
+    for (const r of revArr) {
+      expandedRevs.add(r);
+      expandedRevs.add(r.replace(/\$([0-9]+)\s*-\s*\$([0-9]+)/, "$$$1 - $2"));
+      expandedRevs.add(r.replace(/\$([0-9]+)\s*-\s*([0-9]+)/, "$$$1 - $$$2"));
+      if (r === "> $1B") {
+        expandedRevs.add("1B+");
+        expandedRevs.add("> 1B");
+      }
+      if (r === "$500M - $1B") {
+        expandedRevs.add("$500M - 1B");
+      }
+      if (r === "$250 - $500M") {
+        expandedRevs.add("$250 - 500M");
+      }
+      if (r === "$100 - $250M") {
+        expandedRevs.add("$100 - 250M");
+      }
+      if (r === "$50 - $100M") {
+        expandedRevs.add("$50 - 100M");
+      }
+      if (r === "$10 - $50M") {
+        expandedRevs.add("$10 - 50M");
+      }
+      if (r === "$1 - $10M") {
+        expandedRevs.add("$1 - 10M");
+      }
+      if (r === "$0 - $1M") {
+        expandedRevs.add("$0 - 1M");
+        expandedRevs.add("< $1M");
+      }
+    }
+    qb.andWhere("lead.revenue_range IN (:...revenueRanges)", { revenueRanges: Array.from(expandedRevs) });
+    hasWhere = true;
+  }
+  if (countryArr.length > 0) {
+    const expandedCountries = /* @__PURE__ */ new Set();
+    for (const c of countryArr) {
+      expandedCountries.add(c);
+      if (c === "USA" || c === "United States") {
+        expandedCountries.add("USA");
+        expandedCountries.add("United States");
+      }
+    }
+    qb.andWhere("lead.country IN (:...countries)", { countries: Array.from(expandedCountries) });
+    hasWhere = true;
+  }
+  if (senArr.length > 0) {
+    const expandedSeniorities = /* @__PURE__ */ new Set();
+    for (const s of senArr) {
+      expandedSeniorities.add(s);
+      if (s === "C-Level / Founder" || s === "C-Level") {
+        expandedSeniorities.add("C-Level / Founder");
+        expandedSeniorities.add("C-Level");
+        expandedSeniorities.add("Founder");
+        expandedSeniorities.add("Owner");
+      }
+      if (s === "VP" || s === "Vice President") {
+        expandedSeniorities.add("VP");
+        expandedSeniorities.add("Vice President");
+      }
+    }
+    qb.andWhere("lead.seniority IN (:...seniorities)", { seniorities: Array.from(expandedSeniorities) });
+    hasWhere = true;
+  }
+  if (deptArr.length > 0) {
+    qb.andWhere("lead.department IN (:...departments)", { departments: deptArr });
+    hasWhere = true;
+  }
+  if (verArr.length > 0) {
+    qb.andWhere("lead.verification_status IN (:...verificationStatuses)", { verificationStatuses: verArr });
+    hasWhere = true;
+  }
+  if (fundArr.length > 0) {
+    qb.andWhere("lead.funding_stage IN (:...fundingStages)", { fundingStages: fundArr });
+    hasWhere = true;
+  }
+  if (techArr.length > 0) {
+    const techSubClauses = techArr.map((_, i) => `JSON_CONTAINS(lead.tech_stack, JSON_QUOTE(:tech_${i}))`);
+    const paramsObj = {};
+    techArr.forEach((t, i) => {
+      paramsObj[`tech_${i}`] = t;
+    });
+    qb.andWhere(`(${techSubClauses.join(" OR ")})`, paramsObj);
+    hasWhere = true;
+  }
+  if (minScore > 0) {
+    qb.andWhere("lead.buying_intent_score >= :minScore", { minScore });
+    hasWhere = true;
+  }
+  if (String(hasVerifiedEmail) === "true") {
+    qb.andWhere("lead.verification_status = 'Verified'");
+    hasWhere = true;
+  }
+  if (String(hasDirectPhone) === "true") {
+    qb.andWhere("lead.has_direct_phone = 1");
+    hasWhere = true;
+  }
+  const savedIdsArr = parseArrayParam(savedListLeadIds);
+  if (savedIdsArr.length > 0) {
+    qb.andWhere("lead.id IN (:...savedIdsArr)", { savedIdsArr });
+    hasWhere = true;
+  }
+  if (String(onlyRevealed) === "true" || onlyRevealed === true) {
+    let revealedIds = [];
+    if (userId) {
+      try {
+        const ds4 = await getDataSource();
+        const revealedRows = await ds4.query(
+          'SELECT lead_id FROM user_revealed_leads WHERE user_id = ? OR user_id = "usr_superadmin"',
           [userId]
         );
-        const existingCount = Number(countRes[0]?.count || 0);
-        if (existingCount >= 5) {
+        revealedIds = (revealedRows || []).map((r) => String(r.lead_id)).filter(Boolean);
+      } catch (err) {
+        console.error("Error querying user_revealed_leads in queryLeadsDatabase:", err.message);
+      }
+    }
+    const clientRevealed = parseArrayParam(params.revealedIds || params.revealedLeadIds);
+    if (clientRevealed.length > 0) {
+      revealedIds = Array.from(/* @__PURE__ */ new Set([...revealedIds, ...clientRevealed]));
+    }
+    if (revealedIds.length === 0) {
+      return {
+        leads: [],
+        pagination: {
+          page: 1,
+          pageSize: safePageSize,
+          totalCatalogRows: 0,
+          totalPages: 1,
+          estimatedGlobalMatches: 0,
+          totalDatabaseRecords: 0
+        },
+        metrics: {
+          verifiedRatio: 100,
+          avgIntentScore: 90,
+          activeFiltersCount: 1
+        },
+        facets: {}
+      };
+    }
+    const allRevealedLeads = await fetchLeadsByIds(revealedIds, userId);
+    let filtered = allRevealedLeads;
+    if (searchLower) {
+      const qLower = searchLower.toLowerCase();
+      filtered = filtered.filter(
+        (l) => (l.companyName || "").toLowerCase().includes(qLower) || (l.contactName || "").toLowerCase().includes(qLower) || (l.domain || "").toLowerCase().includes(qLower) || (l.contactEmail || "").toLowerCase().includes(qLower) || (l.city || "").toLowerCase().includes(qLower) || (l.industry || "").toLowerCase().includes(qLower)
+      );
+    }
+    if (indArr.length > 0) {
+      filtered = filtered.filter((l) => indArr.includes(l.industry));
+    }
+    if (empArr.length > 0) {
+      filtered = filtered.filter((l) => empArr.includes(l.employeeRange) || empArr.includes(String(l.employeeCount)));
+    }
+    if (revArr.length > 0) {
+      filtered = filtered.filter((l) => revArr.some((r) => (l.revenueRange || "").includes(r)));
+    }
+    if (countryArr.length > 0) {
+      filtered = filtered.filter((l) => countryArr.includes(l.country));
+    }
+    if (senArr.length > 0) {
+      filtered = filtered.filter((l) => senArr.includes(l.seniority));
+    }
+    if (deptArr.length > 0) {
+      filtered = filtered.filter((l) => deptArr.includes(l.department));
+    }
+    if (verArr.length > 0) {
+      filtered = filtered.filter((l) => verArr.includes(l.verificationStatus));
+    }
+    if (fundArr.length > 0) {
+      filtered = filtered.filter((l) => fundArr.includes(l.fundingStage));
+    }
+    if (minScore > 0) {
+      filtered = filtered.filter((l) => (l.buyingIntentScore || 0) >= minScore);
+    }
+    if (String(hasVerifiedEmail) === "true" || hasVerifiedEmail === true) {
+      filtered = filtered.filter((l) => Boolean(l.contactEmail));
+    }
+    if (String(hasDirectPhone) === "true" || hasDirectPhone === true) {
+      filtered = filtered.filter((l) => Boolean(l.contactPhone));
+    }
+    if (sortBy === "buying_intent_score" || sortBy === "intent" || sortBy === "buyingIntentScore") {
+      filtered.sort((a, b) => sortOrder === "asc" ? (a.buyingIntentScore || 0) - (b.buyingIntentScore || 0) : (b.buyingIntentScore || 0) - (a.buyingIntentScore || 0));
+    } else if (sortBy === "company_name" || sortBy === "company" || sortBy === "companyName") {
+      filtered.sort((a, b) => sortOrder === "asc" ? (a.companyName || "").localeCompare(b.companyName || "") : (b.companyName || "").localeCompare(a.companyName || ""));
+    } else if (sortBy === "employee_count" || sortBy === "employees" || sortBy === "employeeCount") {
+      filtered.sort((a, b) => sortOrder === "asc" ? (a.employeeCount || 0) - (b.employeeCount || 0) : (b.employeeCount || 0) - (a.employeeCount || 0));
+    }
+    const totalCount = filtered.length;
+    const startIndex = (safePage - 1) * safePageSize;
+    const pageLeads = filtered.slice(startIndex, startIndex + safePageSize);
+    return {
+      leads: pageLeads.map((l) => ({ ...l, isRevealed: 1 })),
+      pagination: {
+        page: safePage,
+        pageSize: safePageSize,
+        totalCatalogRows: totalCount,
+        totalPages: Math.ceil(totalCount / safePageSize) || 1,
+        estimatedGlobalMatches: totalCount,
+        totalDatabaseRecords: totalCount
+      },
+      metrics: {
+        verifiedRatio: 100,
+        avgIntentScore: totalCount > 0 ? Math.round(filtered.reduce((acc, l) => acc + (l.buyingIntentScore || 88), 0) / totalCount) : 90,
+        activeFiltersCount: 1
+      },
+      facets: {}
+    };
+  }
+  const isUnfiltered = !hasWhere;
+  let totalMatches = 0;
+  if (isUnfiltered) {
+    totalMatches = globals.totalDatabaseRecords;
+  } else {
+    try {
+      const countQb = qb.clone().select("COUNT(lead.id)", "count");
+      const countRes = await countQb.getRawOne();
+      totalMatches = Number(countRes?.count || 0);
+    } catch (err) {
+      console.warn("Count query fallback error:", err.message);
+      totalMatches = 0;
+    }
+  }
+  const sortMap = {
+    companyName: "lead.company_name",
+    company_name: "lead.company_name",
+    annualRevenueUsd: "lead.annual_revenue_usd",
+    annual_revenue_usd: "lead.annual_revenue_usd",
+    employeeCount: "lead.employee_count",
+    employee_count: "lead.employee_count",
+    buyingIntentScore: "lead.buying_intent_score",
+    buying_intent_score: "lead.buying_intent_score",
+    createdAt: "lead.created_at",
+    created_at: "lead.created_at"
+  };
+  const sortCol = sortMap[sortBy] || "lead.buying_intent_score";
+  const sortDirection = String(sortOrder).toLowerCase() === "asc" ? "ASC" : "DESC";
+  let leads = [];
+  try {
+    if (isUnfiltered && offset < 5e4 && sortBy === "buying_intent_score") {
+      const rawEntities = await ds.query(
+        `SELECT id, company_name, domain, industry, employee_range, employee_count,
+                revenue_range, annual_revenue_usd, country, city, contact_name,
+                contact_title, seniority, department, contact_email, contact_phone,
+                linkedin_url, verification_status, funding_stage, tech_stack,
+                buying_intent_score, founded_year, has_direct_phone, is_custom,
+                is_recent, source, created_at
+         FROM leads
+         LIMIT ? OFFSET ?`,
+        [safePageSize, offset]
+      );
+      leads = (rawEntities || []).map((e) => ({
+        id: e.id,
+        companyName: e.company_name,
+        domain: e.domain,
+        industry: e.industry,
+        employeeRange: e.employee_range,
+        employeeCount: Number(e.employee_count) || 100,
+        revenueRange: e.revenue_range,
+        annualRevenueUsd: Number(e.annual_revenue_usd) || 0,
+        country: e.country,
+        city: e.city,
+        contactName: e.contact_name,
+        contactTitle: e.contact_title,
+        seniority: e.seniority,
+        department: e.department,
+        contactEmail: e.contact_email,
+        contactPhone: e.contact_phone,
+        linkedinUrl: e.linkedin_url,
+        verificationStatus: e.verification_status,
+        fundingStage: e.funding_stage,
+        techStack: Array.isArray(e.tech_stack) ? e.tech_stack : typeof e.tech_stack === "string" ? JSON.parse(e.tech_stack || "[]") : ["AWS"],
+        buyingIntentScore: Number(e.buying_intent_score) || 88,
+        foundedYear: Number(e.founded_year) || 2020,
+        hasDirectPhone: Boolean(e.has_direct_phone),
+        isCustom: Boolean(e.is_custom && e.source === "manual_lead_entry"),
+        isRecent: Boolean(e.is_recent),
+        source: e.source,
+        createdAt: e.created_at
+      }));
+    } else if (isUnfiltered && totalMatches > 0 && offset > totalMatches / 2) {
+      const revOffset = Math.max(0, totalMatches - safePage * safePageSize);
+      const revTake = Math.min(safePageSize, totalMatches - offset);
+      const revDirection = sortDirection === "DESC" ? "ASC" : "DESC";
+      const idRows = await leadRepo.createQueryBuilder("lead").select("lead.id", "id").orderBy(sortCol, revDirection).addOrderBy("lead.id", "ASC").skip(revOffset).take(revTake).getRawMany();
+      if (idRows.length > 0) {
+        const idList = idRows.map((r) => r.id);
+        const fullEntities = await leadRepo.createQueryBuilder("lead").where("lead.id IN (:...idList)", { idList }).getMany();
+        const entityMap = new Map(fullEntities.map((e) => [e.id, e]));
+        const orderedEntities = idRows.reverse().map((r) => entityMap.get(r.id)).filter(Boolean);
+        leads = orderedEntities.map(mapEntityToLead);
+      }
+    } else {
+      const idQb = qb.clone().select("lead.id", "id");
+      const activeFilterCount = (indArr.length > 0 ? 1 : 0) + (empArr.length > 0 ? 1 : 0) + (revArr.length > 0 ? 1 : 0) + (countryArr.length > 0 ? 1 : 0) + (senArr.length > 0 ? 1 : 0) + (deptArr.length > 0 ? 1 : 0) + (fundArr.length > 0 ? 1 : 0) + (minScore > 0 ? 1 : 0);
+      if (activeFilterCount >= 1) {
+        if (revArr.length > 0) {
+          idQb.useIndex("idx_rev_emp_ind");
+        } else if (indArr.length > 0 && empArr.length > 0) {
+          idQb.useIndex("idx_ind_emp_score");
+        } else if (indArr.length > 0) {
+          idQb.useIndex("idx_cov_leads");
+        } else if (deptArr.length > 0) {
+          idQb.useIndex("idx_cov_dept");
+        } else if (empArr.length > 0) {
+          idQb.useIndex("idx_cov_emp_rev");
+        } else if (senArr.length > 0) {
+          idQb.useIndex("idx_cov_sen_score");
+        }
+      }
+      if (safePage <= 5 && sortBy === "buying_intent_score") {
+        qb.skip(offset).take(safePageSize);
+        const entities = await qb.getMany();
+        leads = entities.map(mapEntityToLead);
+      } else {
+        const idRows = await idQb.orderBy(sortCol, sortDirection).addOrderBy("lead.id", "ASC").skip(offset).take(safePageSize).getRawMany();
+        if (idRows.length > 0) {
+          const idList = idRows.map((r) => r.id);
+          const fullEntities = await leadRepo.createQueryBuilder("lead").where("lead.id IN (:...idList)", { idList }).getMany();
+          const entityMap = new Map(fullEntities.map((e) => [e.id, e]));
+          const orderedEntities = idRows.map((r) => entityMap.get(r.id)).filter(Boolean);
+          leads = orderedEntities.map(mapEntityToLead);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("Optimized deferred pagination fallback:", err.message);
+    qb.orderBy(sortCol, sortDirection).addOrderBy("lead.id", "ASC").skip(offset).take(safePageSize);
+    const entities = await qb.getMany();
+    leads = entities.map(mapEntityToLead);
+  }
+  const verifiedRatio = leads.length > 0 ? Math.round(leads.filter((l) => l.verificationStatus === "Verified").length / leads.length * 100) : globals.verifiedRatio;
+  let avgIntentScore = globals.avgIntentScore;
+  if (minScore > 0) {
+    const intentHistogram = {
+      72: 39460,
+      73: 39737,
+      74: 39898,
+      75: 39935,
+      76: 39758,
+      77: 40070,
+      78: 39739,
+      79: 40162,
+      80: 39773,
+      81: 39787,
+      82: 39477,
+      83: 39851,
+      84: 39940,
+      85: 40028,
+      86: 39852,
+      87: 39541,
+      88: 39699,
+      89: 39815,
+      90: 39887,
+      91: 40026,
+      92: 39962,
+      93: 39586,
+      94: 39816,
+      95: 39809,
+      96: 39986,
+      97: 40089
+    };
+    let scoreSum = 0;
+    let scoreCount = 0;
+    for (let s = minScore; s <= 100; s++) {
+      if (intentHistogram[s]) {
+        scoreSum += s * intentHistogram[s];
+        scoreCount += intentHistogram[s];
+      }
+    }
+    avgIntentScore = scoreCount > 0 ? Math.round(scoreSum / scoreCount) : 95;
+  } else if (leads.length > 0) {
+    avgIntentScore = Math.round(leads.reduce((sum, l) => sum + (l.buyingIntentScore || 0), 0) / leads.length);
+  }
+  const totalDatabaseRecords = globals.totalDatabaseRecords || totalMatches;
+  const facets = {
+    industries: {},
+    employeeRanges: {},
+    revenueRanges: {},
+    countries: {},
+    seniorities: {},
+    departments: {},
+    verificationStatuses: {},
+    fundingStages: {},
+    techStack: {}
+  };
+  return {
+    leads,
+    pagination: {
+      page: safePage,
+      pageSize: safePageSize,
+      totalCatalogRows: totalMatches,
+      totalPages: Math.max(1, Math.ceil(totalMatches / safePageSize)),
+      estimatedGlobalMatches: totalMatches,
+      totalDatabaseRecords
+    },
+    metrics: {
+      verifiedRatio,
+      avgIntentScore,
+      activeFiltersCount: (searchLower ? 1 : 0) + indArr.length + empArr.length + revArr.length + countryArr.length + senArr.length + deptArr.length + verArr.length + fundArr.length + techArr.length + (minScore > 0 ? 1 : 0) + (String(hasVerifiedEmail) === "true" ? 1 : 0) + (String(hasDirectPhone) === "true" ? 1 : 0) + (String(onlyRevealed) === "true" || onlyRevealed === true ? 1 : 0)
+    },
+    facets
+  };
+}
+async function batchInsertLeads(newLeads = []) {
+  if (!Array.isArray(newLeads) || newLeads.length === 0) {
+    throw new Error("No leads provided to ingest.");
+  }
+  const ds = await getLeadsDataSource();
+  const leadRepo = ds.getRepository(Lead);
+  let insertedCount = 0;
+  const BATCH_CHUNK_SIZE = 1e3;
+  for (let c = 0; c < newLeads.length; c += BATCH_CHUNK_SIZE) {
+    const chunk = newLeads.slice(c, c + BATCH_CHUNK_SIZE);
+    const entities = chunk.map((item, idx) => {
+      const globalIdx = c + idx;
+      const id = item.id || `lead_${Date.now()}_${globalIdx}_${Math.random().toString(36).substring(2, 7)}`;
+      const domain = String(item.domain || "example.com").trim();
+      const safeTrim = (v, maxLen, fallback = "") => {
+        if (v === null || v === void 0) return fallback.slice(0, maxLen);
+        const s = String(v).replace(/\0/g, "").trim();
+        return (s || fallback).slice(0, maxLen);
+      };
+      return leadRepo.create({
+        id,
+        companyName: safeTrim(item.companyName || item.company, 255, "Enterprise Company"),
+        domain: safeTrim(item.domain, 255, "example.com"),
+        industry: safeTrim(item.industry, 128, "Enterprise Software & SaaS"),
+        employeeRange: safeTrim(item.employeeRange, 64, "51-200"),
+        employeeCount: Number(item.employeeCount) || 150,
+        revenueRange: safeTrim(item.revenueRange, 64, "$10M - $50M"),
+        annualRevenueUsd: Number(item.annualRevenueUsd) || 25e6,
+        country: safeTrim(item.country, 128, "United States"),
+        city: safeTrim(item.city, 128, "San Francisco, CA"),
+        contactName: safeTrim(item.contactName || item.name, 255, "Decision Maker"),
+        contactTitle: safeTrim(item.contactTitle || item.title, 255, "Director of Operations"),
+        seniority: safeTrim(item.seniority, 64, "Director"),
+        department: safeTrim(item.department, 128, "Executive Leadership"),
+        contactEmail: safeTrim(item.contactEmail || item.email, 255, `contact_${globalIdx}@example.com`),
+        contactPhone: safeTrim(item.contactPhone || item.phone, 64, "+1 (555) 019-2831"),
+        linkedinUrl: safeTrim(item.linkedinUrl || `https://linkedin.com/company/${domain.replace(/\.[^/.]+$/, "")}`, 255, ""),
+        verificationStatus: safeTrim(item.verificationStatus, 32, "Verified"),
+        fundingStage: safeTrim(item.fundingStage, 64, "Series B"),
+        techStack: Array.isArray(item.techStack) ? item.techStack : typeof item.techStack === "string" ? item.techStack.split(/[,;|]/).map((s) => s.trim()).filter(Boolean) : ["AWS", "Salesforce"],
+        buyingIntentScore: Number(item.buyingIntentScore) || Math.floor(Math.random() * 25 + 75),
+        hasDirectPhone: item.hasDirectPhone !== void 0 ? item.hasDirectPhone ? 1 : 0 : 1,
+        isCustom: 1,
+        isRecent: 1,
+        source: safeTrim(item.source, 64, "mysql_b2b_database"),
+        createdAt: item.createdAt ? new Date(item.createdAt) : /* @__PURE__ */ new Date()
+      });
+    });
+    await leadRepo.save(entities, { chunk: 500 });
+    insertedCount += entities.length;
+  }
+  const totalRecords = await leadRepo.count();
+  return {
+    insertedCount,
+    totalRecords
+  };
+}
+async function fetchLeadsByIds(ids, userId) {
+  if (!Array.isArray(ids) || ids.length === 0) return [];
+  const cleanIds = Array.from(new Set(ids.map((id) => String(id).trim()).filter(Boolean)));
+  if (cleanIds.length === 0) return [];
+  const foundMap = /* @__PURE__ */ new Map();
+  let remainingIds = [...cleanIds];
+  const queryDsForIds = async (ds) => {
+    if (!ds || !remainingIds.length) return;
+    try {
+      const repo = ds.getRepository(Lead);
+      const CHUNK_SIZE = 500;
+      for (let i = 0; i < remainingIds.length; i += CHUNK_SIZE) {
+        const chunk = remainingIds.slice(i, i + CHUNK_SIZE);
+        const entities = await repo.createQueryBuilder("lead").where("lead.id IN (:...chunk)", { chunk }).getMany();
+        if (entities && entities.length > 0) {
+          for (const ent of entities) {
+            const mapped = mapEntityToLead(ent);
+            mapped.isCustom = 0;
+            mapped.isCore = 1;
+            mapped.source = "core";
+            foundMap.set(mapped.id, mapped);
+          }
+        }
+      }
+      remainingIds = cleanIds.filter((id) => !foundMap.has(id));
+    } catch (err) {
+      console.warn("Error reading from datasource shard in fetchLeadsByIds:", err.message);
+    }
+  };
+  try {
+    const ds2 = await getSecondaryDataSource();
+    await queryDsForIds(ds2);
+  } catch (_) {
+  }
+  if (remainingIds.length > 0) {
+    try {
+      const ds3 = await getTertiaryDataSource();
+      await queryDsForIds(ds3);
+    } catch (_) {
+    }
+  }
+  if (remainingIds.length > 0) {
+    try {
+      const ds1 = await getPrimaryDataSource();
+      await queryDsForIds(ds1);
+    } catch (_) {
+    }
+  }
+  if (remainingIds.length > 0) {
+    try {
+      const ds4 = await getDataSource();
+      const CHUNK_SIZE = 500;
+      for (let i = 0; i < remainingIds.length; i += CHUNK_SIZE) {
+        const chunk = remainingIds.slice(i, i + CHUNK_SIZE);
+        const placeholders = chunk.map(() => "?").join(",");
+        const params = [...chunk];
+        let queryStr = `SELECT * FROM custom_leads WHERE id IN (${placeholders})`;
+        if (userId) {
+          queryStr += ` AND (user_id = ? OR user_id = 'usr_superadmin' OR user_id IS NULL OR user_id = '')`;
+          params.push(userId);
+        }
+        const customRows = await ds4.query(queryStr, params);
+        if (customRows && customRows.length > 0) {
+          for (const row of customRows) {
+            const mapped = mapCustomRowToLead(row);
+            mapped.isCustom = 1;
+            mapped.isCore = 0;
+            mapped.source = "manual_custom_lead";
+            foundMap.set(mapped.id, mapped);
+          }
+        }
+      }
+      remainingIds = cleanIds.filter((id) => !foundMap.has(id));
+    } catch (err) {
+      console.warn("Error reading custom_leads from DB4 in fetchLeadsByIds:", err.message);
+    }
+  }
+  const results = [];
+  for (const id of cleanIds) {
+    if (foundMap.has(id)) {
+      results.push(foundMap.get(id));
+    }
+  }
+  return results;
+}
+
+// server/routes/leadsRoutes.ts
+var router3 = Router3();
+router3.get("/revealed", requireJwtMiddleware, async (req, res) => {
+  try {
+    const ds = await getDataSource();
+    const rows = await ds.query(
+      "SELECT lead_id FROM user_revealed_leads WHERE user_id = ?",
+      [req.user.id]
+    );
+    const leadIds = (rows || []).map((r) => String(r.lead_id));
+    res.json({ success: true, leadIds });
+  } catch (err) {
+    res.status(500).json({ error: err.message || "Failed to fetch revealed leads" });
+  }
+});
+router3.post("/reveal", requireJwtMiddleware, async (req, res) => {
+  try {
+    const leadId = String(req.body?.leadId || "").trim();
+    if (!leadId) {
+      return res.status(400).json({ error: "leadId is required" });
+    }
+    const ds = await getDataSource();
+    const existing = await ds.query(
+      "SELECT lead_id FROM user_revealed_leads WHERE user_id = ? AND lead_id = ?",
+      [req.user.id, leadId]
+    );
+    let user = req.user;
+    const isAlreadyRevealed = existing && existing.length > 0;
+    if (!isAlreadyRevealed) {
+      const isUnlimited = user?.planId === "unlimited" || user?.role === "superadmin" || user?.isSuperAdmin;
+      if (!isUnlimited && (user.creditsRemaining ?? 100) <= 0) {
+        return res.status(403).json({ error: "Insufficient credits remaining. Please upgrade plan." });
+      }
+      user = await decrementUserCreditsInDb(req.user.id, 1);
+      await ds.query(
+        "INSERT IGNORE INTO user_revealed_leads (user_id, lead_id) VALUES (?, ?)",
+        [req.user.id, leadId]
+      );
+    }
+    res.json({
+      success: true,
+      leadId,
+      alreadyRevealed: isAlreadyRevealed,
+      user
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message || "Failed to reveal lead" });
+  }
+});
+router3.get("/taxonomy", (_req, res) => {
+  res.json(FILTER_TAXONOMY);
+});
+var landingPreviewCache = /* @__PURE__ */ new Map();
+router3.get("/landing-preview", async (req, res) => {
+  try {
+    const clientIp = String(
+      req.headers["x-forwarded-for"] || req.headers["x-real-ip"] || req.socket.remoteAddress || "unknown"
+    ).split(",")[0].trim();
+    const now = Date.now();
+    const THIRTY_MINUTES_MS = 30 * 60 * 1e3;
+    const cached = landingPreviewCache.get(clientIp);
+    if (cached && now - cached.timestamp < THIRTY_MINUTES_MS) {
+      return res.json({
+        leads: cached.leads,
+        clientIp,
+        nextRotationInMs: THIRTY_MINUTES_MS - (now - cached.timestamp)
+      });
+    }
+    const randOffset = Math.floor(Math.random() * 3e6);
+    const ds = await getTertiaryDataSource();
+    const rawLeads = await ds.query(
+      `SELECT id, company_name, domain, industry, employee_range,
+              annual_revenue_usd, revenue_range, country, city,
+              contact_name, contact_title, contact_email, contact_phone,
+              buying_intent_score, verification_status
+       FROM leads 
+       WHERE contact_email IS NOT NULL AND company_name IS NOT NULL
+       LIMIT 20 OFFSET ?`,
+      [randOffset]
+    );
+    const formatted = (rawLeads || []).map((l) => ({
+      id: l.id,
+      companyName: l.company_name,
+      domain: l.domain,
+      industry: l.industry || "Business Services",
+      employeeRange: l.employee_range || "51-200",
+      contactName: l.contact_name || "Executive Contact",
+      contactTitle: l.contact_title || "Director of Operations",
+      contactEmail: l.contact_email,
+      contactPhone: l.contact_phone,
+      buyingIntentScore: Number(l.buying_intent_score) || 88,
+      verificationStatus: l.verification_status || "Verified"
+    }));
+    landingPreviewCache.set(clientIp, {
+      timestamp: now,
+      leads: formatted
+    });
+    if (landingPreviewCache.size > 1e4) {
+      for (const [ip, entry] of landingPreviewCache.entries()) {
+        if (now - entry.timestamp > THIRTY_MINUTES_MS) {
+          landingPreviewCache.delete(ip);
+        }
+      }
+    }
+    res.json({
+      leads: formatted,
+      clientIp,
+      nextRotationInMs: THIRTY_MINUTES_MS
+    });
+  } catch (err) {
+    console.error("Landing preview error:", err.message);
+    res.status(500).json({ error: "Failed to fetch preview leads" });
+  }
+});
+router3.get("/", optionalAuthMiddleware, async (req, res) => {
+  const tStart = Date.now();
+  try {
+    const userId = req.user?.id ? String(req.user.id) : null;
+    const result = await queryLeadsDatabase(req.query, userId);
+    const elapsed = Date.now() - tStart;
+    console.log(`[QUERY MONITOR] ${elapsed}ms | Filters: ${JSON.stringify(req.query)}`);
+    res.json(result);
+  } catch (error) {
+    const elapsed = Date.now() - tStart;
+    console.error(`[QUERY MONITOR ERROR] ${elapsed}ms:`, error);
+    res.status(500).json({ error: "Failed to execute B2B database query" });
+  }
+});
+router3.post("/by-ids", async (req, res) => {
+  try {
+    const { ids } = req.body || {};
+    let userId = req.user?.id ? String(req.user.id) : null;
+    if (!userId && req.headers.authorization?.startsWith("Bearer ")) {
+      const token = req.headers.authorization.slice(7);
+      try {
+        const u = await verifyJwtTokenAsync(token);
+        if (u) userId = String(u.id);
+      } catch (_) {
+      }
+    }
+    const leads = await fetchLeadsByIds(ids || [], userId);
+    res.json({ leads });
+  } catch (err) {
+    console.error("Error fetching leads by IDs:", err);
+    res.status(500).json({ error: "Failed to fetch leads by IDs" });
+  }
+});
+var leadsRoutes_default = router3;
+
+// server/routes/savedListsRoutes.ts
+import { Router as Router4 } from "express";
+init_dataSource();
+init_SavedList();
+var router4 = Router4();
+router4.get("/", async (req, res) => {
+  try {
+    const ds = await getDataSource();
+    const listRepo = ds.getRepository(SavedList);
+    const userId = req.user?.id || req.user?.email ? String(req.user.id || req.user.email) : null;
+    let lists = [];
+    if (userId) {
+      lists = await listRepo.createQueryBuilder("list").where("list.userId = :userId OR list.userId IS NULL", { userId }).orderBy("list.createdAt", "DESC").getMany();
+    } else {
+      lists = await listRepo.find({
+        order: { createdAt: "DESC" },
+        take: 100
+      });
+    }
+    res.json({
+      lists: lists.map((l) => ({
+        id: l.id,
+        name: l.name,
+        description: l.description,
+        leadIds: Array.isArray(l.leadIds) ? l.leadIds : typeof l.leadIds === "string" ? JSON.parse(l.leadIds || "[]") : [],
+        filterSummary: l.filterSummary,
+        leadCount: l.leadCount,
+        createdAt: l.createdAt,
+        updatedAt: l.updatedAt
+      }))
+    });
+  } catch (err) {
+    console.error("Failed to get saved lists:", err);
+    res.status(500).json({ error: err.message || "Failed to fetch saved lists" });
+  }
+});
+router4.post("/", optionalAuthMiddleware, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const name = String(body.name || "").trim();
+    if (!name) {
+      return res.status(400).json({ error: "List name is required" });
+    }
+    const ds = await getDataSource();
+    const listRepo = ds.getRepository(SavedList);
+    const leadIds = Array.isArray(body.leadIds) ? body.leadIds : [];
+    const listId = body.id && /^[a-zA-Z0-9_\-]+$/.test(body.id) ? body.id : `list_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const userId = req.user?.id || req.user?.email ? String(req.user.id || req.user.email) : null;
+    const userPlan = (req.user?.planId || req.user?.plan || "free").toLowerCase();
+    const userRole = (req.user?.role || "").toLowerCase();
+    const isPaidOrSuperadmin = userRole === "superadmin" || userPlan.includes("growth") || userPlan.includes("scale") || userPlan.includes("unlimited") || userPlan.includes("pro") || userPlan.includes("starter");
+    if (userId) {
+      if (!isPaidOrSuperadmin) {
+        const countRes = await ds.query(
+          "SELECT COUNT(*) as count FROM saved_lists WHERE user_id = ?",
+          [userId]
+        );
+        if (Number(countRes[0]?.count || 0) >= 5) {
           return res.status(403).json({
-            error: "Free accounts are limited to 5 clusters total. Delete an existing cluster or upgrade your plan to create more."
+            error: "Free accounts are limited to 5 saved lists total. Delete an existing list or upgrade to a paid plan to create more."
+          });
+        }
+        if (leadIds.length > 1e3) {
+          return res.status(403).json({
+            error: `Free plan limit: A saved list cannot exceed 1,000 leads (selected ${leadIds.length}). Upgrade to a paid plan for up to 5,000 leads per list.`
           });
         }
       } else {
         const lifetimeRes = await ds.query(
-          "SELECT COUNT(*) as count FROM custom_clusters WHERE user_id = ?",
+          "SELECT COUNT(*) as count FROM saved_lists WHERE user_id = ?",
           [userId]
         );
         if (Number(lifetimeRes[0]?.count || 0) >= 1e3) {
           return res.status(403).json({
-            error: "Lifetime limit reached: You have reached the maximum limit of 1,000 clusters for this account."
+            error: "Lifetime limit reached: You have reached the maximum limit of 1,000 saved lists for your account."
           });
         }
         const dailyRes = await ds.query(
-          "SELECT COUNT(*) as count FROM custom_clusters WHERE user_id = ? AND created_at >= CURDATE()",
+          "SELECT COUNT(*) as count FROM saved_lists WHERE user_id = ? AND created_at >= CURDATE()",
           [userId]
         );
         if (Number(dailyRes[0]?.count || 0) >= 50) {
           return res.status(403).json({
-            error: "Daily limit reached: You can create up to 50 clusters per day on your plan. This resets daily at midnight."
+            error: "Daily limit reached: You can create up to 50 saved lists per day on your plan. This resets daily at midnight."
+          });
+        }
+        if (leadIds.length > 5e3) {
+          return res.status(403).json({
+            error: `List capacity reached: A saved list cannot exceed 5,000 leads (selected ${leadIds.length}).`
           });
         }
       }
-      const clusterId = `cls_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-      await ds.query(
-        `INSERT INTO custom_clusters (id, user_id, name, description, created_at)
-         VALUES (?, ?, ?, ?, NOW())
-         ON DUPLICATE KEY UPDATE description = VALUES(description)`,
-        [clusterId, userId, name, description || `${name} lead cluster`]
-      );
-      res.status(201).json({
-        success: true,
-        cluster: {
-          id: clusterId,
-          name,
-          description,
-          leadCount: 0
-        }
-      });
-    } catch (err) {
-      res.status(400).json({ error: err.message || "Could not create cluster" });
     }
-  });
-  app.delete("/api/leads/custom/clusters/:name", requireJwtMiddleware, async (req, res) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) return res.status(401).json({ error: "Authentication required" });
-      const clusterName = decodeURIComponent(req.params.name);
-      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
-      await ds.query(
-        "DELETE FROM custom_leads WHERE user_id = ? AND cluster_name = ?",
-        [userId, clusterName]
-      );
-      await ds.query(
-        "DELETE FROM custom_clusters WHERE user_id = ? AND name = ?",
-        [userId, clusterName]
-      );
-      res.json({ success: true, deletedCluster: clusterName });
-    } catch (err) {
-      res.status(500).json({ error: err.message || "Could not delete cluster" });
-    }
-  });
-  app.put("/api/leads/custom/clusters/:name", requireJwtMiddleware, async (req, res) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) return res.status(401).json({ error: "Authentication required" });
-      const oldName = decodeURIComponent(req.params.name).trim();
-      const newName = String(req.body?.name || "").trim();
-      const description = String(req.body?.description || "").trim();
-      if (!newName) {
-        return res.status(400).json({ error: "New cluster name is required" });
+    const newList = listRepo.create({
+      id: listId,
+      userId,
+      name,
+      description: body.description ? String(body.description).trim() : null,
+      leadIds,
+      filterSummary: body.filterSummary ? String(body.filterSummary).trim() : "Custom Selected B2B Leads",
+      leadCount: leadIds.length || Number(body.leadCount) || 0
+    });
+    const saved = await listRepo.save(newList);
+    res.status(201).json({
+      success: true,
+      list: {
+        id: saved.id,
+        name: saved.name,
+        description: saved.description,
+        leadIds: saved.leadIds || [],
+        filterSummary: saved.filterSummary,
+        leadCount: saved.leadCount,
+        createdAt: saved.createdAt,
+        updatedAt: saved.updatedAt
       }
-      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
-      const checkRows = await ds.query(
-        "SELECT id, name FROM custom_clusters WHERE user_id = ? AND name = ?",
-        [userId, oldName]
-      );
-      if (checkRows && checkRows.length > 0) {
-        await ds.query(
-          "UPDATE custom_clusters SET name = ?, description = ? WHERE user_id = ? AND name = ?",
-          [newName, description || `${newName} lead cluster`, userId, oldName]
-        );
-      } else {
-        const clusterId = `cls_${Buffer.from(userId + "_" + newName).toString("base64").replace(/[^a-zA-Z0-9]/g, "").slice(0, 32)}`;
-        await ds.query(
-          "INSERT INTO custom_clusters (id, user_id, name, description, created_at) VALUES (?, ?, ?, ?, NOW())",
-          [clusterId, userId, newName, description || `${newName} lead cluster`]
+    });
+  } catch (err) {
+    console.error("Failed to save list:", err);
+    res.status(500).json({ error: err.message || "Failed to save list" });
+  }
+});
+router4.post("/:id/leads", optionalAuthMiddleware, async (req, res) => {
+  try {
+    const listId = req.params.id;
+    const body = req.body || {};
+    const newLeadIds = Array.isArray(body.leadIds) ? body.leadIds.map((id) => String(id)) : [];
+    if (!newLeadIds.length) {
+      return res.status(400).json({ error: "No lead IDs provided to add." });
+    }
+    const ds = await getDataSource();
+    const listRepo = ds.getRepository(SavedList);
+    let list = await listRepo.findOne({ where: { id: listId } });
+    if (!list) {
+      const rows = await ds.query("SELECT * FROM saved_lists WHERE id = ?", [listId]);
+      if (rows && rows.length > 0) {
+        const row = rows[0];
+        list = listRepo.create({
+          id: row.id,
+          userId: row.user_id,
+          name: row.name,
+          description: row.description,
+          leadIds: typeof row.lead_ids === "string" ? JSON.parse(row.lead_ids || "[]") : row.lead_ids || [],
+          filterSummary: row.filter_summary,
+          leadCount: Number(row.lead_count || 0)
+        });
+      }
+    }
+    if (!list) {
+      return res.status(404).json({ error: "Saved list not found" });
+    }
+    const existingIds = Array.isArray(list.leadIds) ? list.leadIds : typeof list.leadIds === "string" ? JSON.parse(list.leadIds || "[]") : [];
+    const mergedSet = /* @__PURE__ */ new Set([...existingIds, ...newLeadIds]);
+    const mergedArray = Array.from(mergedSet);
+    const addedCount = mergedArray.length - existingIds.length;
+    const userPlan = (req.user?.planId || req.user?.plan || "free").toLowerCase();
+    const userRole = (req.user?.role || "").toLowerCase();
+    const isPaidOrSuperadmin = userRole === "superadmin" || userPlan.includes("growth") || userPlan.includes("scale") || userPlan.includes("unlimited") || userPlan.includes("pro") || userPlan.includes("starter");
+    const maxLeadsAllowed = isPaidOrSuperadmin ? 5e3 : 1e3;
+    if (mergedArray.length > maxLeadsAllowed) {
+      return res.status(403).json({
+        error: isPaidOrSuperadmin ? `List capacity reached: Adding ${newLeadIds.length} leads would exceed the maximum limit of 5,000 leads per list (currently ${existingIds.length}).` : `Free plan limit: Adding ${newLeadIds.length} leads would exceed the 1,000 leads limit for this list (currently ${existingIds.length}). Upgrade to a paid plan for up to 5,000 leads per list.`
+      });
+    }
+    list.leadIds = mergedArray;
+    list.leadCount = mergedArray.length;
+    const saved = await listRepo.save(list);
+    await ds.query(
+      "UPDATE saved_lists SET lead_ids = ?, lead_count = ?, updated_at = NOW() WHERE id = ?",
+      [JSON.stringify(mergedArray), mergedArray.length, listId]
+    ).catch(() => {
+    });
+    res.json({
+      success: true,
+      addedCount,
+      list: {
+        id: saved.id,
+        name: saved.name,
+        description: saved.description,
+        leadIds: saved.leadIds || [],
+        filterSummary: saved.filterSummary,
+        leadCount: saved.leadCount,
+        createdAt: saved.createdAt,
+        updatedAt: saved.updatedAt
+      }
+    });
+  } catch (err) {
+    console.error("Failed to add leads to list:", err);
+    res.status(500).json({ error: err.message || "Failed to add leads to list" });
+  }
+});
+router4.delete("/:id/leads", async (req, res) => {
+  try {
+    const listId = req.params.id;
+    const body = req.body || {};
+    const leadIdsToRemove = Array.isArray(body.leadIds) ? body.leadIds.map((id) => String(id)) : [];
+    if (!leadIdsToRemove.length) {
+      return res.status(400).json({ error: "No lead IDs provided to remove." });
+    }
+    const ds = await getDataSource();
+    const listRepo = ds.getRepository(SavedList);
+    let list = await listRepo.findOne({ where: { id: listId } });
+    if (!list) {
+      return res.status(404).json({ error: "Saved list not found" });
+    }
+    const removeSet = new Set(leadIdsToRemove);
+    const existingIds = Array.isArray(list.leadIds) ? list.leadIds : typeof list.leadIds === "string" ? JSON.parse(list.leadIds || "[]") : [];
+    const updatedIds = existingIds.filter((id) => !removeSet.has(String(id)));
+    list.leadIds = updatedIds;
+    list.leadCount = updatedIds.length;
+    const saved = await listRepo.save(list);
+    await ds.query(
+      "UPDATE saved_lists SET lead_ids = ?, lead_count = ?, updated_at = NOW() WHERE id = ?",
+      [JSON.stringify(updatedIds), updatedIds.length, listId]
+    ).catch(() => {
+    });
+    res.json({
+      success: true,
+      removedCount: existingIds.length - updatedIds.length,
+      list: {
+        id: saved.id,
+        name: saved.name,
+        description: saved.description,
+        leadIds: saved.leadIds || [],
+        filterSummary: saved.filterSummary,
+        leadCount: saved.leadCount,
+        createdAt: saved.createdAt,
+        updatedAt: saved.updatedAt
+      }
+    });
+  } catch (err) {
+    console.error("Failed to batch remove leads from list:", err);
+    res.status(500).json({ error: err.message || "Failed to remove leads from list" });
+  }
+});
+router4.delete("/:id/leads/:leadId", async (req, res) => {
+  try {
+    const listId = req.params.id;
+    const leadId = req.params.leadId;
+    const ds = await getDataSource();
+    const listRepo = ds.getRepository(SavedList);
+    let list = await listRepo.findOne({ where: { id: listId } });
+    if (!list) {
+      return res.status(404).json({ error: "Saved list not found" });
+    }
+    const existingIds = Array.isArray(list.leadIds) ? list.leadIds : typeof list.leadIds === "string" ? JSON.parse(list.leadIds || "[]") : [];
+    const updatedIds = existingIds.filter((id) => String(id) !== String(leadId));
+    list.leadIds = updatedIds;
+    list.leadCount = updatedIds.length;
+    const saved = await listRepo.save(list);
+    await ds.query(
+      "UPDATE saved_lists SET lead_ids = ?, lead_count = ?, updated_at = NOW() WHERE id = ?",
+      [JSON.stringify(updatedIds), updatedIds.length, listId]
+    ).catch(() => {
+    });
+    res.json({
+      success: true,
+      list: {
+        id: saved.id,
+        name: saved.name,
+        description: saved.description,
+        leadIds: saved.leadIds || [],
+        filterSummary: saved.filterSummary,
+        leadCount: saved.leadCount,
+        createdAt: saved.createdAt,
+        updatedAt: saved.updatedAt
+      }
+    });
+  } catch (err) {
+    console.error("Failed to remove lead from list:", err);
+    res.status(500).json({ error: err.message || "Failed to remove lead from list" });
+  }
+});
+router4.delete("/:id", async (req, res) => {
+  try {
+    const targetId = req.params.id;
+    const ds = await getDataSource();
+    const listRepo = ds.getRepository(SavedList);
+    await listRepo.delete(targetId);
+    await ds.query("DELETE FROM saved_lists WHERE id = ?", [targetId]).catch(() => {
+    });
+    try {
+      const ds2 = SecondaryDataSource;
+      if (ds2 && ds2.isInitialized) {
+        await ds2.query("DELETE FROM saved_lists WHERE id = ?", [targetId]).catch(() => {
+        });
+      }
+    } catch {
+    }
+    res.json({ success: true, deleted: true, id: targetId });
+  } catch (err) {
+    console.error("Failed to delete list from database:", err);
+    res.status(500).json({ error: err.message || "Failed to delete list from database" });
+  }
+});
+router4.put("/:id", async (req, res) => {
+  try {
+    const targetId = req.params.id;
+    const { name, description } = req.body || {};
+    if (!name || !String(name).trim()) {
+      return res.status(400).json({ error: "List name cannot be empty." });
+    }
+    const ds = await getDataSource();
+    const listRepo = ds.getRepository(SavedList);
+    const targetList = await listRepo.findOne({ where: { id: targetId } });
+    if (!targetList) {
+      return res.status(404).json({ error: "Saved list not found." });
+    }
+    targetList.name = String(name).trim();
+    if (description !== void 0) {
+      targetList.description = String(description).trim();
+    }
+    targetList.updatedAt = /* @__PURE__ */ new Date();
+    const saved = await listRepo.save(targetList);
+    await ds.query(
+      "UPDATE saved_lists SET name = ?, description = ?, updated_at = NOW() WHERE id = ?",
+      [saved.name, saved.description, targetId]
+    ).catch(() => {
+    });
+    try {
+      const ds2 = SecondaryDataSource;
+      if (ds2 && ds2.isInitialized) {
+        await ds2.query(
+          "UPDATE saved_lists SET name = ?, description = ?, updated_at = NOW() WHERE id = ?",
+          [saved.name, saved.description, targetId]
         ).catch(() => {
         });
       }
-      await ds.query(
-        "UPDATE custom_leads SET cluster_name = ? WHERE user_id = ? AND cluster_name = ?",
-        [newName, userId, oldName]
-      );
-      res.json({
-        success: true,
-        oldName,
-        cluster: {
-          name: newName,
-          description: description || `${newName} lead cluster`
-        },
-        message: `Cluster renamed from "${oldName}" to "${newName}".`
-      });
-    } catch (err) {
-      console.error("Failed to rename custom cluster:", err);
-      res.status(500).json({ error: err.message || "Could not rename cluster" });
+    } catch {
     }
-  });
-  app.post("/api/leads/custom", requireJwtMiddleware, async (req, res) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) {
-        return res.status(401).json({ error: "Authentication required to create custom leads." });
-      }
-      const body = req.body || {};
-      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
-      const customId = body.id || `custom_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-      const safeTrim = (v, maxLen, fallback = "") => {
-        if (v === null || v === void 0) return fallback.slice(0, maxLen);
-        const s = String(v).replace(/\0/g, "").trim();
-        return (s || fallback).slice(0, maxLen);
-      };
-      const clusterName = safeTrim(body.clusterName || body.cluster, 128, "");
-      if (!clusterName) {
-        return res.status(400).json({ error: "A valid cluster name is required. Every custom lead must belong to a cluster." });
-      }
-      const userParam = String(userId);
-      const emailParam = req.user?.email ? String(req.user.email) : userParam;
-      const targetEmail = safeTrim(body.contactEmail, 255, "").toLowerCase();
-      const targetCompany = safeTrim(body.companyName, 255, "").toLowerCase();
-      const targetContact = safeTrim(body.contactName, 255, "").toLowerCase();
-      if (targetEmail) {
-        const existingByEmail = await ds.query(
-          `SELECT id, company_name, contact_name, cluster_name FROM custom_leads 
-           WHERE (user_id = ? OR user_id = ?) AND LOWER(contact_email) = ? LIMIT 1`,
-          [userParam, emailParam, targetEmail]
-        );
-        if (existingByEmail && existingByEmail.length > 0) {
-          return res.status(409).json({
-            error: `Duplicate lead prevented: A custom lead with email "${targetEmail}" (${existingByEmail[0].company_name || "Business"}) already exists in your cluster "${existingByEmail[0].cluster_name}".`
-          });
-        }
-      }
-      if (targetCompany && targetContact) {
-        const existingByName = await ds.query(
-          `SELECT id, cluster_name FROM custom_leads 
-           WHERE (user_id = ? OR user_id = ?) AND LOWER(company_name) = ? AND LOWER(contact_name) = ? LIMIT 1`,
-          [userParam, emailParam, targetCompany, targetContact]
-        );
-        if (existingByName && existingByName.length > 0) {
-          return res.status(409).json({
-            error: `Duplicate lead prevented: "${body.contactName}" at "${body.companyName}" already exists in your cluster "${existingByName[0].cluster_name}".`
-          });
-        }
-      }
-      const userPlan = (req.user?.planId || req.user?.plan || "free").toLowerCase();
-      const userRole = (req.user?.role || "").toLowerCase();
-      const isPaidOrSuperadmin = userRole === "superadmin" || userPlan.includes("growth") || userPlan.includes("scale") || userPlan.includes("unlimited") || userPlan.includes("pro") || userPlan.includes("starter");
-      const clusterLeadCountRes = await ds.query(
-        "SELECT COUNT(*) as count FROM custom_leads WHERE (user_id = ? OR user_id = ?) AND cluster_name = ?",
-        [userParam, emailParam, clusterName]
-      );
-      const currentClusterCount = Number(clusterLeadCountRes[0]?.count || 0);
-      const maxLeadsPerCluster = isPaidOrSuperadmin ? 5e3 : 1e3;
-      if (currentClusterCount >= maxLeadsPerCluster) {
-        return res.status(403).json({
-          error: isPaidOrSuperadmin ? `Cluster limit reached: Each cluster can hold a maximum of 5,000 custom leads.` : `Free plan limit: A cluster can contain a maximum of 1,000 custom leads. Upgrade to a paid plan to store up to 5,000 leads per cluster.`
+    res.json({
+      success: true,
+      list: {
+        id: saved.id,
+        name: saved.name,
+        description: saved.description,
+        leadIds: Array.isArray(saved.leadIds) ? saved.leadIds : typeof saved.leadIds === "string" ? JSON.parse(saved.leadIds || "[]") : [],
+        filterSummary: saved.filterSummary,
+        leadCount: saved.leadCount,
+        createdAt: saved.createdAt,
+        updatedAt: saved.updatedAt
+      },
+      message: "Saved list updated successfully."
+    });
+  } catch (err) {
+    console.error("Failed to update saved list:", err);
+    res.status(500).json({ error: err.message || "Failed to update saved list" });
+  }
+});
+var savedListsRoutes_default = router4;
+
+// server/routes/adminRoutes.ts
+import { Router as Router5 } from "express";
+init_dataSource();
+init_SavedList();
+init_Lead();
+var router5 = Router5();
+router5.get("/users", requireSuperAdminMiddleware, async (_req, res) => {
+  try {
+    const users = await getAllUsersForAdmin();
+    res.json({ users });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+router5.put("/users/:id", requireSuperAdminMiddleware, async (req, res) => {
+  try {
+    const updated = await updateUserByAdmin(req.params.id, req.body || {});
+    res.json({ user: updated });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+router5.get("/stats", requireSuperAdminMiddleware, async (_req, res) => {
+  try {
+    const stats = await getAdminStats();
+    res.json(stats);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+router5.post("/leads/batch", requireSuperAdminMiddleware, async (req, res) => {
+  try {
+    const { leads, source, createList, listName } = req.body || {};
+    const result = await batchInsertLeads(
+      (leads || []).map((l) => ({ ...l, source: source || "superadmin_import" }))
+    );
+    let savedList = null;
+    if (createList || listName) {
+      try {
+        const ds = await getDataSource();
+        const listRepo = ds.getRepository(SavedList);
+        const name = String(listName || `Imported List (${(/* @__PURE__ */ new Date()).toLocaleDateString()})`).trim();
+        const targetIds = (leads || []).map((l) => l.id).filter(Boolean);
+        const newList = listRepo.create({
+          id: `list_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+          userId: req.user?.id ? String(req.user.id) : null,
+          name,
+          description: `Imported via ${source || "spreadsheet"} on ${(/* @__PURE__ */ new Date()).toLocaleString()}`,
+          leadIds: targetIds,
+          filterSummary: `${result.insertedCount.toLocaleString()} Imported B2B Accounts`,
+          leadCount: result.insertedCount
         });
+        savedList = await listRepo.save(newList);
+      } catch (listErr) {
+        console.warn("Could not auto-create list for imported leads:", listErr);
       }
-      const techStackJson = JSON.stringify(
-        Array.isArray(body.techStack) ? body.techStack : String(body.techStack || "AWS, Salesforce").split(/[,;|]/).map((s) => s.trim()).filter(Boolean)
-      );
-      const intentScore = body.buyingIntentScore !== void 0 && body.buyingIntentScore !== null && !isNaN(Number(body.buyingIntentScore)) ? Math.max(0, Math.min(100, Math.round(Number(body.buyingIntentScore)))) : 88;
-      await ds.query(
-        `INSERT INTO custom_leads (
-          id, user_id, cluster_name, company_name, domain, industry, employee_range, employee_count,
-          revenue_range, annual_revenue_usd, country, city, contact_name, contact_title,
-          seniority, department, contact_email, contact_phone, linkedin_url,
-          verification_status, funding_stage, tech_stack, buying_intent_score,
-          founded_year, has_direct_phone, source, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-        [
-          customId,
-          userId,
-          clusterName,
-          safeTrim(body.companyName, 255, "My Custom Business"),
-          safeTrim(body.domain, 255, "business.io"),
-          safeTrim(body.industry, 255, "Enterprise Software & SaaS"),
-          safeTrim(body.employeeRange, 100, "51-200"),
-          Number(body.employeeCount) || 120,
-          safeTrim(body.revenueRange, 100, "$10M - $50M"),
-          Number(body.annualRevenueUsd) || 24e6,
-          safeTrim(body.country, 100, "United States"),
-          safeTrim(body.city, 255, "San Francisco, CA"),
-          safeTrim(body.contactName, 255, "Executive Contact"),
-          safeTrim(body.contactTitle, 255, "VP of Operations"),
-          safeTrim(body.seniority, 100, "VP"),
-          safeTrim(body.department, 100, "Operations & Supply Chain"),
-          safeTrim(body.contactEmail, 255, "contact@business.io"),
-          safeTrim(body.contactPhone, 100, "+1 (415) 555-0142"),
-          safeTrim(body.linkedinUrl, 500, ""),
-          safeTrim(body.verificationStatus, 50, "Verified"),
-          safeTrim(body.fundingStage, 100, "Series B"),
-          techStackJson,
-          intentScore,
-          Number(body.foundedYear) || 2021,
-          body.hasDirectPhone !== void 0 ? body.hasDirectPhone ? 1 : 0 : 1,
-          "manual_custom_lead"
-        ]
-      );
-      const clusterId = `cls_${Buffer.from(userId + "_" + clusterName).toString("base64").replace(/[^a-zA-Z0-9]/g, "").slice(0, 32)}`;
-      await ds.query(
-        `INSERT IGNORE INTO custom_clusters (id, user_id, name, description, created_at) VALUES (?, ?, ?, ?, NOW())`,
-        [clusterId, userId, clusterName, `${clusterName} lead cluster`]
+    }
+    res.status(201).json({ ...result, list: savedList });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+router5.delete("/leads/:id", requireSuperAdminMiddleware, async (req, res) => {
+  try {
+    const targetId = req.params.id;
+    if (!targetId) {
+      return res.status(400).json({ error: "Lead ID required" });
+    }
+    const ds2 = await getLeadsDataSource();
+    const leadRepo = ds2.getRepository(Lead);
+    const existing = await leadRepo.findOne({ where: { id: targetId } });
+    if (!existing) {
+      const ds1 = await getDataSource();
+      await ds1.query("DELETE FROM custom_leads WHERE id = ?", [targetId]).catch(() => {
+      });
+      return res.json({
+        success: true,
+        deleted: true,
+        id: targetId,
+        message: "Lead was not found in core database or was already removed."
+      });
+    }
+    await leadRepo.delete(targetId);
+    try {
+      const ds3 = await getDataSource();
+      await ds3.query(
+        `UPDATE saved_lists 
+         SET lead_ids = JSON_REMOVE(lead_ids, JSON_UNQUOTE(JSON_SEARCH(lead_ids, 'one', ?))),
+             lead_count = GREATEST(0, lead_count - 1)
+         WHERE JSON_SEARCH(lead_ids, 'one', ?) IS NOT NULL`,
+        [targetId, targetId]
       ).catch(() => {
       });
-      res.status(201).json({
-        success: true,
-        lead: {
-          id: customId,
-          clusterName,
-          companyName: safeTrim(body.companyName, 255, "My Custom Business"),
-          domain: safeTrim(body.domain, 255, "business.io"),
-          industry: safeTrim(body.industry, 255, "Enterprise Software & SaaS"),
-          employeeRange: safeTrim(body.employeeRange, 100, "51-200"),
-          employeeCount: Number(body.employeeCount) || 120,
-          revenueRange: safeTrim(body.revenueRange, 100, "$10M - $50M"),
-          annualRevenueUsd: Number(body.annualRevenueUsd) || 24e6,
-          country: safeTrim(body.country, 100, "United States"),
-          city: safeTrim(body.city, 255, "San Francisco, CA"),
-          contactName: safeTrim(body.contactName, 255, "Executive Contact"),
-          contactTitle: safeTrim(body.contactTitle, 255, "VP of Operations"),
-          seniority: safeTrim(body.seniority, 100, "VP"),
-          department: safeTrim(body.department, 100, "Operations & Supply Chain"),
-          contactEmail: safeTrim(body.contactEmail, 255, "contact@business.io"),
-          contactPhone: safeTrim(body.contactPhone, 100, "+1 (415) 555-0142"),
-          verificationStatus: safeTrim(body.verificationStatus, 50, "Verified"),
-          fundingStage: safeTrim(body.fundingStage, 100, "Series B"),
-          buyingIntentScore: Number(body.buyingIntentScore) || 88,
-          isCustom: true,
-          createdAt: (/* @__PURE__ */ new Date()).toISOString()
-        },
-        message: `Custom lead added to cluster "${clusterName}".`
-      });
-    } catch (error) {
-      res.status(400).json({ error: error.message || "Could not add custom lead" });
+    } catch (listErr) {
+      console.warn("Saved lists cleanup warning:", listErr);
     }
-  });
-  app.delete("/api/leads/custom/:id", requireJwtMiddleware, async (req, res) => {
     try {
-      const targetId = req.params.id;
-      const userId = req.user?.id;
-      if (!userId) {
-        return res.status(401).json({ error: "Authentication required" });
+      if (typeof invalidateGlobalMetricsCache === "function") {
+        invalidateGlobalMetricsCache();
       }
-      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
-      const userParam = String(userId);
-      const emailParam = req.user?.email ? String(req.user.email) : userParam;
-      const result = await ds.query(
-        "DELETE FROM custom_leads WHERE id = ? AND (user_id = ? OR user_id = ?)",
-        [targetId, userParam, emailParam]
-      );
-      const deleted = (result?.affectedRows || 0) > 0;
-      res.json({ deleted, id: targetId });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
+    } catch {
     }
-  });
-  app.put("/api/leads/custom/:id", requireJwtMiddleware, async (req, res) => {
-    try {
-      const targetId = req.params.id;
-      const userId = req.user?.id;
-      if (!userId) {
-        return res.status(401).json({ error: "Authentication required" });
-      }
-      const body = req.body || {};
-      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
-      const safeTrim = (v, maxLen, fallback = "") => {
-        if (v === null || v === void 0) return fallback.slice(0, maxLen);
-        const s = String(v).replace(/\0/g, "").trim();
-        return (s || fallback).slice(0, maxLen);
-      };
-      const userParam = String(userId);
-      const emailParam = req.user?.email ? String(req.user.email) : userParam;
-      const existing = await ds.query(
-        "SELECT id, cluster_name FROM custom_leads WHERE id = ? AND (user_id = ? OR user_id = ?)",
-        [targetId, userParam, emailParam]
-      );
-      if (!existing || existing.length === 0) {
-        return res.status(404).json({ error: "Custom lead not found or not owned by your profile." });
-      }
-      const targetEmail = safeTrim(body.contactEmail, 255, "").toLowerCase();
-      if (targetEmail) {
-        const existingOther = await ds.query(
-          `SELECT id, company_name, cluster_name FROM custom_leads 
-           WHERE (user_id = ? OR user_id = ?) AND LOWER(contact_email) = ? AND id != ? LIMIT 1`,
-          [userParam, emailParam, targetEmail, targetId]
-        );
-        if (existingOther && existingOther.length > 0) {
-          return res.status(409).json({
-            error: `Duplicate email: Another custom lead with email "${targetEmail}" already exists in your cluster "${existingOther[0].cluster_name}".`
-          });
+    console.log(`[CORE DATABASE DELETION] Superadmin (${req.user?.email || "superadmin"}) permanently deleted core lead: ${targetId} (${existing.companyName}). Reflected across all accounts.`);
+    res.json({
+      success: true,
+      deleted: true,
+      id: targetId,
+      companyName: existing.companyName,
+      message: "Lead permanently deleted from the core database. This change is reflected platform-wide for all accounts."
+    });
+  } catch (err) {
+    console.error("Failed to delete core database lead:", err);
+    res.status(500).json({ error: err.message || "Failed to delete core database lead" });
+  }
+});
+var activeIngestionJobs = /* @__PURE__ */ new Map();
+router5.get("/leads/upload-progress/:jobId", requireSuperAdminMiddleware, (req, res) => {
+  const job = activeIngestionJobs.get(req.params.jobId);
+  if (!job) {
+    return res.status(404).json({ error: "Ingestion task not found" });
+  }
+  res.json(job);
+});
+router5.post("/leads/upload-cancel/:jobId", requireSuperAdminMiddleware, (req, res) => {
+  const job = activeIngestionJobs.get(req.params.jobId);
+  if (job) {
+    job.cancelRequested = true;
+    job.status = "cancelled";
+    return res.json({ success: true, message: "Ingestion cancellation requested." });
+  }
+  res.status(404).json({ error: "Task not found" });
+});
+router5.post("/leads/upload-stream", requireSuperAdminMiddleware, async (req, res) => {
+  try {
+    const { fileName, fileBase64, createList, listName } = req.body || {};
+    if (!fileBase64) {
+      return res.status(400).json({ error: "No file data received" });
+    }
+    const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const job = {
+      jobId,
+      fileName: fileName || "spreadsheet.xlsx",
+      status: "parsing",
+      processedRows: 0,
+      totalRows: 0,
+      percent: 0,
+      insertedCount: 0,
+      startTime: Date.now()
+    };
+    activeIngestionJobs.set(jobId, job);
+    res.status(202).json({
+      success: true,
+      jobId,
+      message: "Ingestion started in background. You can continue working in other tabs."
+    });
+    (async () => {
+      try {
+        console.log(`[FILE STREAM INGESTION ${jobId}] Processing: ${fileName}...`);
+        let pureBase64 = fileBase64;
+        const commaIdx = fileBase64.indexOf(",");
+        if (commaIdx !== -1 && commaIdx < 100) {
+          pureBase64 = fileBase64.slice(commaIdx + 1);
         }
-      }
-      const clusterName = safeTrim(body.clusterName || body.cluster, 128, existing[0].cluster_name || "General");
-      const userPlan = (req.user?.planId || req.user?.plan || "free").toLowerCase();
-      const userRole = (req.user?.role || "").toLowerCase();
-      const isPaidOrSuperadmin = userRole === "superadmin" || userPlan.includes("growth") || userPlan.includes("scale") || userPlan.includes("unlimited") || userPlan.includes("pro") || userPlan.includes("starter");
-      const clusterLeadCountRes = await ds.query(
-        "SELECT COUNT(*) as count FROM custom_leads WHERE (user_id = ? OR user_id = ?) AND cluster_name = ?",
-        [userParam, emailParam, clusterName]
-      );
-      const currentClusterCount = Number(clusterLeadCountRes[0]?.count || 0);
-      const maxLeadsPerCluster = isPaidOrSuperadmin ? 5e3 : 1e3;
-      if (currentClusterCount >= maxLeadsPerCluster) {
-        return res.status(403).json({
-          error: isPaidOrSuperadmin ? `Cluster limit reached: Each cluster can hold a maximum of 5,000 custom leads.` : `Free plan limit: A cluster can contain a maximum of 1,000 custom leads. Upgrade to a paid plan to store up to 5,000 leads per cluster.`
-        });
-      }
-      const techStackJson = JSON.stringify(
-        Array.isArray(body.techStack) ? body.techStack : String(body.techStack || "AWS, Salesforce").split(/[,;|]/).map((s) => s.trim()).filter(Boolean)
-      );
-      await ds.query(
-        `UPDATE custom_leads SET
-          cluster_name = ?,
-          company_name = ?,
-          domain = ?,
-          industry = ?,
-          employee_range = ?,
-          employee_count = ?,
-          revenue_range = ?,
-          annual_revenue_usd = ?,
-          country = ?,
-          city = ?,
-          contact_name = ?,
-          contact_title = ?,
-          seniority = ?,
-          department = ?,
-          contact_email = ?,
-          contact_phone = ?,
-          linkedin_url = ?,
-          verification_status = ?,
-          funding_stage = ?,
-          tech_stack = ?,
-          buying_intent_score = ?,
-          founded_year = ?,
-          has_direct_phone = ?
-        WHERE id = ? AND (user_id = ? OR user_id = ?)`,
-        [
-          clusterName,
-          safeTrim(body.companyName, 255, "My Custom Business"),
-          safeTrim(body.domain, 255, "business.io"),
-          safeTrim(body.industry, 255, "Enterprise Software & SaaS"),
-          safeTrim(body.employeeRange, 100, "51-200"),
-          Number(body.employeeCount) || 120,
-          safeTrim(body.revenueRange, 100, "$10M - $50M"),
-          Number(body.annualRevenueUsd) || 24e6,
-          safeTrim(body.country, 100, "United States"),
-          safeTrim(body.city, 255, "San Francisco, CA"),
-          safeTrim(body.contactName, 255, "Executive Contact"),
-          safeTrim(body.contactTitle, 255, "VP of Operations"),
-          safeTrim(body.seniority, 100, "VP"),
-          safeTrim(body.department, 100, "Operations & Supply Chain"),
-          safeTrim(body.contactEmail, 255, "contact@business.io"),
-          safeTrim(body.contactPhone, 100, "+1 (415) 555-0142"),
-          safeTrim(body.linkedinUrl, 500, ""),
-          safeTrim(body.verificationStatus, 50, "Verified"),
-          safeTrim(body.fundingStage, 100, "Series B"),
-          techStackJson,
-          Number(body.buyingIntentScore) || 88,
-          Number(body.foundedYear) || 2021,
-          body.hasDirectPhone !== void 0 ? body.hasDirectPhone ? 1 : 0 : 1,
-          targetId,
-          userParam,
-          emailParam
-        ]
-      );
-      const clusterId = `cls_${Buffer.from(userId + "_" + clusterName).toString("base64").replace(/[^a-zA-Z0-9]/g, "").slice(0, 32)}`;
-      await ds.query(
-        "INSERT IGNORE INTO custom_clusters (id, user_id, name, description, created_at) VALUES (?, ?, ?, ?, NOW())",
-        [clusterId, userId, clusterName, `${clusterName} lead cluster`]
-      ).catch(() => {
-      });
-      res.json({
-        success: true,
-        lead: {
-          id: targetId,
-          clusterName,
-          companyName: safeTrim(body.companyName, 255, "My Custom Business"),
-          domain: safeTrim(body.domain, 255, "business.io"),
-          industry: safeTrim(body.industry, 255, "Enterprise Software & SaaS"),
-          employeeRange: safeTrim(body.employeeRange, 100, "51-200"),
-          employeeCount: Number(body.employeeCount) || 120,
-          revenueRange: safeTrim(body.revenueRange, 100, "$10M - $50M"),
-          annualRevenueUsd: Number(body.annualRevenueUsd) || 24e6,
-          country: safeTrim(body.country, 100, "United States"),
-          city: safeTrim(body.city, 255, "San Francisco, CA"),
-          contactName: safeTrim(body.contactName, 255, "Executive Contact"),
-          contactTitle: safeTrim(body.contactTitle, 255, "VP of Operations"),
-          seniority: safeTrim(body.seniority, 100, "VP"),
-          department: safeTrim(body.department, 100, "Operations & Supply Chain"),
-          contactEmail: safeTrim(body.contactEmail, 255, "contact@business.io"),
-          contactPhone: safeTrim(body.contactPhone, 100, "+1 (415) 555-0142"),
-          verificationStatus: safeTrim(body.verificationStatus, 50, "Verified"),
-          fundingStage: safeTrim(body.fundingStage, 100, "Series B"),
-          buyingIntentScore: Number(body.buyingIntentScore) || 88,
-          isCustom: true
-        },
-        message: "Custom lead updated successfully."
-      });
-    } catch (err) {
-      console.error("Failed to update custom lead:", err);
-      res.status(500).json({ error: err.message || "Could not update custom lead" });
-    }
-  });
-  app.get("/api/lists", async (req, res) => {
-    try {
-      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
-      const listRepo = ds.getRepository((await Promise.resolve().then(() => (init_SavedList(), SavedList_exports))).SavedList);
-      const userId = req.user?.id || req.user?.email ? String(req.user.id || req.user.email) : null;
-      let lists = [];
-      if (userId) {
-        lists = await listRepo.createQueryBuilder("list").where("list.userId = :userId OR list.userId IS NULL", { userId }).orderBy("list.createdAt", "DESC").getMany();
-      } else {
-        lists = await listRepo.find({
-          order: { createdAt: "DESC" },
-          take: 100
-        });
-      }
-      res.json({
-        lists: lists.map((l) => ({
-          id: l.id,
-          name: l.name,
-          description: l.description,
-          leadIds: Array.isArray(l.leadIds) ? l.leadIds : typeof l.leadIds === "string" ? JSON.parse(l.leadIds || "[]") : [],
-          filterSummary: l.filterSummary,
-          leadCount: l.leadCount,
-          createdAt: l.createdAt,
-          updatedAt: l.updatedAt
-        }))
-      });
-    } catch (err) {
-      console.error("Failed to get saved lists:", err);
-      res.status(500).json({ error: err.message || "Failed to fetch saved lists" });
-    }
-  });
-  app.post("/api/lists", optionalAuthMiddleware, async (req, res) => {
-    try {
-      const body = req.body || {};
-      const name = String(body.name || "").trim();
-      if (!name) {
-        return res.status(400).json({ error: "List name is required" });
-      }
-      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
-      const listRepo = ds.getRepository((await Promise.resolve().then(() => (init_SavedList(), SavedList_exports))).SavedList);
-      const leadIds = Array.isArray(body.leadIds) ? body.leadIds : [];
-      const listId = body.id && /^[a-zA-Z0-9_\-]+$/.test(body.id) ? body.id : `list_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-      const userId = req.user?.id || req.user?.email ? String(req.user.id || req.user.email) : null;
-      const userPlan = (req.user?.planId || req.user?.plan || "free").toLowerCase();
-      const userRole = (req.user?.role || "").toLowerCase();
-      const isPaidOrSuperadmin = userRole === "superadmin" || userPlan.includes("growth") || userPlan.includes("scale") || userPlan.includes("unlimited") || userPlan.includes("pro") || userPlan.includes("starter");
-      if (userId) {
-        if (!isPaidOrSuperadmin) {
-          const countRes = await ds.query(
-            "SELECT COUNT(*) as count FROM saved_lists WHERE user_id = ?",
-            [userId]
-          );
-          if (Number(countRes[0]?.count || 0) >= 5) {
-            return res.status(403).json({
-              error: "Free accounts are limited to 5 saved lists total. Delete an existing list or upgrade to a paid plan to create more."
-            });
+        const buffer = Buffer.from(pureBase64, "base64");
+        const clean = (val) => {
+          if (val === null || val === void 0) return "";
+          let s = String(val).trim().replace(/^["']|["']$/g, "");
+          s = s.replace(/\0/g, "").trim();
+          return s;
+        };
+        const cleanField = (val, maxLen, fallback = "") => {
+          const s = clean(val);
+          if (!s) return fallback.slice(0, maxLen);
+          return s.slice(0, maxLen);
+        };
+        const rowsToInsert = [];
+        const isZipArchive = buffer.length > 4 && buffer[0] === 80 && buffer[1] === 75;
+        const isExcel = isZipArchive || String(fileName || "").endsWith(".xlsx") || String(fileName || "").endsWith(".xls");
+        if (isExcel) {
+          const XLSX = await import("xlsx");
+          const workbook = XLSX.read(buffer, {
+            type: "buffer",
+            cellFormula: false,
+            cellHTML: false,
+            cellText: false
+          });
+          let activeSheet = null;
+          for (const name of workbook.SheetNames) {
+            const sheet = workbook.Sheets[name];
+            if (sheet && sheet["!ref"]) {
+              activeSheet = sheet;
+              break;
+            }
           }
-          if (leadIds.length > 1e3) {
-            return res.status(403).json({
-              error: `Free plan limit: A saved list cannot exceed 1,000 leads (selected ${leadIds.length}). Upgrade to a paid plan for up to 5,000 leads per list.`
+          if (!activeSheet) {
+            activeSheet = workbook.Sheets[workbook.SheetNames[0]];
+          }
+          const rawMatrix = XLSX.utils.sheet_to_json(activeSheet, { header: 1, defval: "" });
+          if (rawMatrix.length < 2) {
+            throw new Error("Spreadsheet does not contain data rows or headers.");
+          }
+          const rawHeaders = (rawMatrix[0] || []).map((h) => clean(h).toLowerCase());
+          job.totalRows = rawMatrix.length - 1;
+          job.status = "ingesting";
+          for (let r = 1; r < rawMatrix.length; r++) {
+            if (job.cancelRequested) {
+              console.log(`[INGESTION ${jobId}] Ingestion cancelled by user at row ${r}`);
+              job.status = "cancelled";
+              return;
+            }
+            const rowArr = rawMatrix[r] || [];
+            const rowObj = {};
+            for (let col = 0; col < rawHeaders.length; col++) {
+              const key = rawHeaders[col];
+              if (key) rowObj[key] = clean(rowArr[col]);
+            }
+            const company = cleanField(
+              rowObj.company || rowObj.companyname || rowObj["company name"] || rowObj.organization || rowObj.business || rowObj.account || rowArr[0],
+              255,
+              `Enterprise #${r}`
+            );
+            const domain = cleanField(
+              rowObj.domain || rowObj.website || rowObj.url || rowObj["website domain"],
+              255,
+              company ? `${company.toLowerCase().replace(/[^a-z0-9]/g, "")}.com` : "company.io"
+            );
+            const industry = cleanField(rowObj.industry || rowObj.sector || rowObj.category, 128, "Business Services");
+            const contactName = cleanField(
+              rowObj.name || rowObj.contact || rowObj.contactname || rowObj["contact name"] || (rowObj["first name"] ? `${clean(rowObj["first name"])} ${clean(rowObj["last name"] || "")}`.trim() : ""),
+              255,
+              "Executive Decision Maker"
+            );
+            const contactTitle = cleanField(rowObj.title || rowObj.jobtitle || rowObj["job title"] || rowObj.role, 255, "Director of Operations");
+            const contactEmail = cleanField(rowObj.email || rowObj.workemail || rowObj["contact email"] || rowObj["work email"], 255, `contact_${r}@${domain}`);
+            const contactPhone = cleanField(rowObj.phone || rowObj.mobile || rowObj.directphone || rowObj["direct phone"], 64, "+1 (555) 019-3829");
+            rowsToInsert.push({
+              companyName: company,
+              domain,
+              industry,
+              contactName,
+              contactTitle,
+              contactEmail,
+              contactPhone,
+              country: cleanField(rowObj.country || rowObj.nation, 128, "USA"),
+              city: cleanField(rowObj.city || rowObj.location, 128, "San Francisco, CA"),
+              employeeRange: cleanField(rowObj.employees || rowObj.employeerange || rowObj["employee range"], 64, "51-200"),
+              employeeCount: Number(clean(rowObj.employeecount || rowObj["employee count"] || rowObj.size)) || 150,
+              revenueRange: cleanField(rowObj.revenue || rowObj.revenuerange || rowObj["revenue range"], 64, "$10M - $50M"),
+              annualRevenueUsd: Number(clean(rowObj.annualrevenue || rowObj["annual revenue"])) || 25e6,
+              fundingStage: cleanField(rowObj.funding || rowObj.fundingstage, 64, "Series B"),
+              buyingIntentScore: Number(clean(rowObj.intent || rowObj.intentscore)) || 90,
+              techStack: ["AWS", "Salesforce"]
             });
           }
         } else {
-          const lifetimeRes = await ds.query(
-            "SELECT COUNT(*) as count FROM saved_lists WHERE user_id = ?",
-            [userId]
+          let isBinary = false;
+          for (let b = 0; b < Math.min(100, buffer.length); b++) {
+            if (buffer[b] === 0) {
+              isBinary = true;
+              break;
+            }
+          }
+          if (isBinary) {
+            throw new Error("Uploaded CSV file appears to be binary or corrupted. If this was an Excel (.xlsx) file renamed to .csv, please keep the original .xlsx extension.");
+          }
+          const textContent = buffer.toString("utf8");
+          const lines = textContent.split(/\r?\n/).filter(Boolean);
+          if (lines.length < 2) {
+            throw new Error("CSV file does not contain enough rows.");
+          }
+          const delimiter = lines[0].includes("	") ? "	" : ",";
+          const headers = lines[0].split(delimiter).map((h) => clean(h).toLowerCase());
+          job.totalRows = lines.length - 1;
+          job.status = "ingesting";
+          for (let i = 1; i < lines.length; i++) {
+            if (job.cancelRequested) {
+              job.status = "cancelled";
+              return;
+            }
+            const cols = lines[i].split(delimiter);
+            const rowObj = {};
+            headers.forEach((h, idx) => {
+              rowObj[h] = clean(cols[idx]);
+            });
+            const company = cleanField(rowObj.company || rowObj.companyname || cols[0], 255, `Enterprise #${i}`);
+            const domain = cleanField(rowObj.domain || rowObj.website, 255, "company.io");
+            rowsToInsert.push({
+              companyName: company,
+              domain,
+              industry: cleanField(rowObj.industry, 128, "Business Services"),
+              contactName: cleanField(rowObj.name || rowObj.contact, 255, "Executive Decision Maker"),
+              contactTitle: cleanField(rowObj.title, 255, "Director of Operations"),
+              contactEmail: cleanField(rowObj.email, 255, `contact_${i}@${domain}`),
+              contactPhone: cleanField(rowObj.phone, 64, "+1 (555) 019-3829"),
+              country: cleanField(rowObj.country, 128, "USA"),
+              city: cleanField(rowObj.city, 128, "San Francisco, CA"),
+              employeeRange: cleanField(rowObj.employees, 64, "51-200"),
+              revenueRange: cleanField(rowObj.revenue, 64, "$10M - $50M"),
+              fundingStage: "Series B",
+              buyingIntentScore: 88,
+              techStack: ["AWS", "Salesforce"]
+            });
+          }
+        }
+        if (rowsToInsert.length === 0) {
+          throw new Error("Zero valid lead records found in uploaded file.");
+        }
+        console.log(`[INGESTION ${jobId}] Inserting ${rowsToInsert.length.toLocaleString()} leads in chunks to MySQL...`);
+        const CHUNK = 1e3;
+        let totalInserted = 0;
+        for (let c = 0; c < rowsToInsert.length; c += CHUNK) {
+          if (job.cancelRequested) {
+            job.status = "cancelled";
+            console.log(`[INGESTION ${jobId}] Aborted during SQL insertion.`);
+            return;
+          }
+          const currentChunk = rowsToInsert.slice(c, c + CHUNK);
+          const resBatch = await batchInsertLeads(
+            currentChunk.map((l) => ({ ...l, source: fileName || "spreadsheet" }))
           );
-          if (Number(lifetimeRes[0]?.count || 0) >= 1e3) {
-            return res.status(403).json({
-              error: "Lifetime limit reached: You have reached the maximum limit of 1,000 saved lists for your account."
+          totalInserted += resBatch.insertedCount;
+          job.processedRows = Math.min(job.totalRows, c + currentChunk.length);
+          job.insertedCount = totalInserted;
+          job.percent = Math.min(100, Math.round(job.processedRows / job.totalRows * 100));
+        }
+        let savedList = null;
+        if (createList || listName) {
+          try {
+            const ds = await getDataSource();
+            const listRepo = ds.getRepository(SavedList);
+            const name = String(listName || fileName?.replace(/\.[^/.]+$/, "") || `Imported List (${(/* @__PURE__ */ new Date()).toLocaleDateString()})`).trim();
+            const targetIds = rowsToInsert.map((l) => l.id).filter(Boolean);
+            const newList = listRepo.create({
+              id: `list_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+              userId: req.user?.id ? String(req.user.id) : null,
+              name,
+              description: `Imported from ${fileName || "spreadsheet"} (${totalInserted.toLocaleString()} leads)`,
+              leadIds: targetIds,
+              filterSummary: `${totalInserted.toLocaleString()} Leads from ${fileName || "File"}`,
+              leadCount: totalInserted
             });
-          }
-          const dailyRes = await ds.query(
-            "SELECT COUNT(*) as count FROM saved_lists WHERE user_id = ? AND created_at >= CURDATE()",
-            [userId]
-          );
-          if (Number(dailyRes[0]?.count || 0) >= 50) {
-            return res.status(403).json({
-              error: "Daily limit reached: You can create up to 50 saved lists per day on your plan. This resets daily at midnight."
-            });
-          }
-          if (leadIds.length > 5e3) {
-            return res.status(403).json({
-              error: `List capacity reached: A saved list cannot exceed 5,000 leads (selected ${leadIds.length}).`
-            });
+            savedList = await listRepo.save(newList);
+            job.list = savedList;
+          } catch (listErr) {
+            console.warn("Could not auto-create list for imported leads:", listErr);
           }
         }
+        job.status = "completed";
+        job.percent = 100;
+        console.log(`[INGESTION ${jobId}] Finished successfully! ${totalInserted.toLocaleString()} records committed to MySQL.`);
+      } catch (err) {
+        console.error(`[INGESTION ${jobId}] Failed:`, err);
+        job.status = "error";
+        job.error = err.message || "Processing failed";
       }
-      const newList = listRepo.create({
-        id: listId,
-        userId,
-        name,
-        description: body.description ? String(body.description).trim() : null,
-        leadIds,
-        filterSummary: body.filterSummary ? String(body.filterSummary).trim() : "Custom Selected B2B Leads",
-        leadCount: leadIds.length || Number(body.leadCount) || 0
-      });
-      const saved = await listRepo.save(newList);
-      res.status(201).json({
-        success: true,
-        list: {
-          id: saved.id,
-          name: saved.name,
-          description: saved.description,
-          leadIds: saved.leadIds || [],
-          filterSummary: saved.filterSummary,
-          leadCount: saved.leadCount,
-          createdAt: saved.createdAt,
-          updatedAt: saved.updatedAt
-        }
-      });
-    } catch (err) {
-      console.error("Failed to save list:", err);
-      res.status(500).json({ error: err.message || "Failed to save list" });
-    }
-  });
-  app.post("/api/lists/:id/leads", optionalAuthMiddleware, async (req, res) => {
-    try {
-      const listId = req.params.id;
-      const body = req.body || {};
-      const newLeadIds = Array.isArray(body.leadIds) ? body.leadIds.map((id) => String(id)) : [];
-      if (!newLeadIds.length) {
-        return res.status(400).json({ error: "No lead IDs provided to add." });
-      }
-      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
-      const listRepo = ds.getRepository((await Promise.resolve().then(() => (init_SavedList(), SavedList_exports))).SavedList);
-      let list = await listRepo.findOne({ where: { id: listId } });
-      if (!list) {
-        const rows = await ds.query("SELECT * FROM saved_lists WHERE id = ?", [listId]);
-        if (rows && rows.length > 0) {
-          const row = rows[0];
-          list = listRepo.create({
-            id: row.id,
-            userId: row.user_id,
-            name: row.name,
-            description: row.description,
-            leadIds: typeof row.lead_ids === "string" ? JSON.parse(row.lead_ids || "[]") : row.lead_ids || [],
-            filterSummary: row.filter_summary,
-            leadCount: Number(row.lead_count || 0)
-          });
-        }
-      }
-      if (!list) {
-        return res.status(404).json({ error: "Saved list not found" });
-      }
-      const existingIds = Array.isArray(list.leadIds) ? list.leadIds : typeof list.leadIds === "string" ? JSON.parse(list.leadIds || "[]") : [];
-      const mergedSet = /* @__PURE__ */ new Set([...existingIds, ...newLeadIds]);
-      const mergedArray = Array.from(mergedSet);
-      const addedCount = mergedArray.length - existingIds.length;
-      const userPlan = (req.user?.planId || req.user?.plan || "free").toLowerCase();
-      const userRole = (req.user?.role || "").toLowerCase();
-      const isPaidOrSuperadmin = userRole === "superadmin" || userPlan.includes("growth") || userPlan.includes("scale") || userPlan.includes("unlimited") || userPlan.includes("pro") || userPlan.includes("starter");
-      const maxLeadsAllowed = isPaidOrSuperadmin ? 5e3 : 1e3;
-      if (mergedArray.length > maxLeadsAllowed) {
-        return res.status(403).json({
-          error: isPaidOrSuperadmin ? `List capacity reached: Adding ${newLeadIds.length} leads would exceed the maximum limit of 5,000 leads per list (currently ${existingIds.length}).` : `Free plan limit: Adding ${newLeadIds.length} leads would exceed the 1,000 leads limit for this list (currently ${existingIds.length}). Upgrade to a paid plan for up to 5,000 leads per list.`
-        });
-      }
-      list.leadIds = mergedArray;
-      list.leadCount = mergedArray.length;
-      const saved = await listRepo.save(list);
-      await ds.query(
-        "UPDATE saved_lists SET lead_ids = ?, lead_count = ?, updated_at = NOW() WHERE id = ?",
-        [JSON.stringify(mergedArray), mergedArray.length, listId]
-      ).catch(() => {
-      });
-      res.json({
-        success: true,
-        addedCount,
-        list: {
-          id: saved.id,
-          name: saved.name,
-          description: saved.description,
-          leadIds: saved.leadIds || [],
-          filterSummary: saved.filterSummary,
-          leadCount: saved.leadCount,
-          createdAt: saved.createdAt,
-          updatedAt: saved.updatedAt
-        }
-      });
-    } catch (err) {
-      console.error("Failed to add leads to list:", err);
-      res.status(500).json({ error: err.message || "Failed to add leads to list" });
-    }
-  });
-  app.delete("/api/lists/:id/leads", async (req, res) => {
-    try {
-      const listId = req.params.id;
-      const body = req.body || {};
-      const leadIdsToRemove = Array.isArray(body.leadIds) ? body.leadIds.map((id) => String(id)) : [];
-      if (!leadIdsToRemove.length) {
-        return res.status(400).json({ error: "No lead IDs provided to remove." });
-      }
-      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
-      const listRepo = ds.getRepository((await Promise.resolve().then(() => (init_SavedList(), SavedList_exports))).SavedList);
-      let list = await listRepo.findOne({ where: { id: listId } });
-      if (!list) {
-        return res.status(404).json({ error: "Saved list not found" });
-      }
-      const removeSet = new Set(leadIdsToRemove);
-      const existingIds = Array.isArray(list.leadIds) ? list.leadIds : typeof list.leadIds === "string" ? JSON.parse(list.leadIds || "[]") : [];
-      const updatedIds = existingIds.filter((id) => !removeSet.has(String(id)));
-      list.leadIds = updatedIds;
-      list.leadCount = updatedIds.length;
-      const saved = await listRepo.save(list);
-      await ds.query(
-        "UPDATE saved_lists SET lead_ids = ?, lead_count = ?, updated_at = NOW() WHERE id = ?",
-        [JSON.stringify(updatedIds), updatedIds.length, listId]
-      ).catch(() => {
-      });
-      res.json({
-        success: true,
-        removedCount: existingIds.length - updatedIds.length,
-        list: {
-          id: saved.id,
-          name: saved.name,
-          description: saved.description,
-          leadIds: saved.leadIds || [],
-          filterSummary: saved.filterSummary,
-          leadCount: saved.leadCount,
-          createdAt: saved.createdAt,
-          updatedAt: saved.updatedAt
-        }
-      });
-    } catch (err) {
-      console.error("Failed to batch remove leads from list:", err);
-      res.status(500).json({ error: err.message || "Failed to remove leads from list" });
-    }
-  });
-  app.delete("/api/lists/:id/leads/:leadId", async (req, res) => {
-    try {
-      const listId = req.params.id;
-      const leadId = req.params.leadId;
-      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
-      const listRepo = ds.getRepository((await Promise.resolve().then(() => (init_SavedList(), SavedList_exports))).SavedList);
-      let list = await listRepo.findOne({ where: { id: listId } });
-      if (!list) {
-        return res.status(404).json({ error: "Saved list not found" });
-      }
-      const existingIds = Array.isArray(list.leadIds) ? list.leadIds : typeof list.leadIds === "string" ? JSON.parse(list.leadIds || "[]") : [];
-      const updatedIds = existingIds.filter((id) => String(id) !== String(leadId));
-      list.leadIds = updatedIds;
-      list.leadCount = updatedIds.length;
-      const saved = await listRepo.save(list);
-      await ds.query(
-        "UPDATE saved_lists SET lead_ids = ?, lead_count = ?, updated_at = NOW() WHERE id = ?",
-        [JSON.stringify(updatedIds), updatedIds.length, listId]
-      ).catch(() => {
-      });
-      res.json({
-        success: true,
-        list: {
-          id: saved.id,
-          name: saved.name,
-          description: saved.description,
-          leadIds: saved.leadIds || [],
-          filterSummary: saved.filterSummary,
-          leadCount: saved.leadCount,
-          createdAt: saved.createdAt,
-          updatedAt: saved.updatedAt
-        }
-      });
-    } catch (err) {
-      console.error("Failed to remove lead from list:", err);
-      res.status(500).json({ error: err.message || "Failed to remove lead from list" });
-    }
-  });
-  app.delete("/api/lists/:id", async (req, res) => {
-    try {
-      const targetId = req.params.id;
-      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
-      const listRepo = ds.getRepository((await Promise.resolve().then(() => (init_SavedList(), SavedList_exports))).SavedList);
-      await listRepo.delete(targetId);
-      await ds.query("DELETE FROM saved_lists WHERE id = ?", [targetId]).catch(() => {
-      });
-      try {
-        const ds2 = (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).SecondaryDataSource;
-        if (ds2 && ds2.isInitialized) {
-          await ds2.query("DELETE FROM saved_lists WHERE id = ?", [targetId]).catch(() => {
-          });
-        }
-      } catch {
-      }
-      res.json({ success: true, deleted: true, id: targetId });
-    } catch (err) {
-      console.error("Failed to delete list from database:", err);
-      res.status(500).json({ error: err.message || "Failed to delete list from database" });
-    }
-  });
-  app.put("/api/lists/:id", async (req, res) => {
-    try {
-      const targetId = req.params.id;
-      const { name, description } = req.body || {};
-      if (!name || !String(name).trim()) {
-        return res.status(400).json({ error: "List name cannot be empty." });
-      }
-      const ds = await (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).getDataSource();
-      const listRepo = ds.getRepository((await Promise.resolve().then(() => (init_SavedList(), SavedList_exports))).SavedList);
-      const targetList = await listRepo.findOne({ where: { id: targetId } });
-      if (!targetList) {
-        return res.status(404).json({ error: "Saved list not found." });
-      }
-      targetList.name = String(name).trim();
-      if (description !== void 0) {
-        targetList.description = String(description).trim();
-      }
-      targetList.updatedAt = /* @__PURE__ */ new Date();
-      const saved = await listRepo.save(targetList);
-      await ds.query(
-        "UPDATE saved_lists SET name = ?, description = ?, updated_at = NOW() WHERE id = ?",
-        [saved.name, saved.description, targetId]
-      ).catch(() => {
-      });
-      try {
-        const ds2 = (await Promise.resolve().then(() => (init_dataSource(), dataSource_exports))).SecondaryDataSource;
-        if (ds2 && ds2.isInitialized) {
-          await ds2.query(
-            "UPDATE saved_lists SET name = ?, description = ?, updated_at = NOW() WHERE id = ?",
-            [saved.name, saved.description, targetId]
-          ).catch(() => {
-          });
-        }
-      } catch {
-      }
-      res.json({
-        success: true,
-        list: {
-          id: saved.id,
-          name: saved.name,
-          description: saved.description,
-          leadIds: Array.isArray(saved.leadIds) ? saved.leadIds : typeof saved.leadIds === "string" ? JSON.parse(saved.leadIds || "[]") : [],
-          filterSummary: saved.filterSummary,
-          leadCount: saved.leadCount,
-          createdAt: saved.createdAt,
-          updatedAt: saved.updatedAt
-        },
-        message: "Saved list updated successfully."
-      });
-    } catch (err) {
-      console.error("Failed to update saved list:", err);
-      res.status(500).json({ error: err.message || "Failed to update saved list" });
-    }
-  });
+    })();
+  } catch (err) {
+    console.error("File stream ingestion error:", err);
+    res.status(500).json({ error: err.message || "Server failed to process high-capacity file upload" });
+  }
+});
+var adminRoutes_default = router5;
+
+// server/routes/index.ts
+var apiRouter = Router6();
+apiRouter.use("/auth", authRoutes_default);
+apiRouter.use("/leads/custom", customLeadsRoutes_default);
+apiRouter.use("/leads", leadsRoutes_default);
+apiRouter.use("/lists", savedListsRoutes_default);
+apiRouter.use("/admin", adminRoutes_default);
+var routes_default = apiRouter;
+
+// server/app.ts
+async function createApp() {
+  const app = express();
+  app.use(express.json({ limit: "500mb" }));
+  app.use(express.urlencoded({ limit: "500mb", extended: true }));
+  app.use(optionalAuthMiddleware);
+  app.use("/api", routes_default);
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -3762,6 +3742,25 @@ async function startServer() {
       res.sendFile(path.join(distPath, "index.html"));
     });
   }
+  return app;
+}
+
+// server.ts
+init_dataSource();
+async function startServer() {
+  const PORT = Number(process.env.PORT) || 3e3;
+  try {
+    await initDatabaseSchema();
+    await ensureSuperAdminSeed();
+    await runGlobalDailyCreditReplenishmentSweep();
+    setInterval(() => {
+      runGlobalDailyCreditReplenishmentSweep().catch((e) => console.error("[Daily Credit Sweep Error]:", e.message));
+    }, 15 * 60 * 1e3);
+    console.log("MySQL B2B_database initialized, Superadmin account secured, and 24h Daily Credit replenishment job active.");
+  } catch (err) {
+    console.error("Failed to initialize MySQL:", err.message);
+  }
+  const app = await createApp();
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`LeadsArrow B2B Intelligence Server running on http://0.0.0.0:${PORT}`);
   });

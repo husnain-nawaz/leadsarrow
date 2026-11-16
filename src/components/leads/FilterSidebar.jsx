@@ -1,0 +1,503 @@
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import {
+  Search,
+  SlidersHorizontal,
+  RotateCcw,
+  ChevronDown,
+  ChevronRight,
+  X,
+  Unlock
+} from 'lucide-react';
+import {
+  setSearchQuery,
+  toggleArrayFilter,
+  setMinIntentScore,
+  setHasVerifiedEmail,
+  setHasDirectPhone,
+  setOnlyRevealed,
+  resetAllFilters,
+  setMobileFilterOpen
+} from '../../store/filtersSlice.js';
+import useBodyScrollLock from '../../hooks/useBodyScrollLock.js';
+
+const TAXONOMY_SECTIONS = [
+  {
+    id: 'industries',
+    label: 'Industry Sector',
+    options: [
+      'Business Services',
+      'Real Estate & Construction',
+      'Retail',
+      'Manufacturing',
+      'Media & Entertainment',
+      'Software & Internet',
+      'Healthcare',
+      'Financial Services',
+      'Non-Profit',
+      'Computers & Electronics',
+      'Travel, Recreation, and Leisure',
+      'Education',
+      'Telecommunications',
+      'Consumer Services',
+      'Transportation & Storage',
+      'Wholesale & Distribution',
+      'Enterprise Software & SaaS',
+      'Energy & Utilities',
+      'Government',
+      'Agriculture & Mining'
+    ]
+  },
+  {
+    id: 'employeeRanges',
+    label: 'Company Headcount',
+    options: [
+      '0 - 25',
+      '25 - 100',
+      '100 - 250',
+      '250 - 1000',
+      '1K - 10K',
+      '10K - 50K',
+      '50K - 100K',
+      '> 100K'
+    ]
+  },
+  {
+    id: 'revenueRanges',
+    label: 'Annual Revenue (USD)',
+    options: [
+      '$0 - $1M',
+      '$1 - $10M',
+      '$10 - $50M',
+      '$50 - $100M',
+      '$100 - $250M',
+      '$250 - $500M',
+      '$500M - $1B',
+      '> $1B'
+    ]
+  },
+  {
+    id: 'countries',
+    label: 'HQ Country & Region',
+    options: [
+      'USA',
+      'Canada'
+    ]
+  },
+  {
+    id: 'seniorities',
+    label: 'Decision-Maker Seniority',
+    options: [
+      'C-Level / Founder',
+      'VP',
+      'Director',
+      'Senior Manager',
+      'Manager'
+    ]
+  },
+  {
+    id: 'departments',
+    label: 'Job Department',
+    options: [
+      'Executive Leadership',
+      'Marketing & Growth',
+      'Sales & Revenue',
+      'Operations & Supply Chain',
+      'Engineering & Technical',
+      'Finance & Procurement',
+      'Information Security',
+      'Product Management'
+    ]
+  },
+  {
+    id: 'fundingStages',
+    label: 'Funding Stage',
+    options: [
+      'Series B',
+      'Public / IPO',
+      'Series C+'
+    ]
+  }
+];
+
+export default function FilterSidebar() {
+  const dispatch = useDispatch();
+  const filters = useSelector((state) => state.filters);
+  const { facets, metrics, loading } = useSelector((state) => state.leads);
+  const [searchInput, setSearchInput] = useState(filters.searchQuery || '');
+
+  // Lock background scrolling when mobile filter drawer is open
+  useBodyScrollLock(filters.isMobileFilterOpen);
+
+  // Automatically close mobile filter drawer if viewport is resized to desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024 && filters.isMobileFilterOpen) {
+        dispatch(setMobileFilterOpen(false));
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [filters.isMobileFilterOpen, dispatch]);
+
+  // Resizable sidebar width with localStorage persistence
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    try {
+      const saved = localStorage.getItem('leadsarrow_filter_sidebar_width');
+      if (saved) {
+        const num = Number(saved);
+        if (num >= 220 && num <= 520) return num;
+      }
+    } catch (e) {}
+    return 280;
+  });
+  const [isResizingSidebar, setIsResizingSidebar] = useState(false);
+  const sidebarWidthRef = useRef(sidebarWidth);
+  sidebarWidthRef.current = sidebarWidth;
+
+  const startResizing = useCallback((e) => {
+    e.preventDefault();
+    setIsResizingSidebar(true);
+    const startX = e.clientX;
+    const startWidth = sidebarWidthRef.current;
+
+    const handleMouseMove = (moveEvent) => {
+      const delta = moveEvent.clientX - startX;
+      const newWidth = Math.min(520, Math.max(220, startWidth + delta));
+      setSidebarWidth(newWidth);
+    };
+
+    const handleMouseUp = (upEvent) => {
+      setIsResizingSidebar(false);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+      const finalDelta = upEvent.clientX - startX;
+      const finalWidth = Math.min(520, Math.max(220, startWidth + finalDelta));
+      try {
+        localStorage.setItem('leadsarrow_filter_sidebar_width', String(finalWidth));
+      } catch (err) {}
+    };
+
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'col-resize';
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  }, []);
+
+  // Keep local search input synchronized if reset from outside
+  useEffect(() => {
+    setSearchInput(filters.searchQuery || '');
+  }, [filters.searchQuery]);
+
+  // Debounce search query dispatch by 300ms to avoid firing un-debounced keystroke race conditions
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchInput !== filters.searchQuery) {
+        dispatch(setSearchQuery(searchInput));
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput, filters.searchQuery, dispatch]);
+
+  const [expandedSections, setExpandedSections] = useState({
+    industries: true,
+    employeeRanges: true,
+    revenueRanges: true,
+    countries: true,
+    seniorities: true,
+    departments: false,
+    fundingStages: false
+  });
+
+  const [facetSearch, setFacetSearch] = useState({});
+
+  const toggleSection = (id) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
+  const sidebarContent = (
+    <div className="flex flex-col h-full bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 select-none transition-colors">
+      {/* Sidebar Header */}
+      <div className="flex items-center justify-between px-4 py-3.5 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex items-center gap-2">
+          <SlidersHorizontal className="w-4 h-4 text-slate-700 dark:text-slate-300" />
+          <span className="text-sm font-semibold text-slate-900 dark:text-white font-display">
+            Database Filters
+          </span>
+          {metrics.activeFiltersCount > 0 && (
+            <span className="text-xs font-mono tabular-nums text-orange-600 dark:text-orange-400 font-semibold">
+              ({metrics.activeFiltersCount})
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => dispatch(resetAllFilters())}
+            className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer whitespace-nowrap"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            Reset
+          </button>
+          {filters.isMobileFilterOpen && (
+            <button
+              type="button"
+              onClick={() => dispatch(setMobileFilterOpen(false))}
+              className="lg:hidden p-1 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Global Keyword Search Input */}
+      <div className="p-4 border-b border-slate-200 dark:border-slate-800 space-y-3">
+        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+          Company, Executive, or Domain
+        </label>
+        <div className="relative">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="e.g. Vanguard, CTO, .io, Munich..."
+            className="w-full pl-9 pr-7 py-2 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-800 focus:border-orange-600 transition-colors"
+          />
+          {searchInput && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchInput('');
+                dispatch(setSearchQuery(''));
+              }}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* High-Intent & Deliverability Toggles */}
+        <div className="pt-1 space-y-2">
+          <label className="flex items-center justify-between gap-2 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
+            <span>Verified Work Email Only</span>
+            <input
+              type="checkbox"
+              checked={filters.hasVerifiedEmail}
+              onChange={(e) => dispatch(setHasVerifiedEmail(e.target.checked))}
+              className="w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-orange-600 focus:ring-orange-500"
+            />
+          </label>
+          <label className="flex items-center justify-between gap-2 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
+            <span>Direct Dial Phone Available</span>
+            <input
+              type="checkbox"
+              checked={filters.hasDirectPhone}
+              onChange={(e) => dispatch(setHasDirectPhone(e.target.checked))}
+              className="w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-orange-600 focus:ring-orange-500"
+            />
+          </label>
+          <label className="flex items-center justify-between gap-2 text-xs text-slate-700 dark:text-slate-300 cursor-pointer hover:text-slate-900 dark:hover:text-white transition-colors">
+            <span className="flex items-center gap-1.5">
+              <Unlock className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
+              <span>Revealed Contacts Only</span>
+            </span>
+            <input
+              type="checkbox"
+              checked={filters.onlyRevealed}
+              onChange={(e) => dispatch(setOnlyRevealed(e.target.checked))}
+              className="w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-orange-600 focus:ring-orange-500"
+            />
+          </label>
+        </div>
+
+        {/* Buying Intent Slider */}
+        <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex items-center justify-between text-xs mb-1.5">
+            <span className="font-medium text-slate-700 dark:text-slate-300">Min Buying Intent Score</span>
+            <span className="font-mono tabular-nums font-semibold text-orange-600 dark:text-orange-400">
+              {filters.minIntentScore > 0 ? `≥ ${filters.minIntentScore}` : 'Any (70+)'}
+            </span>
+          </div>
+          <input
+            type="range"
+            min="70"
+            max="95"
+            step="5"
+            value={filters.minIntentScore || 70}
+            onChange={(e) => {
+              const val = Number(e.target.value);
+              dispatch(setMinIntentScore(val <= 70 ? 0 : val));
+            }}
+            className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-600"
+          />
+          <div className="flex justify-between text-[10px] font-mono tabular-nums text-slate-400 dark:text-slate-500 mt-1">
+            <span>Any (70)</span>
+            <span>75</span>
+            <span>80</span>
+            <span>85</span>
+            <span>90</span>
+            <span>95+</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Scrollable Accordion Filter Facets */}
+      <div className="flex-1 overflow-y-auto divide-y divide-slate-200 dark:divide-slate-800">
+        {TAXONOMY_SECTIONS.map((section) => {
+          const isOpen = Boolean(expandedSections[section.id]);
+          const selectedValues = filters[section.id] || [];
+          const sectionFacets = facets[section.id] || {};
+          const localQuery = (facetSearch[section.id] || '').toLowerCase();
+
+          const visibleOptions = section.options.filter((opt) =>
+            opt.toLowerCase().includes(localQuery)
+          );
+
+          return (
+            <div key={section.id} className="py-2.5 px-4">
+              <button
+                type="button"
+                onClick={() => toggleSection(section.id)}
+                className="w-full flex items-center justify-between py-1 text-left cursor-pointer group"
+              >
+                <div className="flex items-center gap-1.5 min-w-0">
+                  {isOpen ? (
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 shrink-0" />
+                  ) : (
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 shrink-0" />
+                  )}
+                  <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 group-hover:text-slate-950 dark:group-hover:text-white truncate">
+                    {section.label}
+                  </span>
+                </div>
+                {selectedValues.length > 0 && (
+                  <span className="text-xs font-mono tabular-nums font-semibold text-orange-600 dark:text-orange-400">
+                    {selectedValues.length}
+                  </span>
+                )}
+              </button>
+
+              {isOpen && (
+                <div className="mt-2 space-y-1.5 pl-1">
+                  {section.options.length > 7 && (
+                    <input
+                      type="text"
+                      value={facetSearch[section.id] || ''}
+                      onChange={(e) =>
+                        setFacetSearch((prev) => ({
+                          ...prev,
+                          [section.id]: e.target.value
+                        }))
+                      }
+                      placeholder={`Filter ${section.label.toLowerCase()}...`}
+                      className="w-full px-2.5 py-1 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-orange-600 mb-1.5"
+                    />
+                  )}
+
+                  <div className="max-h-48 overflow-y-auto space-y-1 pr-1">
+                    {visibleOptions.map((option) => {
+                      const isChecked = selectedValues.includes(option);
+
+                      return (
+                        <label
+                          key={option}
+                          className="flex items-center gap-2 py-1 text-xs text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() =>
+                              dispatch(
+                                toggleArrayFilter({
+                                  category: section.id,
+                                  value: option
+                                })
+                              )
+                            }
+                            className="w-3.5 h-3.5 rounded border-slate-300 text-orange-600 focus:ring-orange-500 shrink-0"
+                          />
+                          <span
+                            className={`truncate transition-colors ${
+                              isChecked
+                                ? 'font-bold text-orange-600 dark:text-orange-400'
+                                : 'text-slate-700 dark:text-slate-300'
+                            }`}
+                          >
+                            {option}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Mobile Sticky Footer: View Results */}
+      <div className="lg:hidden p-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
+        <button
+          type="button"
+          onClick={() => dispatch(setMobileFilterOpen(false))}
+          className="w-full py-2.5 px-4 bg-orange-600 hover:bg-orange-700 active:scale-95 text-white font-semibold text-xs rounded-xl shadow-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
+        >
+          <span>View Results</span>
+          {metrics.activeFiltersCount > 0 && (
+            <span className="bg-orange-700 text-white text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full">
+              {metrics.activeFiltersCount} active
+            </span>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Desktop Permanent Filter Sidebar (Resizable width) */}
+      <aside
+        style={{ width: `${sidebarWidth}px` }}
+        className="hidden lg:block shrink-0 h-screen sticky top-0 self-start relative group/sidebar"
+      >
+        {sidebarContent}
+
+        {/* Draggable border resizer */}
+        <div
+          onMouseDown={startResizing}
+          onDoubleClick={() => {
+            setSidebarWidth(280);
+            try { localStorage.setItem('leadsarrow_filter_sidebar_width', '280'); } catch (e) {}
+          }}
+          title="Drag to resize filter sidebar (Double click to reset)"
+          className={`absolute top-0 right-0 -mr-1 w-2 h-full cursor-col-resize z-40 transition-colors ${
+            isResizingSidebar ? 'bg-orange-500 shadow-sm' : 'hover:bg-orange-500/50'
+          }`}
+        />
+      </aside>
+
+      {/* Mobile Slide-Over Filter Drawer */}
+      {filters.isMobileFilterOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          <div
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs touch-none animate-in fade-in duration-200"
+            onClick={() => dispatch(setMobileFilterOpen(false))}
+            onTouchMove={(e) => e.preventDefault()}
+          />
+          <div className="relative w-80 max-w-[85vw] h-full bg-white dark:bg-slate-900 z-10 shadow-2xl overscroll-contain touch-pan-y animate-in slide-in-from-left duration-200">
+            {sidebarContent}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
