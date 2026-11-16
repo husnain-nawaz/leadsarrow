@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { AlertTriangle, Trash2, X, Loader2 } from 'lucide-react';
+import useBodyScrollLock from '../hooks/useBodyScrollLock.js';
 
 export default function ConfirmDeleteModal({
   isOpen,
@@ -36,6 +37,9 @@ export default function ConfirmDeleteModal({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose, loading]);
+
+  // Prevent background scrolling while delete modal is open
+  useBodyScrollLock(Boolean(isOpen));
 
   if (!isOpen) return null;
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { FileSpreadsheet, Download, X, Loader2, CheckCircle2 } from 'lucide-react';
+import useBodyScrollLock from '../hooks/useBodyScrollLock.js';
 
 export default function ConfirmExportModal({
   isOpen,
@@ -39,6 +40,9 @@ export default function ConfirmExportModal({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose, loading]);
+
+  // Prevent background scrolling while export confirmation modal is open
+  useBodyScrollLock(Boolean(isOpen));
 
   if (!isOpen) return null;
 

@@ -19,6 +19,7 @@ import {
   resetAllFilters,
   setMobileFilterOpen
 } from '../store/filtersSlice.js';
+import useBodyScrollLock from '../hooks/useBodyScrollLock.js';
 
 const TAXONOMY_SECTIONS = [
   {
@@ -124,6 +125,20 @@ export default function FilterSidebar() {
   const filters = useSelector((state) => state.filters);
   const { facets, metrics, loading } = useSelector((state) => state.leads);
   const [searchInput, setSearchInput] = useState(filters.searchQuery || '');
+
+  // Lock background scrolling when mobile filter drawer is open
+  useBodyScrollLock(filters.isMobileFilterOpen);
+
+  // Automatically close mobile filter drawer if viewport is resized to desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024 && filters.isMobileFilterOpen) {
+        dispatch(setMobileFilterOpen(false));
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [filters.isMobileFilterOpen, dispatch]);
 
   // Resizable sidebar width with localStorage persistence
   const [sidebarWidth, setSidebarWidth] = useState(() => {
@@ -428,6 +443,22 @@ export default function FilterSidebar() {
           );
         })}
       </div>
+
+      {/* Mobile Sticky Footer: View Results */}
+      <div className="lg:hidden p-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
+        <button
+          type="button"
+          onClick={() => dispatch(setMobileFilterOpen(false))}
+          className="w-full py-2.5 px-4 bg-orange-600 hover:bg-orange-700 active:scale-95 text-white font-semibold text-xs rounded-xl shadow-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
+        >
+          <span>View Results</span>
+          {metrics.activeFiltersCount > 0 && (
+            <span className="bg-orange-700 text-white text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full">
+              {metrics.activeFiltersCount} active
+            </span>
+          )}
+        </button>
+      </div>
     </div>
   );
 
@@ -458,10 +489,11 @@ export default function FilterSidebar() {
       {filters.isMobileFilterOpen && (
         <div className="fixed inset-0 z-50 lg:hidden flex">
           <div
-            className="fixed inset-0 bg-slate-900/50"
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs touch-none animate-in fade-in duration-200"
             onClick={() => dispatch(setMobileFilterOpen(false))}
+            onTouchMove={(e) => e.preventDefault()}
           />
-          <div className="relative w-80 max-w-[85vw] h-full bg-white z-10 shadow-xl">
+          <div className="relative w-80 max-w-[85vw] h-full bg-white dark:bg-slate-900 z-10 shadow-2xl overscroll-contain touch-pan-y animate-in slide-in-from-left duration-200">
             {sidebarContent}
           </div>
         </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Pencil, Layers, Loader2, Lock } from 'lucide-react';
 import { updateCustomLeadOnServerApi } from '../services/api.js';
+import useBodyScrollLock from '../hooks/useBodyScrollLock.js';
 
 export default function EditCustomLeadModal({ lead, clusters = [], isOpen, onClose, onSave }) {
   const [form, setForm] = useState({
@@ -49,6 +50,9 @@ export default function EditCustomLeadModal({ lead, clusters = [], isOpen, onClo
       setErrorMsg(null);
     }
   }, [lead, isOpen]);
+
+  // Prevent background scrolling while edit modal is open
+  useBodyScrollLock(Boolean(isOpen && lead));
 
   if (!isOpen || !lead) return null;
 

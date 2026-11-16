@@ -20,6 +20,7 @@ import {
 import { decrementExportCredits, openUpgradeModal } from '../store/authSlice.js';
 import { addLeadsToExistingList } from '../store/savedListsSlice.js';
 import { isNewLead } from './LeadsTable.jsx';
+import useBodyScrollLock from '../hooks/useBodyScrollLock.js';
 
 function maskEmail(email) {
   const [userPart, domainPart] = String(email || '').split('@');
@@ -40,6 +41,9 @@ export default function LeadDetailDrawer() {
   const { lists } = useSelector((state) => state.savedLists);
   const [copiedField, setCopiedField] = useState(null);
   const [savedNotice, setSavedNotice] = useState(false);
+
+  // Prevent background scrolling while the detail drawer is open
+  useBodyScrollLock(Boolean(activeLead));
 
   if (!activeLead) return null;
 
@@ -92,11 +96,12 @@ export default function LeadDetailDrawer() {
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div
-        className="fixed inset-0 bg-slate-900/40"
+        className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs touch-none animate-in fade-in duration-150"
         onClick={() => dispatch(setActiveLead(null))}
+        onTouchMove={(e) => e.preventDefault()}
       />
 
-      <div className="relative z-10 w-full max-w-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 h-full border-l border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden transition-colors">
+      <div className="relative z-10 w-full max-w-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 h-full border-l border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden overscroll-contain touch-pan-y transition-colors">
         {/* Drawer Header */}
         <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-4">
           <div>

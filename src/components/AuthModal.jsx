@@ -8,6 +8,7 @@ import {
   loginWithGooglePopup,
   clearAuthError
 } from '../store/authSlice.js';
+import useBodyScrollLock from '../hooks/useBodyScrollLock.js';
 
 export default function AuthModal() {
   const dispatch = useDispatch();
@@ -25,6 +26,9 @@ export default function AuthModal() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
+
+  // Prevent background scrolling while auth modal is open
+  useBodyScrollLock(isAuthModalOpen);
 
   useEffect(() => {
     if (isAuthModalOpen) {

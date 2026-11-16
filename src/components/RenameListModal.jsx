@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Bookmark, Loader2 } from 'lucide-react';
+import useBodyScrollLock from '../hooks/useBodyScrollLock.js';
 
 export default function RenameListModal({ list, isOpen, onClose, onSave }) {
   const [name, setName] = useState('');
@@ -14,6 +15,9 @@ export default function RenameListModal({ list, isOpen, onClose, onSave }) {
       setErrorMsg(null);
     }
   }, [list, isOpen]);
+
+  // Prevent background scrolling while rename list modal is open
+  useBodyScrollLock(Boolean(isOpen && list));
 
   if (!isOpen || !list) return null;
 

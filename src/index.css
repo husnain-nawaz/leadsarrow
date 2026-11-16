@@ -41,6 +41,14 @@
   .dark input, .dark textarea, .dark select {
     color: #f8fafc;
   }
+
+  /* Prevent bounce/scroll chaining when modal or mobile sidebar is active */
+  body.body-scroll-locked,
+  html:has(body.body-scroll-locked) {
+    overflow: hidden !important;
+    overscroll-behavior: none !important;
+    touch-action: none;
+  }
 }
 
 /* Smooth, stable, flicker-free theme crossfade with zero font invisibility */

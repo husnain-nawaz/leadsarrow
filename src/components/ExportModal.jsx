@@ -6,6 +6,7 @@ import { decrementExportCredits, consumeCredits, openUpgradeModal } from '../sto
 import { fetchLeadsByIdsApi } from '../services/api.js';
 import ConfirmExportModal from './ConfirmExportModal.jsx';
 import { showToast } from '../store/toastSlice.js';
+import useBodyScrollLock from '../hooks/useBodyScrollLock.js';
 
 export default function ExportModal() {
   const dispatch = useDispatch();
@@ -77,6 +78,9 @@ export default function ExportModal() {
         setIsLoadingLeads(false);
       });
   }, [isExportModalOpen, selectedLeadIds]);
+
+  // Prevent background scrolling while the export modal is open
+  useBodyScrollLock(isExportModalOpen);
 
   if (!isExportModalOpen) return null;
 

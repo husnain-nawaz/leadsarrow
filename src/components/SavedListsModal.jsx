@@ -25,6 +25,7 @@ import {
 import { setSavedListFilter } from '../store/filtersSlice.js';
 import { showToast } from '../store/toastSlice.js';
 import AddLeadsToSavedListModal from './AddLeadsToSavedListModal.jsx';
+import useBodyScrollLock from '../hooks/useBodyScrollLock.js';
 
 export default function SavedListsModal({ setActiveView, onSelectFullPageList }) {
   const dispatch = useDispatch();
@@ -33,6 +34,9 @@ export default function SavedListsModal({ setActiveView, onSelectFullPageList })
   );
   const { selectedLeadIds, items } = useSelector((state) => state.leads);
   const filters = useSelector((state) => state.filters);
+
+  // Prevent background scrolling while Saved Lists modal is open
+  useBodyScrollLock(isSavedListsModalOpen);
 
   const [listName, setListName] = useState('');
   const [listDesc, setListDesc] = useState('');

@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { closeProfileModal, openSignOutModal, updateCurrentUserProfile } from '../store/authSlice.js';
 import { PRESET_AVATARS } from '../data/avatars.js';
+import useBodyScrollLock from '../hooks/useBodyScrollLock.js';
 
 export default function ProfileModal({ onOpenFullProfile }) {
   const dispatch = useDispatch();
@@ -69,6 +70,9 @@ export default function ProfileModal({ onOpenFullProfile }) {
     }
     wasOpenRef.current = isProfileModalOpen;
   }, [isProfileModalOpen]);
+
+  // Prevent background scrolling while profile modal is open
+  useBodyScrollLock(Boolean(isProfileModalOpen && user));
 
   if (!isProfileModalOpen || !user) return null;
 

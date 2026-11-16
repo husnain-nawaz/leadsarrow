@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, FolderEdit, Loader2 } from 'lucide-react';
 import { updateCustomClusterOnServerApi } from '../services/api.js';
+import useBodyScrollLock from '../hooks/useBodyScrollLock.js';
 
 export default function RenameClusterModal({ cluster, isOpen, onClose, onRenamed }) {
   const [name, setName] = useState('');
@@ -15,6 +16,9 @@ export default function RenameClusterModal({ cluster, isOpen, onClose, onRenamed
       setErrorMsg(null);
     }
   }, [cluster, isOpen]);
+
+  // Prevent background scrolling while rename cluster modal is open
+  useBodyScrollLock(Boolean(isOpen && cluster));
 
   if (!isOpen || !cluster) return null;
 

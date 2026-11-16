@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { appendLeadsToSavedList } from '../store/savedListsSlice.js';
 import { fetchLeadsFromServer, fetchCustomLeadsFromServerApi } from '../services/api.js';
+import useBodyScrollLock from '../hooks/useBodyScrollLock.js';
 
 export default function AddLeadsToSavedListModal({
   isOpen,
@@ -242,6 +243,9 @@ export default function AddLeadsToSavedListModal({
       setIsSubmitting(false);
     }
   };
+
+  // Prevent background scrolling while the modal is open
+  useBodyScrollLock(Boolean(isOpen && targetList));
 
   if (!isOpen || !targetList) return null;
 

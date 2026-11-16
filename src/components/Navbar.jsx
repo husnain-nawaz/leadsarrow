@@ -19,6 +19,7 @@ import {
   Bookmark
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext.jsx';
+import useBodyScrollLock from '../hooks/useBodyScrollLock.js';
 
 export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
   const dispatch = useDispatch();
@@ -31,6 +32,20 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
   const [isCreditsPopoverOpen, setIsCreditsPopoverOpen] = useState(false);
   const profileDropdownRef = useRef(null);
   const creditsPopoverRef = useRef(null);
+
+  // Prevent background scrolling while the mobile navigation sidebar is open
+  useBodyScrollLock(isMobileMenuOpen);
+
+  // Automatically close mobile menu if viewport resized to desktop breakpoint
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -437,12 +452,13 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
         <div className="fixed inset-0 z-[100] lg:hidden">
           {/* Backdrop overlay */}
           <div
-            className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200"
+            className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200 touch-none"
             onClick={() => setIsMobileMenuOpen(false)}
+            onTouchMove={(e) => e.preventDefault()}
           />
 
           {/* Sidebar Drawer Panel */}
-          <aside className="fixed inset-y-0 left-0 z-[100] w-[300px] sm:w-80 max-w-[85vw] bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col justify-between overflow-y-auto animate-in slide-in-from-left duration-200 text-slate-900 dark:text-slate-100">
+          <aside className="fixed inset-y-0 left-0 z-[100] w-[300px] sm:w-80 max-w-[85vw] bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col justify-between overflow-y-auto overscroll-contain touch-pan-y animate-in slide-in-from-left duration-200 text-slate-900 dark:text-slate-100">
             {/* Sidebar Top: Wordmark & Close Button */}
             <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 bg-white dark:bg-slate-900">
               <div className="flex items-center gap-2">

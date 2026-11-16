@@ -2,11 +2,15 @@ import React, { useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { LogOut, X, AlertTriangle } from 'lucide-react';
 import { closeSignOutModal, logoutUser } from '../store/authSlice.js';
+import useBodyScrollLock from '../hooks/useBodyScrollLock.js';
 
 export default function SignOutModal() {
   const dispatch = useDispatch();
   const { isSignOutModalOpen, user } = useSelector((state) => state.auth);
   const cancelBtnRef = useRef(null);
+
+  // Prevent background scrolling while sign out modal is open
+  useBodyScrollLock(isSignOutModalOpen);
 
   // Focus the "No, Stay Signed In" button by default when modal opens
   useEffect(() => {

@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { X, Check, Zap, Shield, Sparkles, CreditCard, ArrowRight } from 'lucide-react';
 import { closeUpgradeModal, upgradeUserPlanThunk } from '../store/authSlice.js';
 import { PRICING_PLANS } from '../data/plans.js';
+import useBodyScrollLock from '../hooks/useBodyScrollLock.js';
 
 export default function PlanUpgradeModal() {
   const dispatch = useDispatch();
@@ -10,6 +11,9 @@ export default function PlanUpgradeModal() {
   const [selectedPlanId, setSelectedPlanId] = useState(upgradeTargetPlan || 'pro');
   const [isProcessing, setIsProcessing] = useState(false);
   const [successMessage, setSuccessMessage] = useState(null);
+
+  // Prevent background scrolling while upgrade modal is open
+  useBodyScrollLock(isUpgradeModalOpen);
 
   if (!isUpgradeModalOpen) return null;
 

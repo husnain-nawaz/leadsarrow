@@ -3,12 +3,16 @@ import { useSelector, useDispatch } from 'react-redux';
 import { X, Plus, Sparkles, Layers, Folder, Lock, Loader2 } from 'lucide-react';
 import { setAddLeadModalOpen, addCustomLead, fetchLeads } from '../store/leadsSlice.js';
 import { showToast } from '../store/toastSlice.js';
+import useBodyScrollLock from '../hooks/useBodyScrollLock.js';
 
 export default function AddLeadModal() {
   const dispatch = useDispatch();
   const { isAddLeadModalOpen, targetClusterName } = useSelector((state) => state.leads);
   const filters = useSelector((state) => state.filters);
   const { user } = useSelector((state) => state.auth);
+
+  // Prevent background scrolling while add lead modal is open
+  useBodyScrollLock(isAddLeadModalOpen);
 
   const [form, setForm] = useState({
     clusterName: targetClusterName || '',
