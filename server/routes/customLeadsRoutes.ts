@@ -67,18 +67,16 @@ router.get('/', requireJwtMiddleware, async (req: any, res) => {
     // Sort clusters strictly newest first (createdAt DESC) so newest cluster is always index 0
     clusters.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-    // Determine active cluster: leads can be filtered by specific cluster or 'all'
+    // Determine active cluster: always select specific cluster, or default to the most recent cluster (index 0)
     let activeCluster = requestedCluster && requestedCluster !== 'all' ? requestedCluster : null;
-    if (!requestedCluster && clusters.length > 0) {
+    if (!activeCluster && clusters.length > 0) {
       activeCluster = clusters[0].name;
     }
 
     let whereClause = 'WHERE user_id = ?';
     const sqlParams: any[] = [userId];
 
-    if (requestedCluster === 'all') {
-      // All custom leads across all clusters
-    } else if (activeCluster) {
+    if (activeCluster) {
       whereClause += ' AND cluster_name = ?';
       sqlParams.push(activeCluster);
     } else {

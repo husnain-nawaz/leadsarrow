@@ -201,7 +201,7 @@ export async function revealLeadContactApi(leadId) {
   });
 }
 
-export async function fetchCustomLeadsFromServerApi(searchQuery = '', cluster = 'all') {
+export async function fetchCustomLeadsFromServerApi(searchQuery = '', cluster = '') {
   const query = new URLSearchParams();
   if (searchQuery) query.set('q', searchQuery);
   if (cluster && cluster !== 'all') query.set('cluster', cluster);

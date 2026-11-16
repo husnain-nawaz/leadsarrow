@@ -784,14 +784,16 @@ async function recordLoginSession(userId, req) {
     const userRepo = ds.getRepository(User);
     const ip = req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "127.0.0.1";
     const device = req.headers["user-agent"] ? req.headers["user-agent"].substring(0, 100) : "Web Client";
-    const login = loginRepo.create({
-      userId,
-      ip: String(ip).substring(0, 60),
-      location: "Local Network",
-      device
+    await ds.query(
+      "INSERT INTO user_logins (user_id, ip, location, device, timestamp) VALUES (?, ?, ?, ?, NOW())",
+      [userId, String(ip).substring(0, 60), "Local Network", device]
+    ).catch(() => {
     });
-    await loginRepo.save(login);
-    await userRepo.update(userId, { lastLoginAt: /* @__PURE__ */ new Date() });
+    await ds.query(
+      "UPDATE users SET last_login_at = NOW() WHERE id = ?",
+      [userId]
+    ).catch(() => {
+    });
   } catch (err) {
     console.error("Failed to record login session with TypeORM:", err.message);
   }
@@ -1435,13 +1437,12 @@ router2.get("/", requireJwtMiddleware, async (req, res) => {
     });
     clusters.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     let activeCluster = requestedCluster && requestedCluster !== "all" ? requestedCluster : null;
-    if (!requestedCluster && clusters.length > 0) {
+    if (!activeCluster && clusters.length > 0) {
       activeCluster = clusters[0].name;
     }
     let whereClause = "WHERE user_id = ?";
     const sqlParams = [userId];
-    if (requestedCluster === "all") {
-    } else if (activeCluster) {
+    if (activeCluster) {
       whereClause += " AND cluster_name = ?";
       sqlParams.push(activeCluster);
     } else {

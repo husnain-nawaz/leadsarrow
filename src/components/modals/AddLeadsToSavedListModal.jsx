@@ -50,7 +50,7 @@ export default function AddLeadsToSavedListModal({
   const [sourceTab, setSourceTab] = useState('all'); // 'all' | 'custom'
   const [searchResults, setSearchResults] = useState([]);
   const [clusters, setClusters] = useState([]);
-  const [selectedCluster, setSelectedCluster] = useState('all');
+  const [selectedCluster, setSelectedCluster] = useState(null);
   const [loading, setLoading] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -65,16 +65,27 @@ export default function AddLeadsToSavedListModal({
     return new Set(Array.isArray(targetList?.leadIds) ? targetList.leadIds.map((id) => String(id)) : []);
   }, [targetList]);
 
-  const performSearch = useCallback(async (query, tab, pageNum = 1, pageSizeNum = 10, cluster = 'all') => {
+  const performSearch = useCallback(async (query, tab, pageNum = 1, pageSizeNum = 10, cluster = null) => {
     setLoading(true);
     setStatusMessage(null);
     try {
       if (tab === 'custom') {
-        const res = await fetchCustomLeadsFromServerApi(query, cluster);
+        const res = await fetchCustomLeadsFromServerApi(query, cluster || '');
         const leads = res.leads || [];
-        setClusters(res.clusters || []);
+        const fetchedClusters = res.clusters || [];
+        setClusters(fetchedClusters);
         setServerTotal(leads.length);
         setSearchResults(leads);
+
+        // Automatically sync selectedCluster to the most recent active cluster
+        if (fetchedClusters.length > 0) {
+          const validNames = fetchedClusters.map((c) => c.name);
+          if (!cluster || !validNames.includes(cluster)) {
+            setSelectedCluster(res.activeCluster || validNames[0]);
+          }
+        } else {
+          setSelectedCluster(null);
+        }
       } else {
         const res = await fetchLeadsFromServer({
           searchQuery: query.trim(),
@@ -101,7 +112,7 @@ export default function AddLeadsToSavedListModal({
       setSelectedIds([]);
       setSearchQuery('');
       setModalPage(1);
-      setSelectedCluster('all');
+      setSelectedCluster(null);
       setStatusMessage(null);
     }
   }, [isOpen, sourceTab, modalPage, modalPageSize, selectedCluster, performSearch]);
@@ -345,6 +356,9 @@ export default function AddLeadsToSavedListModal({
               onClick={() => {
                 setSourceTab('custom');
                 setModalPage(1);
+                if (clusters.length > 0 && !selectedCluster) {
+                  setSelectedCluster(clusters[0].name);
+                }
               }}
               className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl transition-colors cursor-pointer ${
                 sourceTab === 'custom'
@@ -364,7 +378,7 @@ export default function AddLeadsToSavedListModal({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={sourceTab === 'custom' && selectedCluster !== 'all' ? `Search within cluster "${selectedCluster}"...` : "Search by company, contact name, domain, email..."}
+                placeholder={sourceTab === 'custom' && selectedCluster ? `Search within cluster "${selectedCluster}"...` : "Search by company, contact name, domain, email..."}
                 className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-orange-600"
               />
             </div>
@@ -385,51 +399,40 @@ export default function AddLeadsToSavedListModal({
               <span>Your Clusters:</span>
             </span>
 
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedCluster('all');
-                setModalPage(1);
-              }}
-              className={`px-3 py-1 rounded-lg font-medium text-xs whitespace-nowrap transition-colors cursor-pointer shrink-0 ${
-                selectedCluster === 'all'
-                  ? 'bg-orange-600 text-white shadow-2xs font-bold'
-                  : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
-              }`}
-            >
-              All Clusters ({clusters.reduce((acc, c) => acc + (c.leadCount || 0), 0)})
-            </button>
-
-            {clusters.map((cluster) => {
-              const isSelected = selectedCluster === cluster.name;
-              return (
-                <button
-                  key={cluster.id || cluster.name}
-                  type="button"
-                  onClick={() => {
-                    setSelectedCluster(cluster.name);
-                    setModalPage(1);
-                  }}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-colors cursor-pointer shrink-0 ${
-                    isSelected
-                      ? 'bg-orange-600 text-white shadow-2xs font-bold'
-                      : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
-                  }`}
-                >
-                  <Folder className={`w-3 h-3 ${isSelected ? 'text-white' : 'text-orange-500'}`} />
-                  <span>{cluster.name}</span>
-                  <span
-                    className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+            {clusters.length === 0 ? (
+              <span className="text-xs text-slate-400 italic">No clusters created yet.</span>
+            ) : (
+              clusters.map((cluster) => {
+                const isSelected = selectedCluster === cluster.name;
+                return (
+                  <button
+                    key={cluster.id || cluster.name}
+                    type="button"
+                    onClick={() => {
+                      setSelectedCluster(cluster.name);
+                      setModalPage(1);
+                    }}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-colors cursor-pointer shrink-0 ${
                       isSelected
-                        ? 'bg-orange-700 text-white'
-                        : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                        ? 'bg-orange-600 text-white shadow-2xs font-bold'
+                        : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
                     }`}
                   >
-                    {cluster.leadCount || 0}
-                  </span>
-                </button>
-              );
-            })}
+                    <Folder className={`w-3 h-3 ${isSelected ? 'text-white' : 'text-orange-500'}`} />
+                    <span>{cluster.name}</span>
+                    <span
+                      className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+                        isSelected
+                          ? 'bg-orange-700 text-white'
+                          : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                      }`}
+                    >
+                      {cluster.leadCount || 0}
+                    </span>
+                  </button>
+                );
+              })
+            )}
           </div>
         )}
 
