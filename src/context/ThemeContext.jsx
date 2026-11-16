@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { flushSync } from 'react-dom';
 
 const ThemeContext = createContext({
   theme: 'dark',
@@ -17,14 +18,9 @@ export function ThemeProvider({ children }) {
 
   const isDark = theme === 'dark';
 
-  useEffect(() => {
-    try {
-      localStorage.setItem('leadsarrow_theme', theme);
-      localStorage.setItem('leadsarrow_landing_theme', theme);
-    } catch {}
-
+  const applyThemeToDom = (targetTheme) => {
     const root = document.documentElement;
-    if (theme === 'dark') {
+    if (targetTheme === 'dark') {
       root.classList.add('dark');
       root.setAttribute('data-theme', 'dark');
       document.body.classList.add('dark');
@@ -37,33 +33,65 @@ export function ThemeProvider({ children }) {
       document.body.style.backgroundColor = '#f8fafc';
       document.body.style.color = '#0f172a';
     }
+  };
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('leadsarrow_theme', theme);
+      localStorage.setItem('leadsarrow_landing_theme', theme);
+    } catch {}
+    applyThemeToDom(theme);
   }, [theme]);
 
   const toggleTheme = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
 
-    // If browser supports native View Transitions, sweep smoothly from top to bottom!
-    if (typeof document !== 'undefined' && 'startViewTransition' in document) {
-      document.startViewTransition(() => {
-        setTheme(nextTheme);
-        const root = document.documentElement;
-        if (nextTheme === 'dark') {
-          root.classList.add('dark');
-          root.setAttribute('data-theme', 'dark');
-          document.body.classList.add('dark');
-          document.body.style.backgroundColor = '#0f172a';
-          document.body.style.color = '#f8fafc';
-        } else {
-          root.classList.remove('dark');
-          root.setAttribute('data-theme', 'light');
-          document.body.classList.remove('dark');
-          document.body.style.backgroundColor = '#f8fafc';
-          document.body.style.color = '#0f172a';
+    // Temporarily suppress all element-level CSS color transitions during theme toggle.
+    // This stops font and background colors from interpolating to the same middle-gray
+    // simultaneously, which caused text to disappear/fade out for several hundred milliseconds.
+    const disableTransitionsStyle = document.createElement('style');
+    disableTransitionsStyle.appendChild(
+      document.createTextNode(
+        `*, *::before, *::after {
+          -webkit-transition: none !important;
+          -moz-transition: none !important;
+          -o-transition: none !important;
+          -ms-transition: none !important;
+          transition: none !important;
+        }`
+      )
+    );
+    document.head.appendChild(disableTransitionsStyle);
+
+    const cleanupTransitions = () => {
+      // Force layout reflow before removing the transition suppression
+      if (typeof window !== 'undefined') {
+        window.getComputedStyle(document.body);
+      }
+      setTimeout(() => {
+        if (document.head.contains(disableTransitionsStyle)) {
+          document.head.removeChild(disableTransitionsStyle);
         }
+      }, 50);
+    };
+
+    if (typeof document !== 'undefined' && 'startViewTransition' in document) {
+      const transition = document.startViewTransition(() => {
+        flushSync(() => {
+          setTheme(nextTheme);
+          applyThemeToDom(nextTheme);
+        });
       });
+
+      if (transition && transition.finished) {
+        transition.finished.finally(cleanupTransitions);
+      } else {
+        cleanupTransitions();
+      }
     } else {
-      // Fallback: synchronous atomic change in the exact same frame
       setTheme(nextTheme);
+      applyThemeToDom(nextTheme);
+      cleanupTransitions();
     }
   };
 

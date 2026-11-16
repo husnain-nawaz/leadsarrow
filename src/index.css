@@ -35,28 +35,37 @@
   }
 }
 
-/* Fast top-to-bottom theme sweep animation using native View Transitions */
+/* Smooth, stable, flicker-free theme crossfade with zero font invisibility */
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation: none;
   mix-blend-mode: normal;
 }
 
 ::view-transition-old(root) {
+  animation: 0.16s ease-out both themeCrossFadeOut;
   z-index: 1;
 }
 
 ::view-transition-new(root) {
-  z-index: 9999;
-  animation: themeSweepDown 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: 0.16s ease-in both themeCrossFadeIn;
+  z-index: 2;
 }
 
-@keyframes themeSweepDown {
-  0% {
-    clip-path: inset(0 0 100% 0);
+@keyframes themeCrossFadeOut {
+  from {
+    opacity: 1;
   }
-  100% {
-    clip-path: inset(0 0 0 0);
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes themeCrossFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 

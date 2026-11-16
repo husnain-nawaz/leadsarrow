@@ -373,7 +373,7 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
           {/* Sidebar Drawer Panel */}
           <aside className="fixed inset-y-0 left-0 z-50 w-[300px] sm:w-80 max-w-[85vw] bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col justify-between overflow-y-auto animate-in slide-in-from-left duration-200 text-slate-900 dark:text-slate-100">
             {/* Sidebar Top: Wordmark & Close Button */}
-            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 bg-slate-50/70 dark:bg-slate-850/60">
+            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 bg-white dark:bg-slate-900">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-orange-600"></span>
                 <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white font-display">
@@ -531,11 +531,11 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
               </div>
             </div>
 
-            {/* Sidebar Bottom: Account Details & Actions */}
-            <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-850/60 shrink-0 space-y-3">
+            {/* Sidebar Bottom: Account Details & Actions (Unified seamless background) */}
+            <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0 space-y-3">
               {user ? (
                 <>
-                  <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1.5 shadow-2xs">
+                  <div className="p-3 bg-slate-50 dark:bg-slate-800/90 rounded-xl border border-slate-200 dark:border-slate-700/80 space-y-1.5 shadow-2xs">
                     <div className="flex items-center justify-between gap-2">
                       <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
                         {displayName}
@@ -549,7 +549,7 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
                     </div>
 
                     {!isUnlimited && (
-                      <div className="pt-1.5 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400">
+                      <div className="pt-1.5 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400">
                         <span>Daily Credits:</span>
                         <span className="font-mono font-semibold text-slate-800 dark:text-slate-200">
                           {user.creditsRemaining ?? 100} / {user.dailyCreditsLimit || 100}
@@ -565,7 +565,7 @@ export default function Navbar({ activeView, setActiveView, onToggleLanding }) {
                         dispatch(openProfileModal());
                         setIsMobileMenuOpen(false);
                       }}
-                      className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                      className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700/90 transition-colors cursor-pointer"
                     >
                       <UserIcon className="w-3.5 h-3.5 text-slate-400" />
                       <span>Profile</span>
