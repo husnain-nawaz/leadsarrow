@@ -85,7 +85,13 @@ export default function AuthScreen({ navigation, route }) {
         <View style={styles.topBar}>
           <TouchableOpacity
             style={styles.closeBtn}
-            onPress={() => navigation.canGoBack() && navigation.goBack()}
+            onPress={() => {
+              if (navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate('MainTabs');
+              }
+            }}
           >
             <Ionicons name="close" size={24} color={theme.colors.textSecondary} />
           </TouchableOpacity>
@@ -243,6 +249,19 @@ export default function AuthScreen({ navigation, route }) {
                 {isLoginMode ? 'Sign In to Workspace' : 'Get Started Free (100 Credits)'}
               </Text>
             )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.guestBtn}
+            onPress={() => {
+              if (navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate('MainTabs');
+              }
+            }}
+          >
+            <Text style={styles.guestBtnText}>Explore App Demo / Continue as Guest →</Text>
           </TouchableOpacity>
         </View>
 
@@ -469,6 +488,20 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 15,
     fontWeight: '700'
+  },
+  guestBtn: {
+    marginTop: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)'
+  },
+  guestBtnText: {
+    color: theme.colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '600'
   },
   benefits: {
     marginTop: 10,

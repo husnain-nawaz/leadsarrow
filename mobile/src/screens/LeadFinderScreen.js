@@ -17,6 +17,69 @@ import LeadCard from '../components/LeadCard';
 import FilterModal from '../components/FilterModal';
 import AddToListModal from '../components/AddToListModal';
 
+const SAMPLE_DEMO_LEADS = [
+  {
+    id: 'demo-1',
+    fullName: 'Sarah Jenkins',
+    jobTitle: 'VP of Global Enterprise Sales',
+    companyName: 'CloudScale Dynamics',
+    industry: 'Software & Cloud',
+    country: 'United States',
+    employees: '500-1,000',
+    revenue: '$50M-$100M',
+    intentScore: 94,
+    email: 'sarah.jenkins@cloudscale.io',
+    phone: '+1 (415) 890-2134',
+    domain: 'cloudscale.io',
+    linkedinUrl: 'https://linkedin.com'
+  },
+  {
+    id: 'demo-2',
+    fullName: 'Marcus Vance',
+    jobTitle: 'Chief Revenue Officer',
+    companyName: 'Nexus FinTech Labs',
+    industry: 'Financial Technology',
+    country: 'United Kingdom',
+    employees: '250-500',
+    revenue: '$25M-$50M',
+    intentScore: 89,
+    email: 'm.vance@nexusfintech.co.uk',
+    phone: '+44 20 7946 0912',
+    domain: 'nexusfintech.co.uk',
+    linkedinUrl: 'https://linkedin.com'
+  },
+  {
+    id: 'demo-3',
+    fullName: 'Elena Rostova',
+    jobTitle: 'Head of Growth Marketing',
+    companyName: 'AeroPulse Robotics',
+    industry: 'Artificial Intelligence',
+    country: 'Germany',
+    employees: '100-250',
+    revenue: '$10M-$25M',
+    intentScore: 92,
+    email: 'e.rostova@aeropulse.de',
+    phone: '+49 30 1234567',
+    domain: 'aeropulse.de',
+    linkedinUrl: 'https://linkedin.com'
+  },
+  {
+    id: 'demo-4',
+    fullName: 'David K. Tanaka',
+    jobTitle: 'Director of Procurement',
+    companyName: 'HyperLogistics Global',
+    industry: 'Logistics & Supply Chain',
+    country: 'Singapore',
+    employees: '1,000-5,000',
+    revenue: '$100M-$500M',
+    intentScore: 86,
+    email: 'david.tanaka@hyperlogistics.sg',
+    phone: '+65 6789 0123',
+    domain: 'hyperlogistics.sg',
+    linkedinUrl: 'https://linkedin.com'
+  }
+];
+
 export default function LeadFinderScreen({ navigation }) {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -67,6 +130,9 @@ export default function LeadFinderScreen({ navigation }) {
         setPage(pageNum);
       } catch (err) {
         console.warn('Failed to load leads:', err.message);
+        if (pageNum === 1) {
+          setLeads(SAMPLE_DEMO_LEADS);
+        }
       } finally {
         setLoading(false);
         setRefreshing(false);
