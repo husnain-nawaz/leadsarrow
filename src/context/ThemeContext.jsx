@@ -33,6 +33,11 @@ export function ThemeProvider({ children }) {
       document.body.style.backgroundColor = '#f8fafc';
       document.body.style.color = '#0f172a';
     }
+    try {
+      if (typeof window !== 'undefined' && window.ReactNativeWebView?.postMessage) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'THEME_CHANGE', theme: targetTheme }));
+      }
+    } catch {}
   };
 
   useEffect(() => {
@@ -75,7 +80,11 @@ export function ThemeProvider({ children }) {
       }, 50);
     };
 
-    if (typeof document !== 'undefined' && 'startViewTransition' in document) {
+    const isWebView =
+      typeof window !== 'undefined' &&
+      (window.__LEADSARROW_NATIVE_APP__ === true || typeof window.ReactNativeWebView !== 'undefined');
+
+    if (!isWebView && typeof document !== 'undefined' && 'startViewTransition' in document) {
       const transition = document.startViewTransition(() => {
         flushSync(() => {
           setTheme(nextTheme);

@@ -64,10 +64,16 @@ export default function LoginPage({ onExploreLanding }) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-between bg-slate-950 text-slate-100 relative overflow-hidden">
+    <div className={`min-h-screen flex flex-col justify-between relative overflow-hidden transition-colors duration-200 ${
+      isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'
+    }`}>
       {/* Decorative background glows */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-orange-600/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className={`absolute top-0 left-1/4 w-96 h-96 rounded-full blur-3xl pointer-events-none ${
+        isDark ? 'bg-orange-600/10' : 'bg-orange-400/15'
+      }`} />
+      <div className={`absolute bottom-0 right-1/4 w-96 h-96 rounded-full blur-3xl pointer-events-none ${
+        isDark ? 'bg-blue-600/10' : 'bg-amber-300/15'
+      }`} />
 
       {/* Top Navigation Bar */}
       <header className="relative z-10 w-full max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
@@ -76,10 +82,14 @@ export default function LoginPage({ onExploreLanding }) {
             <Zap className="w-5 h-5 text-white" />
           </div>
           <div>
-            <span className="text-xl font-bold tracking-tight text-white font-display">
+            <span className={`text-xl font-bold tracking-tight font-display ${isDark ? 'text-white' : 'text-slate-900'}`}>
               Leads<span className="text-orange-500">Arrow</span>
             </span>
-            <span className="hidden sm:inline-block ml-2.5 px-2 py-0.5 text-[10px] font-semibold bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded-full uppercase tracking-wider">
+            <span className={`hidden sm:inline-block ml-2.5 px-2 py-0.5 text-[10px] font-semibold rounded-full uppercase tracking-wider border ${
+              isDark
+                ? 'bg-orange-500/10 text-orange-400 border-orange-500/20'
+                : 'bg-orange-100 text-orange-700 border-orange-200'
+            }`}>
               B2B Intelligence
             </span>
           </div>
@@ -90,20 +100,28 @@ export default function LoginPage({ onExploreLanding }) {
             <button
               type="button"
               onClick={onExploreLanding}
-              className="text-xs font-medium text-slate-400 hover:text-white transition-colors flex items-center gap-1 cursor-pointer py-1.5 px-3 rounded-lg hover:bg-slate-900 border border-transparent hover:border-slate-800"
+              className={`text-xs font-medium transition-colors flex items-center gap-1 cursor-pointer py-1.5 px-3 rounded-lg border ${
+                isDark
+                  ? 'text-slate-400 hover:text-white hover:bg-slate-900 border-transparent hover:border-slate-800'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white border-transparent hover:border-slate-200'
+              }`}
             >
               <span>Explore Product & Pricing</span>
-              <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
+              <ChevronRight className={`w-3.5 h-3.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
             </button>
           )}
 
           <button
             type="button"
             onClick={toggleTheme}
-            className="p-2 text-slate-400 hover:text-white rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 transition-colors cursor-pointer"
-            title="Toggle theme"
+            className={`p-2 rounded-lg border transition-colors cursor-pointer ${
+              isDark
+                ? 'text-slate-400 hover:text-white bg-slate-900 border-slate-800 hover:border-slate-700'
+                : 'text-slate-700 hover:text-slate-900 bg-white border-slate-200 hover:border-slate-300 shadow-xs'
+            }`}
+            title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
           >
-            {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-300" />}
+            {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
           </button>
         </div>
       </header>
@@ -114,30 +132,36 @@ export default function LoginPage({ onExploreLanding }) {
           
           {/* Left Brand Teaser (hidden on very small screens, visible on md+) */}
           <div className="hidden lg:flex lg:col-span-5 flex-col justify-center space-y-6 pr-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs font-semibold">
+            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-semibold ${
+              isDark
+                ? 'bg-orange-500/10 border-orange-500/20 text-orange-400'
+                : 'bg-orange-100 border-orange-200 text-orange-800'
+            }`}>
               <Sparkles className="w-3.5 h-3.5" />
               <span>10,363,428 Verified Contacts</span>
             </div>
 
-            <h1 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight leading-tight font-display">
+            <h1 className={`text-3xl lg:text-4xl font-extrabold tracking-tight leading-tight font-display ${
+              isDark ? 'text-white' : 'text-slate-900'
+            }`}>
               High-Velocity B2B Intelligence & Contact Reveal Engine.
             </h1>
 
-            <p className="text-sm text-slate-400 leading-relaxed">
+            <p className={`text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
               Find decision makers across 10M+ global enterprises, reveal direct verified work emails & phone numbers, and export targeted prospect clusters instantly.
             </p>
 
             <div className="space-y-3 pt-2">
-              <div className="flex items-center gap-3 text-xs text-slate-300">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <div className={`flex items-center gap-3 text-xs ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                 <span>100 free verified contact credits daily</span>
               </div>
-              <div className="flex items-center gap-3 text-xs text-slate-300">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <div className={`flex items-center gap-3 text-xs ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                 <span>94%+ deliverability on mobile & direct email</span>
               </div>
-              <div className="flex items-center gap-3 text-xs text-slate-300">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <div className={`flex items-center gap-3 text-xs ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                 <span>Custom clusters & 1-click export to CSV / Excel</span>
               </div>
             </div>
@@ -147,7 +171,9 @@ export default function LoginPage({ onExploreLanding }) {
                 <button
                   type="button"
                   onClick={onExploreLanding}
-                  className="inline-flex items-center gap-2 text-xs font-semibold text-orange-400 hover:text-orange-300 cursor-pointer group"
+                  className={`inline-flex items-center gap-2 text-xs font-semibold cursor-pointer group ${
+                    isDark ? 'text-orange-400 hover:text-orange-300' : 'text-orange-600 hover:text-orange-700'
+                  }`}
                 >
                   <span>See full feature demo & pricing plans</span>
                   <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
@@ -158,14 +184,18 @@ export default function LoginPage({ onExploreLanding }) {
 
           {/* Right: Auth Card */}
           <div className="lg:col-span-7">
-            <div className="w-full max-w-md mx-auto bg-slate-900/90 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl shadow-black/60 backdrop-blur-xl">
+            <div className={`w-full max-w-md mx-auto border rounded-2xl p-6 sm:p-8 backdrop-blur-xl ${
+              isDark
+                ? 'bg-slate-900/90 border-slate-800 shadow-2xl shadow-black/60'
+                : 'bg-white border-slate-200 shadow-xl shadow-slate-200/80'
+            }`}>
               
               {/* Card Header & Switcher */}
               <div className="mb-6">
-                <h2 className="text-2xl font-bold text-white font-display">
+                <h2 className={`text-2xl font-bold font-display ${isDark ? 'text-white' : 'text-slate-900'}`}>
                   {mode === 'login' ? 'Sign In to Workspace' : 'Create Free Account'}
                 </h2>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                   {mode === 'login'
                     ? 'Enter your credentials or use one-tap Google auth'
                     : '100 free reveal credits automatically provisioned daily'}
@@ -173,7 +203,9 @@ export default function LoginPage({ onExploreLanding }) {
               </div>
 
               {/* Mode Tabs */}
-              <div className="flex p-1 bg-slate-950/80 border border-slate-800 rounded-xl mb-5">
+              <div className={`flex p-1 border rounded-xl mb-5 ${
+                isDark ? 'bg-slate-950/80 border-slate-800' : 'bg-slate-100 border-slate-200'
+              }`}>
                 <button
                   type="button"
                   onClick={() => {
@@ -183,7 +215,9 @@ export default function LoginPage({ onExploreLanding }) {
                   className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                     mode === 'login'
                       ? 'bg-orange-600 text-white shadow-md'
-                      : 'text-slate-400 hover:text-white'
+                      : isDark
+                      ? 'text-slate-400 hover:text-white'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   Sign In
@@ -197,7 +231,9 @@ export default function LoginPage({ onExploreLanding }) {
                   className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                     mode === 'register'
                       ? 'bg-orange-600 text-white shadow-md'
-                      : 'text-slate-400 hover:text-white'
+                      : isDark
+                      ? 'text-slate-400 hover:text-white'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   Create Account
@@ -209,9 +245,13 @@ export default function LoginPage({ onExploreLanding }) {
                 <button
                   type="button"
                   onClick={handleQuickFillDemo}
-                  className="w-full mb-4 py-2 px-3 text-xs font-medium text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                  className={`w-full mb-4 py-2 px-3 text-xs font-medium border rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+                    isDark
+                      ? 'text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/25'
+                      : 'text-amber-800 bg-amber-50 hover:bg-amber-100 border-amber-300'
+                  }`}
                 >
-                  <Zap className="w-3.5 h-3.5 text-amber-400" />
+                  <Zap className={`w-3.5 h-3.5 ${isDark ? 'text-amber-400' : 'text-amber-600'}`} />
                   <span>⚡ Quick Fill Superadmin Demo (1-Click)</span>
                 </button>
               )}
@@ -221,7 +261,11 @@ export default function LoginPage({ onExploreLanding }) {
                 type="button"
                 disabled={loading}
                 onClick={handleGoogleLogin}
-                className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-200 bg-slate-800/80 border border-slate-700/80 rounded-xl hover:bg-slate-700/80 transition-colors cursor-pointer disabled:opacity-50 mb-4"
+                className={`w-full flex items-center justify-center gap-2.5 px-4 py-2.5 text-xs font-semibold border rounded-xl transition-colors cursor-pointer disabled:opacity-50 mb-4 ${
+                  isDark
+                    ? 'text-slate-200 bg-slate-800/80 border-slate-700/80 hover:bg-slate-700/80'
+                    : 'text-slate-700 bg-slate-50 border-slate-300 hover:bg-slate-100'
+                }`}
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24">
                   <path
@@ -246,16 +290,22 @@ export default function LoginPage({ onExploreLanding }) {
 
               {/* Divider */}
               <div className="relative flex items-center justify-center my-4">
-                <div className="border-t border-slate-800 w-full" />
-                <span className="bg-slate-900 px-3 text-[11px] text-slate-500 whitespace-nowrap">
+                <div className={`border-t w-full ${isDark ? 'border-slate-800' : 'border-slate-200'}`} />
+                <span className={`px-3 text-[11px] whitespace-nowrap ${
+                  isDark ? 'bg-slate-900 text-slate-500' : 'bg-white text-slate-500'
+                }`}>
                   or continue with email
                 </span>
-                <div className="border-t border-slate-800 w-full" />
+                <div className={`border-t w-full ${isDark ? 'border-slate-800' : 'border-slate-200'}`} />
               </div>
 
               {/* Error Message */}
               {error && (
-                <div className="p-3 mb-4 bg-red-950/50 border border-red-800/80 rounded-xl text-xs text-red-300">
+                <div className={`p-3 mb-4 border rounded-xl text-xs ${
+                  isDark
+                    ? 'bg-red-950/50 border-red-800/80 text-red-300'
+                    : 'bg-red-50 border-red-200 text-red-700'
+                }`}>
                   {error}
                 </div>
               )}
@@ -265,34 +315,42 @@ export default function LoginPage({ onExploreLanding }) {
                 {mode === 'register' && (
                   <>
                     <div>
-                      <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                      <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                         Full Name
                       </label>
                       <div className="relative">
-                        <User className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                        <User className={`w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
                         <input
                           type="text"
                           required
                           value={name}
                           onChange={(e) => setName(e.target.value)}
                           placeholder="Alex Miller"
-                          className="w-full pl-9 pr-3 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500 transition-colors"
+                          className={`w-full pl-9 pr-3 py-2.5 text-xs border rounded-xl focus:outline-none focus:border-orange-500 transition-colors ${
+                            isDark
+                              ? 'bg-slate-950 border-slate-800 text-white placeholder:text-slate-600'
+                              : 'bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-400'
+                          }`}
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                      <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                         Company Name (Optional)
                       </label>
                       <div className="relative">
-                        <Building2 className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                        <Building2 className={`w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
                         <input
                           type="text"
                           value={company}
                           onChange={(e) => setCompany(e.target.value)}
                           placeholder="Acme Global Inc"
-                          className="w-full pl-9 pr-3 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500 transition-colors"
+                          className={`w-full pl-9 pr-3 py-2.5 text-xs border rounded-xl focus:outline-none focus:border-orange-500 transition-colors ${
+                            isDark
+                              ? 'bg-slate-950 border-slate-800 text-white placeholder:text-slate-600'
+                              : 'bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-400'
+                          }`}
                         />
                       </div>
                     </div>
@@ -300,47 +358,57 @@ export default function LoginPage({ onExploreLanding }) {
                 )}
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                  <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                     Work Email
                   </label>
                   <div className="relative">
-                    <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <Mail className={`w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
                     <input
                       type="email"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="alex@leadsarrow.io"
-                      className="w-full pl-9 pr-3 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500 transition-colors"
+                      className={`w-full pl-9 pr-3 py-2.5 text-xs border rounded-xl focus:outline-none focus:border-orange-500 transition-colors ${
+                        isDark
+                          ? 'bg-slate-950 border-slate-800 text-white placeholder:text-slate-600'
+                          : 'bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-400'
+                      }`}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                  <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                     Password
                   </label>
                   <div className="relative">
-                    <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <Lock className={`w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
                     <input
                       type="password"
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••••••"
-                      className="w-full pl-9 pr-3 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500 transition-colors"
+                      className={`w-full pl-9 pr-3 py-2.5 text-xs border rounded-xl focus:outline-none focus:border-orange-500 transition-colors ${
+                        isDark
+                          ? 'bg-slate-950 border-slate-800 text-white placeholder:text-slate-600'
+                          : 'bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-400'
+                      }`}
                     />
                   </div>
                 </div>
 
                 {/* Remember Login Credentials */}
-                <label className="flex items-center justify-between py-1 text-xs text-slate-400 cursor-pointer">
+                <label className={`flex items-center justify-between py-1 text-xs cursor-pointer ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                   <div className="flex items-center gap-2">
                     <input
                       type="checkbox"
                       checked={rememberMe}
                       onChange={(e) => setRememberMe(e.target.checked)}
-                      className="w-3.5 h-3.5 rounded border-slate-700 bg-slate-950 text-orange-600 focus:ring-orange-500"
+                      className={`w-3.5 h-3.5 rounded text-orange-600 focus:ring-orange-500 ${
+                        isDark ? 'border-slate-700 bg-slate-950' : 'border-slate-300 bg-white'
+                      }`}
                     />
                     <span>Remember login session (30 days)</span>
                   </div>
@@ -365,14 +433,16 @@ export default function LoginPage({ onExploreLanding }) {
 
               {/* Bottom links */}
               {onExploreLanding && (
-                <div className="mt-6 pt-5 border-t border-slate-800 text-center">
+                <div className={`mt-6 pt-5 border-t text-center ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
                   <button
                     type="button"
                     onClick={onExploreLanding}
-                    className="text-xs text-slate-400 hover:text-orange-400 transition-colors cursor-pointer"
+                    className={`text-xs transition-colors cursor-pointer ${
+                      isDark ? 'text-slate-400 hover:text-orange-400' : 'text-slate-500 hover:text-orange-600'
+                    }`}
                   >
                     Want to see features and pricing plans first?{' '}
-                    <span className="font-semibold text-orange-400 underline">View Landing Page</span>
+                    <span className={`font-semibold underline ${isDark ? 'text-orange-400' : 'text-orange-600'}`}>View Landing Page</span>
                   </button>
                 </div>
               )}
@@ -382,7 +452,9 @@ export default function LoginPage({ onExploreLanding }) {
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 w-full max-w-7xl mx-auto px-6 py-4 text-center text-xs text-slate-500 border-t border-slate-900">
+      <footer className={`relative z-10 w-full max-w-7xl mx-auto px-6 py-4 text-center text-xs border-t ${
+        isDark ? 'text-slate-500 border-slate-900' : 'text-slate-500 border-slate-200'
+      }`}>
         LeadsArrow &copy; {new Date().getFullYear()} &mdash; Enterprise High-Velocity B2B Intelligence.
       </footer>
     </div>

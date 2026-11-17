@@ -25,6 +25,16 @@ export default function App() {
   const [canGoBack, setCanGoBack] = useState(false);
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [isDarkTheme, setIsDarkTheme] = useState(true);
+
+  const handleWebViewMessage = (event) => {
+    try {
+      const payload = JSON.parse(event.nativeEvent.data);
+      if (payload?.type === 'THEME_CHANGE') {
+        setIsDarkTheme(payload.theme === 'dark');
+      }
+    } catch {}
+  };
 
   // Handle Android hardware back button
   useEffect(() => {
@@ -49,10 +59,12 @@ export default function App() {
     }
   };
 
+  const themeBg = isDarkTheme ? '#0b0f19' : '#f8fafc';
+
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
-        <StatusBar style="light" backgroundColor="#0b0f19" />
+      <SafeAreaView style={[styles.container, { backgroundColor: themeBg }]} edges={['top', 'left', 'right', 'bottom']}>
+        <StatusBar style={isDarkTheme ? 'light' : 'dark'} backgroundColor={themeBg} />
 
         {hasError ? (
           <View style={styles.errorContainer}>
@@ -65,15 +77,15 @@ export default function App() {
             </TouchableOpacity>
           </View>
         ) : (
-          <View style={styles.webViewWrapper}>
+          <View style={[styles.webViewWrapper, { backgroundColor: themeBg }]}>
             <WebView
               ref={webViewRef}
               source={{ uri: WEB_APP_URL }}
-              style={styles.webView}
+              style={[styles.webView, { backgroundColor: themeBg }]}
               originWhitelist={['*']}
               applicationNameForUserAgent="LeadsArrowAndroidApp/1.0"
               injectedJavaScriptBeforeContentLoaded={NATIVE_APP_INJECT_SCRIPT}
-              onMessage={() => {}}
+              onMessage={handleWebViewMessage}
               onNavigationStateChange={(navState) => {
                 setCanGoBack(navState.canGoBack);
               }}
