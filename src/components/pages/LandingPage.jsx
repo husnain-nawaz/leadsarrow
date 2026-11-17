@@ -389,7 +389,7 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
               <ArrowRight className="w-4 h-4" />
             </button>
             <a
-              href="/downloads/LeadsArrow.apk?v=1.0.3"
+              href="/downloads/LeadsArrow.apk?v=1.0.4"
               download="LeadsArrow.apk"
               className={`w-full sm:w-auto px-6 sm:px-7 py-3.5 sm:py-4 text-xs sm:text-sm font-bold rounded-xl transition-all text-center border flex items-center justify-center gap-2 ${
                 isDark
@@ -818,7 +818,7 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
                   : 'bg-emerald-100 border border-emerald-200 text-emerald-800'
               }`}>
                 <Smartphone className="w-3.5 h-3.5" />
-                <span>Official Android Mobile App · v1.0.3</span>
+                <span>Official Android Mobile App · v1.0.4</span>
               </div>
 
               <h2 className={`text-2xl sm:text-3xl font-extrabold font-display tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
@@ -847,7 +847,7 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
 
             <div className="flex flex-col items-center gap-3 shrink-0 w-full md:w-auto">
               <a
-                href="/downloads/LeadsArrow.apk?v=1.0.3"
+                href="/downloads/LeadsArrow.apk?v=1.0.4"
                 download="LeadsArrow.apk"
                 className="w-full md:w-auto px-7 py-4 text-sm font-extrabold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-xl shadow-lg shadow-emerald-600/25 transition-all inline-flex items-center justify-center gap-2.5 transform hover:-translate-y-0.5"
               >
@@ -943,7 +943,7 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
             <a href="#features" className="hover:text-white transition-colors">Features</a>
             <a href="#preview" className="hover:text-white transition-colors">10M+ Database</a>
             <a href="#pricing" className="hover:text-white transition-colors">Pricing Plans</a>
-            <a href="/downloads/LeadsArrow.apk?v=1.0.3" download="LeadsArrow.apk" className="text-emerald-400 hover:text-emerald-300 font-semibold transition-colors">
+            <a href="/downloads/LeadsArrow.apk?v=1.0.4" download="LeadsArrow.apk" className="text-emerald-400 hover:text-emerald-300 font-semibold transition-colors">
               Download Android App
             </a>
             <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
