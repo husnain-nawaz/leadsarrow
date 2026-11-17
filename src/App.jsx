@@ -263,6 +263,46 @@ function MainApp() {
   const [isMobileApp] = useState(detectIsMobileApp);
   const [showLandingForLoggedIn, setShowLandingForLoggedIn] = useState(false);
 
+  // Disable pinch-to-zoom and double-tap zoom ONLY inside the native Android .apk app (keep browser zoom normal)
+  useEffect(() => {
+    if (!isMobileApp || typeof document === 'undefined') return;
+
+    let viewportMeta = document.querySelector('meta[name="viewport"]');
+    if (!viewportMeta) {
+      viewportMeta = document.createElement('meta');
+      viewportMeta.setAttribute('name', 'viewport');
+      document.head.appendChild(viewportMeta);
+    }
+    viewportMeta.setAttribute(
+      'content',
+      'width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no'
+    );
+
+    document.documentElement.style.touchAction = 'pan-x pan-y';
+    document.body.style.touchAction = 'pan-x pan-y';
+
+    const preventMultiTouchZoom = (e) => {
+      if (e.touches && e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+    const preventGestureZoom = (e) => {
+      e.preventDefault();
+    };
+
+    document.addEventListener('touchstart', preventMultiTouchZoom, { passive: false });
+    document.addEventListener('touchmove', preventMultiTouchZoom, { passive: false });
+    document.addEventListener('gesturestart', preventGestureZoom, { passive: false });
+    document.addEventListener('gesturechange', preventGestureZoom, { passive: false });
+
+    return () => {
+      document.removeEventListener('touchstart', preventMultiTouchZoom);
+      document.removeEventListener('touchmove', preventMultiTouchZoom);
+      document.removeEventListener('gesturestart', preventGestureZoom);
+      document.removeEventListener('gesturechange', preventGestureZoom);
+    };
+  }, [isMobileApp]);
+
   // Instantly catch deactivation broadcast from API layer and block dashboard
   useEffect(() => {
     const handleDeactivated = () => {

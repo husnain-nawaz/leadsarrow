@@ -17,6 +17,26 @@ const WEB_APP_URL = 'https://aliceblue-kudu-967560.hostingersite.com/?app=androi
 const NATIVE_APP_INJECT_SCRIPT = `
   window.__LEADSARROW_NATIVE_APP__ = true;
   try { sessionStorage.setItem('leadsarrow_native_app', '1'); } catch (e) {}
+  try {
+    var applyNoZoom = function () {
+      var meta = document.querySelector('meta[name="viewport"]');
+      if (!meta && document.head) {
+        meta = document.createElement('meta');
+        meta.setAttribute('name', 'viewport');
+        document.head.appendChild(meta);
+      }
+      if (meta) {
+        meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no');
+      }
+      if (document.documentElement) document.documentElement.style.touchAction = 'pan-x pan-y';
+      if (document.body) document.body.style.touchAction = 'pan-x pan-y';
+    };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', applyNoZoom);
+    } else {
+      applyNoZoom();
+    }
+  } catch (e) {}
   true;
 `;
 
@@ -106,6 +126,10 @@ export default function App() {
               )}
               allowsBackForwardNavigationGestures={true}
               forceDarkOn={false}
+              setBuiltInZoomControls={false}
+              setDisplayZoomControls={false}
+              scalesPageToFit={false}
+              textZoom={100}
               pullToRefreshEnabled={true}
               cacheEnabled={true}
               cacheMode="LOAD_DEFAULT"
