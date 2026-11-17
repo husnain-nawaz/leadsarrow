@@ -27,6 +27,7 @@ mobile/ios/
 mobile/*.jks
 mobile/*.keystore
 *.apk
+!public/downloads/LeadsArrow.apk
 *.aab
 mobile_screen.png
 mobile/.env*

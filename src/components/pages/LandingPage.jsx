@@ -29,7 +29,8 @@ import {
   ShieldAlert,
   BadgeCheck,
   Sun,
-  Moon
+  Moon,
+  Smartphone
 } from 'lucide-react';
 import { openAuthModal, openSignOutModal, openProfileModal, openUpgradeModal } from '../../store/authSlice.js';
 import { PRICING_PLANS } from '../../data/plans.js';
@@ -192,6 +193,10 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
               <a href="#features" className={`hover:${isDark ? 'text-white' : 'text-slate-900'} transition-colors`}>Features</a>
               <a href="#preview" className={`hover:${isDark ? 'text-white' : 'text-slate-900'} transition-colors`}>10M+ Database</a>
               <a href="#pricing" className="hover:text-orange-500 transition-colors text-orange-500 font-bold">Pricing & Daily Plans</a>
+              <a href="#mobile-app" className={`hover:${isDark ? 'text-white' : 'text-slate-900'} transition-colors inline-flex items-center gap-1`}>
+                <Smartphone className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Android App</span>
+              </a>
               <a href="#faq" className={`hover:${isDark ? 'text-white' : 'text-slate-900'} transition-colors`}>FAQ</a>
             </nav>
           </div>
@@ -374,7 +379,7 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+          <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 pt-2">
             <button
               type="button"
               onClick={() => handleOpenAuth('free')}
@@ -383,6 +388,23 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
               <span>{user ? 'Open Workspace Dashboard' : 'Claim 100 Free Daily Credits'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
+            <a
+              href="/downloads/LeadsArrow.apk"
+              download="LeadsArrow.apk"
+              className={`w-full sm:w-auto px-6 sm:px-7 py-3.5 sm:py-4 text-xs sm:text-sm font-bold rounded-xl transition-all text-center border flex items-center justify-center gap-2 ${
+                isDark
+                  ? 'text-emerald-300 hover:text-white bg-emerald-950/60 hover:bg-emerald-900/70 border-emerald-500/40'
+                  : 'text-emerald-800 hover:text-emerald-950 bg-emerald-50 hover:bg-emerald-100 border-emerald-300 shadow-xs'
+              }`}
+            >
+              <Smartphone className="w-4 h-4 shrink-0" />
+              <span>Download Android APK</span>
+              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${
+                isDark ? 'bg-emerald-900/80 text-emerald-200' : 'bg-emerald-200/80 text-emerald-900'
+              }`}>
+                10.5 MB
+              </span>
+            </a>
             <a
               href="#preview"
               className={`w-full sm:w-auto px-6 sm:px-7 py-3.5 sm:py-4 text-xs sm:text-sm font-semibold rounded-xl transition-all text-center border ${
@@ -781,6 +803,65 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
         </div>
       </section>
 
+      {/* Android Mobile App Download Section */}
+      <section id="mobile-app" className={`py-14 sm:py-20 px-4 sm:px-6 border-t ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-200'}`}>
+        <div className="max-w-5xl mx-auto">
+          <div className={`rounded-2xl border p-6 sm:p-10 flex flex-col md:flex-row items-center justify-between gap-8 ${
+            isDark
+              ? 'bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950/30 border-slate-800 shadow-2xl'
+              : 'bg-gradient-to-br from-slate-50 via-white to-emerald-50/50 border-slate-200 shadow-lg'
+          }`}>
+            <div className="space-y-4 text-center md:text-left max-w-xl">
+              <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${
+                isDark
+                  ? 'bg-emerald-950/80 border border-emerald-700/60 text-emerald-300'
+                  : 'bg-emerald-100 border border-emerald-200 text-emerald-800'
+              }`}>
+                <Smartphone className="w-3.5 h-3.5" />
+                <span>Official Android Mobile App · v1.0.0</span>
+              </div>
+
+              <h2 className={`text-2xl sm:text-3xl font-extrabold font-display tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                Take LeadsArrow Everywhere on Android
+              </h2>
+
+              <p className={`text-xs sm:text-sm leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                Search 10.3M+ decision makers, reveal verified emails & direct phone numbers, and manage your saved target lists straight from your Android phone — in a fast, lightweight <strong>10.5 MB</strong> standalone app.
+              </p>
+
+              <div className={`flex flex-wrap items-center justify-center md:justify-start gap-4 text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                <span className="inline-flex items-center gap-1.5">
+                  <Check className="w-4 h-4 text-emerald-500 shrink-0" />
+                  10.5 MB Lightweight APK
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <Check className="w-4 h-4 text-emerald-500 shrink-0" />
+                  Android 7.0+ (arm64-v8a)
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <Check className="w-4 h-4 text-emerald-500 shrink-0" />
+                  Signed Release Build
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col items-center gap-3 shrink-0 w-full md:w-auto">
+              <a
+                href="/downloads/LeadsArrow.apk"
+                download="LeadsArrow.apk"
+                className="w-full md:w-auto px-7 py-4 text-sm font-extrabold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-xl shadow-lg shadow-emerald-600/25 transition-all inline-flex items-center justify-center gap-2.5 transform hover:-translate-y-0.5"
+              >
+                <Download className="w-4 h-4 shrink-0" />
+                <span>Download LeadsArrow APK</span>
+              </a>
+              <span className={`text-[11px] text-center ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Direct download · Allow &ldquo;Install unknown apps&rdquo; on Android
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* FAQ Section */}
       <section id="faq" className={`py-14 sm:py-24 px-4 sm:px-6 border-t ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
         <div className="max-w-3xl mx-auto space-y-8 sm:space-y-10">
@@ -862,6 +943,9 @@ export default function LandingPage({ onReturnDashboard, onOpenProfile }) {
             <a href="#features" className="hover:text-white transition-colors">Features</a>
             <a href="#preview" className="hover:text-white transition-colors">10M+ Database</a>
             <a href="#pricing" className="hover:text-white transition-colors">Pricing Plans</a>
+            <a href="/downloads/LeadsArrow.apk" download="LeadsArrow.apk" className="text-emerald-400 hover:text-emerald-300 font-semibold transition-colors">
+              Download Android App
+            </a>
             <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
             <button
               type="button"

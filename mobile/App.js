@@ -31,8 +31,8 @@ export default function App() {
         }
         return false; // let system handle (exit or background)
       };
-      BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
     }
   }, [canGoBack]);
 
