@@ -77,28 +77,43 @@ export default function AppNavigator() {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName={isLoggedIn ? 'MainTabs' : 'Auth'}
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: theme.colors.background }
         }}
       >
-        <Stack.Screen
-          name="Auth"
-          component={AuthScreen}
-          options={{
-            animation: 'fade'
-          }}
-        />
-        <Stack.Screen name="MainTabs" component={MainTabNavigator} />
-        <Stack.Screen
-          name="SavedListDetail"
-          component={SavedListDetailScreen}
-          options={{
-            headerShown: false,
-            animation: 'slide_from_right'
-          }}
-        />
+        {isLoggedIn ? (
+          <>
+            <Stack.Screen name="MainTabs" component={MainTabNavigator} />
+            <Stack.Screen
+              name="SavedListDetail"
+              component={SavedListDetailScreen}
+              options={{
+                headerShown: false,
+                animation: 'slide_from_right'
+              }}
+            />
+          </>
+        ) : (
+          <>
+            <Stack.Screen
+              name="Auth"
+              component={AuthScreen}
+              options={{
+                animation: 'fade'
+              }}
+            />
+            <Stack.Screen name="MainTabs" component={MainTabNavigator} />
+            <Stack.Screen
+              name="SavedListDetail"
+              component={SavedListDetailScreen}
+              options={{
+                headerShown: false,
+                animation: 'slide_from_right'
+              }}
+            />
+          </>
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );

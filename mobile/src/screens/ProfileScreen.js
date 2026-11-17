@@ -16,7 +16,9 @@ import { theme } from '../config/theme';
 
 export default function ProfileScreen({ navigation }) {
   const { user, isLoggedIn, logout, refreshUser, revealedLeadIds } = useAuth();
-  const [serverUrl, setServerUrl] = useState(api.baseUrl || 'http://192.168.18.4:3000');
+  const [serverUrl, setServerUrl] = useState(
+    api.baseUrl || 'https://aliceblue-kudu-967560.hostingersite.com'
+  );
   const [testingConnection, setTestingConnection] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -177,7 +179,7 @@ export default function ProfileScreen({ navigation }) {
           onChangeText={setServerUrl}
           autoCapitalize="none"
           autoCorrect={false}
-          placeholder="http://192.168.18.4:3000"
+          placeholder="https://aliceblue-kudu-967560.hostingersite.com"
           placeholderTextColor={theme.colors.textMuted}
         />
 

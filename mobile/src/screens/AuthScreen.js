@@ -26,11 +26,13 @@ export default function AuthScreen({ navigation, route }) {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [showApiSettings, setShowApiSettings] = useState(false);
-  const [customServerUrl, setCustomServerUrl] = useState(api.baseUrl || 'http://192.168.18.4:3000');
+  const [customServerUrl, setCustomServerUrl] = useState(
+    api.baseUrl || 'https://aliceblue-kudu-967560.hostingersite.com'
+  );
 
   const handleFillDemo = () => {
     setEmail('alex@leadsarrow.io');
-    setPassword('password123');
+    setPassword('LeadsArrow2026!');
     setErrorMessage('');
   };
 
@@ -64,6 +66,8 @@ export default function AuthScreen({ navigation, route }) {
       }
       if (navigation.canGoBack()) {
         navigation.goBack();
+      } else {
+        navigation.navigate('MainTabs');
       }
     } catch (err) {
       setErrorMessage(err.message || 'Authentication failed. Please check credentials or network.');
@@ -128,7 +132,7 @@ export default function AuthScreen({ navigation, route }) {
               value={customServerUrl}
               onChangeText={setCustomServerUrl}
               autoCapitalize="none"
-              placeholder="http://192.168.18.4:3000"
+              placeholder="https://aliceblue-kudu-967560.hostingersite.com"
               placeholderTextColor={theme.colors.textMuted}
             />
             <TouchableOpacity style={styles.serverSaveBtn} onPress={handleSaveApiUrl}>

@@ -59,7 +59,7 @@ export default function LoginPage({ onExploreLanding }) {
 
   const handleQuickFillDemo = () => {
     setEmail('alex@leadsarrow.io');
-    setPassword('SuperAdmin2026!');
+    setPassword('LeadsArrow2026!');
     dispatch(clearAuthError());
   };
 

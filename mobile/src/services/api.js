@@ -7,13 +7,11 @@ const STORAGE_KEYS = {
   BASE_URL: 'leadsarrow_mobile_base_url'
 };
 
-// Default Backend URL based on platform
+// Production Hostinger Live Web Backend URL (Same backend used by the web version)
+const LIVE_BACKEND_URL = 'https://aliceblue-kudu-967560.hostingersite.com';
+
 const getDefaultBaseUrl = () => {
-  // If running in Android Emulator, 10.0.2.2 maps to host PC localhost
-  if (Platform.OS === 'android') {
-    return 'http://192.168.18.4:3000'; // LAN IP for device/emulator, fallback to 10.0.2.2
-  }
-  return 'http://192.168.18.4:3000';
+  return LIVE_BACKEND_URL;
 };
 
 class ApiService {
@@ -31,7 +29,13 @@ class ApiService {
         AsyncStorage.getItem(STORAGE_KEYS.BASE_URL)
       ]);
       if (savedToken) this.token = savedToken;
-      if (savedUrl) this.baseUrl = savedUrl;
+      // Always use the live production web backend if the saved URL was the legacy local IP
+      if (savedUrl && !savedUrl.includes('192.168.') && !savedUrl.includes('localhost')) {
+        this.baseUrl = savedUrl;
+      } else {
+        this.baseUrl = getDefaultBaseUrl();
+        await AsyncStorage.setItem(STORAGE_KEYS.BASE_URL, this.baseUrl);
+      }
     } catch (e) {
       console.warn('[ApiService] Error loading stored credentials:', e);
     }
