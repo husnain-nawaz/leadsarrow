@@ -862,7 +862,7 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 flex flex-col font-sans selection:bg-orange-600 selection:text-white transition-colors">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 flex flex-col font-sans selection:bg-orange-600 selection:text-white transition-colors">
       {/* Superadmin Top Bar (Fully Responsive on Mobile) */}
       <header className="border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-30 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 transition-colors">
         <div className="flex items-center gap-2.5 sm:gap-4 min-w-0">
@@ -973,69 +973,69 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
       )}
 
       {/* KPI Stats Bar */}
-      <div className="bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800/80 px-6 py-4 transition-colors">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-          <div className="bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-3.5 rounded-xl shadow-xs transition-colors">
-            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs">
-              <span>Total Logins / Users</span>
-              <Users className="w-4 h-4 text-blue-500 dark:text-blue-400" />
+      <div className="bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800/80 px-3 sm:px-6 py-3 sm:py-4 transition-colors">
+        <div className="max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-4">
+          <div className="bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-3 sm:p-3.5 rounded-xl shadow-xs transition-colors">
+            <div className="flex items-center justify-between gap-1 text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs">
+              <span className="truncate">Total Logins / Users</span>
+              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-500 dark:text-blue-400 shrink-0" />
             </div>
-            <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1 font-display">
+            <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-1 font-display">
               {stats?.totalUsers ?? usersList.length}
             </div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+            <div className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
               {stats?.paidUsers ?? 0} Paid · {stats?.freeUsers ?? 0} Free
             </div>
           </div>
 
-          <div className="bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-3.5 rounded-xl shadow-xs transition-colors">
-            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs">
-              <span>Paid Subscriptions</span>
-              <CreditCard className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+          <div className="bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-3 sm:p-3.5 rounded-xl shadow-xs transition-colors">
+            <div className="flex items-center justify-between gap-1 text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs">
+              <span className="truncate">Paid Subscriptions</span>
+              <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500 dark:text-emerald-400 shrink-0" />
             </div>
-            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1 font-display">
+            <div className="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1 font-display">
               {stats?.paidUsers ?? 0} Accounts
             </div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+            <div className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
               Starter ($10), Pro ($39), Unlimited ($79)
             </div>
           </div>
 
-          <div className="bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-3.5 rounded-xl shadow-xs transition-colors">
-            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs">
-              <span>Estimated MRR</span>
-              <DollarSign className="w-4 h-4 text-orange-500 dark:text-orange-400" />
+          <div className="bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-3 sm:p-3.5 rounded-xl shadow-xs transition-colors">
+            <div className="flex items-center justify-between gap-1 text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs">
+              <span className="truncate">Estimated MRR</span>
+              <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-500 dark:text-orange-400 shrink-0" />
             </div>
-            <div className="text-2xl font-bold text-orange-600 dark:text-orange-400 mt-1 font-display">
+            <div className="text-xl sm:text-2xl font-bold text-orange-600 dark:text-orange-400 mt-1 font-display">
               ${stats?.totalRevenue ?? 0} / mo
             </div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+            <div className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
               Active recurring revenue
             </div>
           </div>
 
-          <div className="bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-3.5 rounded-xl shadow-xs transition-colors">
-            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs">
-              <span>Credits Used Today</span>
-              <Zap className="w-4 h-4 text-amber-500 dark:text-amber-400" />
+          <div className="bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-3 sm:p-3.5 rounded-xl shadow-xs transition-colors">
+            <div className="flex items-center justify-between gap-1 text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs">
+              <span className="truncate">Credits Used Today</span>
+              <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500 dark:text-amber-400 shrink-0" />
             </div>
-            <div className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1 font-display">
+            <div className="text-xl sm:text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1 font-display">
               {(stats?.totalCreditsUsedToday ?? 0).toLocaleString()}
             </div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+            <div className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
               Across all user sessions
             </div>
           </div>
 
-          <div className="bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-3.5 rounded-xl col-span-2 sm:col-span-1 shadow-xs transition-colors">
-            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs">
-              <span>Database Volume (Cluster)</span>
-              <Database className="w-4 h-4 text-purple-500 dark:text-purple-400" />
+          <div className="bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-3 sm:p-3.5 rounded-xl col-span-2 sm:col-span-1 shadow-xs transition-colors">
+            <div className="flex items-center justify-between gap-1 text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs">
+              <span className="truncate">Database Volume (Cluster)</span>
+              <Database className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-500 dark:text-purple-400 shrink-0" />
             </div>
-            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400 mt-1 font-display">
+            <div className="text-xl sm:text-2xl font-bold text-purple-600 dark:text-purple-400 mt-1 font-display">
               {(stats?.totalDatabaseLeads ?? 10363428).toLocaleString()}
             </div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex flex-wrap gap-x-1.5">
+            <div className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex flex-wrap gap-x-1.5">
               <span>DB1: 1.84M</span>
               <span>·</span>
               <span>DB2: 4.37M</span>
@@ -1053,81 +1053,86 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
       </div>
 
       {/* Main Container */}
-      <main className="max-w-7xl mx-auto w-full px-6 py-6 flex-1 flex flex-col gap-6">
+      <main className="max-w-7xl mx-auto w-full px-3 sm:px-6 py-4 sm:py-6 flex-1 flex flex-col gap-4 sm:gap-6 min-w-0">
         {/* Navigation Tabs */}
-        <div className="flex border-b border-slate-200 dark:border-slate-800 gap-2">
+        <div className="grid grid-cols-2 sm:flex border-b border-slate-200 dark:border-slate-800 gap-1.5 sm:gap-2">
           <button
             type="button"
             onClick={() => setActiveTab('users')}
-            className={`px-5 py-2.5 text-xs font-bold transition-all rounded-t-lg flex items-center gap-2 cursor-pointer ${
+            className={`px-3 sm:px-5 py-2.5 text-xs font-bold transition-all rounded-t-lg flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 cursor-pointer min-w-0 ${
               activeTab === 'users'
                 ? 'bg-white dark:bg-slate-800 text-orange-600 dark:text-orange-400 border-b-2 border-orange-500 shadow-xs'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50'
             }`}
           >
-            <Users className="w-4 h-4" />
-            <span>User Accounts, Plans & Credit Balances ({usersList.length})</span>
+            <Users className="w-4 h-4 shrink-0" />
+            <span className="sm:hidden truncate">Users & Plans ({usersList.length})</span>
+            <span className="hidden sm:inline">User Accounts, Plans & Credit Balances ({usersList.length})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('ingestion')}
-            className={`px-5 py-2.5 text-xs font-bold transition-all rounded-t-lg flex items-center gap-2 cursor-pointer ${
+            className={`px-3 sm:px-5 py-2.5 text-xs font-bold transition-all rounded-t-lg flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 cursor-pointer min-w-0 ${
               activeTab === 'ingestion'
                 ? 'bg-white dark:bg-slate-800 text-orange-600 dark:text-orange-400 border-b-2 border-orange-500 shadow-xs'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50'
             }`}
           >
-            <Database className="w-4 h-4" />
-            <span>Data Ingestion Hub (Manual, CSV/Excel, Sheets, MySQL)</span>
+            <Database className="w-4 h-4 shrink-0" />
+            <span className="sm:hidden truncate">Data Ingestion</span>
+            <span className="hidden sm:inline">Data Ingestion Hub (Manual, CSV/Excel, Sheets, MySQL)</span>
           </button>
         </div>
 
         {/* --- TAB 1: USERS & SUBSCRIPTION MANAGEMENT --- */}
         {activeTab === 'users' && (
-          <div className="space-y-4">
+          <div className="space-y-3.5 sm:space-y-4 min-w-0">
             {/* Superadmin vs Customer Segregation Pills */}
-            <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-900/70 p-1 rounded-xl w-fit border border-slate-200 dark:border-slate-800">
+            <div className="grid grid-cols-3 sm:inline-flex items-center gap-1 sm:gap-2 bg-slate-100 dark:bg-slate-900/70 p-1 rounded-xl w-full sm:w-fit border border-slate-200 dark:border-slate-800">
               <button
                 type="button"
                 onClick={() => setUserRoleTab('customers')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                className={`px-2 sm:px-3.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 min-w-0 ${
                   userRoleTab === 'customers'
                     ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs'
                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                <Users className="w-3.5 h-3.5 text-orange-500" />
-                <span>Customer Accounts ({usersList.filter((u) => !isSuperAdminAccount(u)).length})</span>
+                <Users className="w-3.5 h-3.5 text-orange-500 shrink-0 hidden sm:inline" />
+                <span className="sm:hidden truncate">Customers ({usersList.filter((u) => !isSuperAdminAccount(u)).length})</span>
+                <span className="hidden sm:inline">Customer Accounts ({usersList.filter((u) => !isSuperAdminAccount(u)).length})</span>
               </button>
               <button
                 type="button"
                 onClick={() => setUserRoleTab('admins')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                className={`px-2 sm:px-3.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 min-w-0 ${
                   userRoleTab === 'admins'
                     ? 'bg-white dark:bg-slate-800 text-orange-600 dark:text-orange-400 shadow-xs'
                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                <Shield className="w-3.5 h-3.5 text-orange-500" />
-                <span>Superadmin Staff ({usersList.filter(isSuperAdminAccount).length})</span>
+                <Shield className="w-3.5 h-3.5 text-orange-500 shrink-0 hidden sm:inline" />
+                <span className="sm:hidden truncate">Admins ({usersList.filter(isSuperAdminAccount).length})</span>
+                <span className="hidden sm:inline">Superadmin Staff ({usersList.filter(isSuperAdminAccount).length})</span>
               </button>
               <button
                 type="button"
                 onClick={() => setUserRoleTab('all')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                className={`px-2 sm:px-3.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 min-w-0 ${
                   userRoleTab === 'all'
                     ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs'
                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                <span>All Profiles ({usersList.length})</span>
+                <span className="sm:hidden truncate">All ({usersList.length})</span>
+                <span className="hidden sm:inline">All Profiles ({usersList.length})</span>
               </button>
             </div>
 
             {/* Filters Bar */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs transition-colors">
-              <div className="relative w-full sm:w-72">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2.5 sm:gap-3 bg-white dark:bg-slate-950 p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs transition-colors">
+              <div className="relative w-full lg:w-72">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
@@ -1138,12 +1143,12 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                 />
               </div>
 
-              <div className="flex items-center gap-3 w-full sm:w-auto">
+              <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-2 sm:gap-3 w-full lg:w-auto">
                 {/* Plan Filter */}
                 <select
                   value={selectedPlanFilter}
                   onChange={(e) => setSelectedPlanFilter(e.target.value)}
-                  className="px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none transition-colors"
+                  className="w-full sm:w-auto min-w-0 px-2.5 sm:px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none transition-colors"
                 >
                   <option value="all">All Plans</option>
                   <option value="free">Free Starter ($0 - 100/day)</option>
@@ -1156,9 +1161,9 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                 <select
                   value={selectedPaymentFilter}
                   onChange={(e) => setSelectedPaymentFilter(e.target.value)}
-                  className="px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none transition-colors"
+                  className="w-full sm:w-auto min-w-0 px-2.5 sm:px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none transition-colors"
                 >
-                  <option value="all">All Payment Statuses</option>
+                  <option value="all">All Payments</option>
                   <option value="paid">Paid Customers</option>
                   <option value="free">Free / Unpaid Tier</option>
                 </select>
@@ -1166,9 +1171,9 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                 <button
                   type="button"
                   onClick={() => setIsExportConfirmOpen(true)}
-                  className="px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 rounded-lg flex items-center gap-1.5 whitespace-nowrap cursor-pointer transition-colors shadow-xs"
+                  className="col-span-2 sm:col-span-1 w-full sm:w-auto justify-center px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 rounded-lg flex items-center gap-1.5 whitespace-nowrap cursor-pointer transition-colors shadow-xs"
                 >
-                  <Download className="w-3.5 h-3.5 text-orange-500 dark:text-orange-400" />
+                  <Download className="w-3.5 h-3.5 text-orange-500 dark:text-orange-400 shrink-0" />
                   <span>
                     {selectedUserIds.length > 0
                       ? `Export Selected (${selectedUserIds.length})`
@@ -1180,12 +1185,12 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
 
             {/* Selected Users Action Banner */}
             {selectedUserIds.length > 0 && (
-              <div className="flex items-center justify-between px-4 py-2.5 bg-orange-500/10 border border-orange-500/30 rounded-xl text-xs text-orange-700 dark:text-orange-300 animate-in fade-in duration-150">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3.5 sm:px-4 py-2.5 bg-orange-500/10 border border-orange-500/30 rounded-xl text-xs text-orange-700 dark:text-orange-300 animate-in fade-in duration-150">
                 <div className="flex items-center gap-2">
-                  <CheckSquare className="w-4 h-4 text-orange-500" />
+                  <CheckSquare className="w-4 h-4 text-orange-500 shrink-0" />
                   <span className="font-semibold">{selectedUserIds.length} user account{selectedUserIds.length !== 1 ? 's' : ''} selected</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-end gap-2 w-full sm:w-auto">
                   <button
                     type="button"
                     onClick={() => setSelectedUserIds([])}
@@ -1196,9 +1201,9 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                   <button
                     type="button"
                     onClick={() => setIsExportConfirmOpen(true)}
-                    className="px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                    className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
                   >
-                    <Download className="w-3.5 h-3.5" />
+                    <Download className="w-3.5 h-3.5 shrink-0" />
                     <span>Export {selectedUserIds.length} Selected</span>
                   </button>
                 </div>
@@ -1523,13 +1528,19 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
 
             {/* Customer Detailed Dossier & Purchase History Modal */}
             {selectedCustomer && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 dark:bg-slate-950/80 backdrop-blur-xs overflow-y-auto">
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl my-8 text-slate-900 dark:text-slate-100 transition-colors">
-                  {/* Header */}
-                  <div className="flex items-start justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-bold text-slate-900 dark:text-white font-display">
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-slate-950/70 dark:bg-slate-950/80 backdrop-blur-xs"
+                onClick={() => setSelectedCustomer(null)}
+              >
+                <div
+                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl max-w-2xl w-full max-h-[82vh] sm:max-h-[88vh] flex flex-col overflow-hidden shadow-2xl text-slate-900 dark:text-slate-100 transition-colors"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Sticky Header */}
+                  <div className="flex items-start justify-between gap-2 border-b border-slate-200 dark:border-slate-800 px-4 py-3 sm:px-6 sm:py-4 shrink-0">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                        <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white font-display truncate max-w-[200px] sm:max-w-none">
                           {selectedCustomer.name}
                         </h3>
                         {selectedCustomer.isSuperAdmin && (
@@ -1550,12 +1561,11 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                           {selectedCustomer.paymentStatus === 'paid' ? 'Paid Customer' : 'Free Tier'}
                         </span>
                       </div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex flex-wrap items-center gap-2 font-mono">
-                        <span>{selectedCustomer.email}</span>
+                      <div className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 font-mono">
+                        <span className="break-all">{selectedCustomer.email}</span>
                         <span>·</span>
-                        <span>{selectedCustomer.company || 'Enterprise Workspace'}</span>
-                        <span>·</span>
-                        <span className="uppercase text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-transparent">
+                        <span className="truncate max-w-[140px] sm:max-w-none">{selectedCustomer.company || 'Enterprise Workspace'}</span>
+                        <span className="uppercase text-[9px] sm:text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-transparent">
                           {selectedCustomer.authProvider || 'jwt'}
                         </span>
                       </div>
@@ -1564,208 +1574,215 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                     <button
                       type="button"
                       onClick={() => setSelectedCustomer(null)}
-                      className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                      aria-label="Close dossier"
+                      className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
                     >
-                      <X className="w-5 h-5" />
+                      <X className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
                   </div>
 
-                  {selectedCustomer.isDeactivated && (
-                    <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-xs text-rose-800 dark:text-rose-300">
-                      <div className="font-bold flex items-center gap-1.5 text-rose-600 dark:text-rose-400">
-                        <AlertOctagon className="w-4 h-4" />
-                        <span>Account Access Suspended / Deactivated</span>
+                  {/* Scrollable Body */}
+                  <div className="flex-1 overflow-y-auto min-h-0 px-4 py-3.5 sm:px-6 sm:py-5 space-y-4">
+                    {selectedCustomer.isDeactivated && (
+                      <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-xs text-rose-800 dark:text-rose-300">
+                        <div className="font-bold flex items-center gap-1.5 text-rose-600 dark:text-rose-400">
+                          <AlertOctagon className="w-4 h-4 shrink-0" />
+                          <span>Account Access Suspended / Deactivated</span>
+                        </div>
+                        <div className="mt-1 text-slate-700 dark:text-slate-300">
+                          <strong className="text-slate-900 dark:text-white">Reason:</strong> {selectedCustomer.deactivationReason || 'No specific reason documented.'}
+                        </div>
                       </div>
-                      <div className="mt-1 text-slate-700 dark:text-slate-300">
-                        <strong className="text-slate-900 dark:text-white">Reason:</strong> {selectedCustomer.deactivationReason || 'No specific reason documented.'}
+                    )}
+
+                    {/* 4 Financial & Account KPI Summary Cards */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 text-xs">
+                      <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2.5 sm:p-3 rounded-xl min-w-0">
+                        <div className="text-slate-500 dark:text-slate-400 text-[10px] sm:text-[11px] font-medium flex items-center gap-1">
+                          <DollarSign className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-500 dark:text-emerald-400 shrink-0" />
+                          <span className="truncate">Total Paid (LTV)</span>
+                        </div>
+                        <div className="text-base sm:text-lg font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5 sm:mt-1 font-mono">
+                          ${(selectedCustomer.totalPaid ?? (selectedCustomer.paymentStatus === 'paid' ? selectedCustomer.amountPaid : 0) ?? 0).toFixed(2)}
+                        </div>
+                        <div className="text-[10px] text-slate-500 mt-0.5 truncate">Cumulative spend</div>
+                      </div>
+
+                      <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2.5 sm:p-3 rounded-xl min-w-0">
+                        <div className="text-slate-500 dark:text-slate-400 text-[10px] sm:text-[11px] font-medium flex items-center gap-1">
+                          <CreditCard className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-orange-500 dark:text-orange-400 shrink-0" />
+                          <span className="truncate">Current Plan</span>
+                        </div>
+                        <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white mt-0.5 sm:mt-1 truncate">
+                          {selectedCustomer.plan || 'Free Starter'}
+                        </div>
+                        <div className="text-[10px] text-orange-500 dark:text-orange-400 mt-0.5">
+                          ${selectedCustomer.amountPaid || 0}/month
+                        </div>
+                      </div>
+
+                      <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2.5 sm:p-3 rounded-xl min-w-0">
+                        <div className="text-slate-500 dark:text-slate-400 text-[10px] sm:text-[11px] font-medium flex items-center gap-1">
+                          <Zap className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-500 dark:text-amber-400 shrink-0" />
+                          <span className="truncate">Daily Quota</span>
+                        </div>
+                        <div className="text-sm sm:text-base font-bold text-slate-900 dark:text-white mt-0.5 sm:mt-1 font-mono truncate">
+                          {selectedCustomer.planId === 'unlimited' ? '∞ Unlimited' : `${(selectedCustomer.dailyCreditsLimit || 100).toLocaleString()}`}
+                        </div>
+                        <div className="text-[10px] text-slate-500 mt-0.5 truncate">Refreshes 24h</div>
+                      </div>
+
+                      <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2.5 sm:p-3 rounded-xl min-w-0">
+                        <div className="text-slate-500 dark:text-slate-400 text-[10px] sm:text-[11px] font-medium flex items-center gap-1">
+                          <Activity className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-purple-500 dark:text-purple-400 shrink-0" />
+                          <span className="truncate">Credits Left</span>
+                        </div>
+                        <div className="text-sm sm:text-base font-bold text-purple-600 dark:text-purple-400 mt-0.5 sm:mt-1 font-mono truncate">
+                          {selectedCustomer.planId === 'unlimited' ? '∞ Uncapped' : (selectedCustomer.creditsRemaining ?? 100).toLocaleString()}
+                        </div>
+                        <div className="text-[10px] text-slate-500 mt-0.5 truncate">Used today: {selectedCustomer.creditsUsedToday ?? 0}</div>
                       </div>
                     </div>
-                  )}
 
-                  {/* 4 Financial & Account KPI Summary Cards */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                    <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 rounded-xl">
-                      <div className="text-slate-500 dark:text-slate-400 text-[11px] font-medium flex items-center gap-1">
-                        <DollarSign className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
-                        <span>Total Paid (LTV)</span>
+                    {/* History of Buying / Purchases & Invoices */}
+                    <div className="space-y-2 text-xs">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5 font-display text-xs sm:text-sm">
+                          <Receipt className="w-4 h-4 text-orange-500 dark:text-orange-400 shrink-0" />
+                          <span>Buying & Transactions</span>
+                        </h4>
+                        <span className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400">
+                          {(selectedCustomer.purchaseHistory || []).length} Records
+                        </span>
                       </div>
-                      <div className="text-lg font-extrabold text-emerald-600 dark:text-emerald-400 mt-1 font-mono">
-                        ${(selectedCustomer.totalPaid ?? (selectedCustomer.paymentStatus === 'paid' ? selectedCustomer.amountPaid : 0) ?? 0).toFixed(2)}
-                      </div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">Cumulative spend</div>
+
+                      {(selectedCustomer.purchaseHistory && selectedCustomer.purchaseHistory.length > 0) ? (
+                        <div className="border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950 max-h-40 overflow-auto">
+                          <table className="w-full min-w-[480px] text-left text-xs">
+                            <thead className="bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-[10px] uppercase border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10">
+                              <tr>
+                                <th className="py-2 px-3">Invoice</th>
+                                <th className="py-2 px-3">Date</th>
+                                <th className="py-2 px-3">Plan</th>
+                                <th className="py-2 px-3">Amount</th>
+                                <th className="py-2 px-3">Method</th>
+                                <th className="py-2 px-3 text-right">Status</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                              {selectedCustomer.purchaseHistory.map((item, idx) => (
+                                <tr key={idx} className="hover:bg-slate-100/60 dark:hover:bg-slate-900/40">
+                                  <td className="py-2 px-3 font-mono text-[11px] text-orange-500 dark:text-orange-400 font-semibold whitespace-nowrap">
+                                    {item.invoiceNumber || item.id}
+                                  </td>
+                                  <td className="py-2 px-3 text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                                    {new Date(item.date).toLocaleDateString()}
+                                  </td>
+                                  <td className="py-2 px-3 font-medium text-slate-900 dark:text-white whitespace-nowrap">
+                                    {item.planName || item.description || selectedCustomer.plan}
+                                  </td>
+                                  <td className="py-2 px-3 font-mono text-emerald-600 dark:text-emerald-400 font-bold whitespace-nowrap">
+                                    ${Number(item.amount || 0).toFixed(2)}
+                                  </td>
+                                  <td className="py-2 px-3 text-slate-500 dark:text-slate-400 text-[11px] whitespace-nowrap">
+                                    {item.paymentMethod || 'Credit Card'}
+                                  </td>
+                                  <td className="py-2 px-3 text-right whitespace-nowrap">
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
+                                      {item.status || 'Completed'}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <div className="border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950 px-3.5 py-3 text-center text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs leading-relaxed">
+                          No purchases yet. User is on Complimentary Free Starter tier ($0.00).
+                        </div>
+                      )}
                     </div>
 
-                    <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 rounded-xl">
-                      <div className="text-slate-500 dark:text-slate-400 text-[11px] font-medium flex items-center gap-1">
-                        <CreditCard className="w-3.5 h-3.5 text-orange-500 dark:text-orange-400" />
-                        <span>Current Plan</span>
-                      </div>
-                      <div className="text-xs font-bold text-slate-900 dark:text-white mt-1 truncate">
-                        {selectedCustomer.plan || 'Free Starter'}
-                      </div>
-                      <div className="text-[10px] text-orange-400 mt-0.5">
-                        ${selectedCustomer.amountPaid || 0}/month
-                      </div>
-                    </div>
-
-                    <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 rounded-xl">
-                      <div className="text-slate-500 dark:text-slate-400 text-[11px] font-medium flex items-center gap-1">
-                        <Zap className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
-                        <span>Daily Credit Quota</span>
-                      </div>
-                      <div className="text-sm font-bold text-slate-900 dark:text-white mt-1 font-mono">
-                        {selectedCustomer.planId === 'unlimited' ? '∞ Unlimited' : `${(selectedCustomer.dailyCreditsLimit || 100).toLocaleString()}`}
-                      </div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">Refreshes every 24h</div>
-                    </div>
-
-                    <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 rounded-xl">
-                      <div className="text-slate-500 dark:text-slate-400 text-[11px] font-medium flex items-center gap-1">
-                        <Activity className="w-3.5 h-3.5 text-purple-500 dark:text-purple-400" />
-                        <span>Credits Left</span>
-                      </div>
-                      <div className="text-sm font-bold text-purple-600 dark:text-purple-400 mt-1 font-mono">
-                        {selectedCustomer.planId === 'unlimited' ? '∞ Uncapped' : (selectedCustomer.creditsRemaining ?? 100).toLocaleString()}
-                      </div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">Used today: {selectedCustomer.creditsUsedToday ?? 0}</div>
-                    </div>
-                  </div>
-
-                  {/* History of Buying / Purchases & Invoices */}
-                  <div className="space-y-2 text-xs">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5 font-display text-sm">
-                        <Receipt className="w-4 h-4 text-orange-400" />
-                        <span>History of Buying & Transactions</span>
+                    {/* Login Sessions & Activity History */}
+                    <div className="space-y-2 text-xs">
+                      <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5 font-display text-xs sm:text-sm">
+                        <History className="w-4 h-4 text-blue-500 dark:text-blue-400 shrink-0" />
+                        <span>Login & Session Activity History</span>
                       </h4>
-                      <span className="text-[11px] text-slate-400">
-                        {(selectedCustomer.purchaseHistory || []).length} Transaction Records
-                      </span>
-                    </div>
 
-                    <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-950 max-h-48 overflow-y-auto">
-                      <table className="w-full text-left text-xs">
-                        <thead className="bg-slate-100 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 text-[10px] uppercase border-b border-slate-200 dark:border-slate-800 sticky top-0">
-                          <tr>
-                            <th className="py-2.5 px-3">Invoice / ID</th>
-                            <th className="py-2.5 px-3">Date</th>
-                            <th className="py-2.5 px-3">Plan / Description</th>
-                            <th className="py-2.5 px-3">Amount</th>
-                            <th className="py-2.5 px-3">Payment Method</th>
-                            <th className="py-2.5 px-3 text-right">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
-                          {(selectedCustomer.purchaseHistory && selectedCustomer.purchaseHistory.length > 0) ? (
-                            selectedCustomer.purchaseHistory.map((item, idx) => (
-                              <tr key={idx} className="hover:bg-slate-100/60 dark:hover:bg-slate-900/40">
-                                <td className="py-2.5 px-3 font-mono text-[11px] text-orange-400 font-semibold">
-                                  {item.invoiceNumber || item.id}
-                                </td>
-                                <td className="py-2.5 px-3 text-slate-400">
-                                  {new Date(item.date).toLocaleDateString()}
-                                </td>
-                                <td className="py-2.5 px-3 font-medium text-slate-900 dark:text-white">
-                                  {item.planName || item.description || selectedCustomer.plan}
-                                </td>
-                                <td className="py-2.5 px-3 font-mono text-emerald-600 dark:text-emerald-400 font-bold">
-                                  ${Number(item.amount || 0).toFixed(2)}
-                                </td>
-                                <td className="py-2.5 px-3 text-slate-400 text-[11px]">
-                                  {item.paymentMethod || 'Credit Card'}
-                                </td>
-                                <td className="py-2.5 px-3 text-right">
-                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
-                                    {item.status || 'Completed'}
-                                  </span>
+                      <div className="border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950 max-h-40 overflow-auto">
+                        <table className="w-full min-w-[440px] text-left text-xs border-collapse">
+                          <thead className="bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-[10px] uppercase border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10">
+                            <tr>
+                              <th className="py-2 px-3 whitespace-nowrap">Timestamp</th>
+                              <th className="py-2 px-3 whitespace-nowrap">IP Address</th>
+                              <th className="py-2 px-3 whitespace-nowrap">Location</th>
+                              <th className="py-2 px-3 text-right whitespace-nowrap">Device / Client</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                            {(selectedCustomer.loginHistory && selectedCustomer.loginHistory.length > 0) ? (
+                              selectedCustomer.loginHistory.map((sess, idx) => (
+                                <tr key={idx} className="hover:bg-slate-100/60 dark:hover:bg-slate-900/40">
+                                  <td className="py-2 px-3 text-slate-800 dark:text-slate-300 font-mono text-[11px] whitespace-nowrap">
+                                    {new Date(sess.timestamp).toLocaleString()}
+                                  </td>
+                                  <td
+                                    className="py-2 px-3 font-mono text-slate-500 dark:text-slate-400 text-[11px] max-w-[140px] truncate"
+                                    title={sess.ip || '192.168.1.1'}
+                                  >
+                                    {(sess.ip || '192.168.1.1').split(',')[0].trim()}
+                                  </td>
+                                  <td className="py-2 px-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                                    {sess.location || 'United States'}
+                                  </td>
+                                  <td className="py-2 px-3 text-right text-slate-500 dark:text-slate-400 text-[11px] whitespace-nowrap">
+                                    {sess.device || 'Chrome Browser'}
+                                  </td>
+                                </tr>
+                              ))
+                            ) : (
+                              <tr>
+                                <td colSpan={4} className="py-3 px-3 text-center text-slate-500 text-[11px] sm:text-xs">
+                                  Initial session active at {new Date(selectedCustomer.lastLoginAt || selectedCustomer.createdAt).toLocaleString()}
                                 </td>
                               </tr>
-                            ))
-                          ) : (
-                            <tr>
-                              <td colSpan={6} className="py-4 text-center text-slate-500 text-xs">
-                                No purchases yet. User is on Complimentary Free Starter tier ($0.00).
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Login Sessions & Activity History */}
-                  <div className="space-y-2 text-xs">
-                    <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5 font-display text-sm">
-                      <History className="w-4 h-4 text-blue-400" />
-                      <span>Login & Session Activity History</span>
-                    </h4>
-
-                    <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-950 max-h-36 overflow-y-auto">
-                      <table className="w-full text-left text-xs">
-                        <thead className="bg-slate-100 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 text-[10px] uppercase border-b border-slate-200 dark:border-slate-800 sticky top-0">
-                          <tr>
-                            <th className="py-2 px-3">Session Timestamp</th>
-                            <th className="py-2 px-3">IP Address</th>
-                            <th className="py-2 px-3">Location</th>
-                            <th className="py-2 px-3 text-right">Device / Client</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
-                          {(selectedCustomer.loginHistory && selectedCustomer.loginHistory.length > 0) ? (
-                            selectedCustomer.loginHistory.map((sess, idx) => (
-                              <tr key={idx} className="hover:bg-slate-100/60 dark:hover:bg-slate-900/40">
-                                <td className="py-2 px-3 text-slate-800 dark:text-slate-300 font-mono text-[11px]">
-                                  {new Date(sess.timestamp).toLocaleString()}
-                                </td>
-                                <td className="py-2 px-3 font-mono text-slate-400 text-[11px]">
-                                  {sess.ip || '192.168.1.1'}
-                                </td>
-                                <td className="py-2 px-3 text-slate-700 dark:text-slate-300">
-                                  {sess.location || 'United States'}
-                                </td>
-                                <td className="py-2 px-3 text-right text-slate-400 text-[11px]">
-                                  {sess.device || 'Chrome Browser'}
-                                </td>
-                              </tr>
-                            ))
-                          ) : (
-                            <tr>
-                              <td colSpan={4} className="py-3 text-center text-slate-500">
-                                Initial session active at {new Date(selectedCustomer.lastLoginAt || selectedCustomer.createdAt).toLocaleString()}
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  {/* Footer Actions */}
-                  <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-800 text-xs">
-                    <div className="text-slate-400 text-[11px]">
+                  {/* Sticky Responsive Footer Actions */}
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 px-4 py-3 sm:px-6 sm:py-3.5 border-t border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 text-xs shrink-0">
+                    <div className="text-slate-500 dark:text-slate-400 text-[11px]">
                       Registered on {new Date(selectedCustomer.createdAt).toLocaleDateString()}
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
                       {!selectedCustomer.isSuperAdmin && (
                         <button
                           type="button"
                           onClick={() => handleToggleDeactivate(selectedCustomer)}
-                          className={`px-3 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 border ${
+                          className={`px-2.5 sm:px-3 py-2 text-[11px] sm:text-xs font-bold rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-1.5 border whitespace-nowrap ${
                             selectedCustomer.isDeactivated
-                              ? 'bg-emerald-950/60 hover:bg-emerald-600 text-emerald-400 hover:text-white border-emerald-700'
-                              : 'bg-rose-950/60 hover:bg-rose-600 text-rose-400 hover:text-white border-rose-700'
+                              ? 'bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-600 text-emerald-700 dark:text-emerald-400 hover:text-white border-emerald-300 dark:border-emerald-700'
+                              : 'bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-600 text-rose-700 dark:text-rose-400 hover:text-white border-rose-300 dark:border-rose-700'
                           }`}
                         >
                           {selectedCustomer.isDeactivated ? (
                             <>
-                              <UserCheck className="w-3.5 h-3.5" />
-                              <span>Reactivate Account</span>
+                              <UserCheck className="w-3.5 h-3.5 shrink-0" />
+                              <span className="sm:hidden">Reactivate</span>
+                              <span className="hidden sm:inline">Reactivate Account</span>
                             </>
                           ) : (
                             <>
-                              <UserX className="w-3.5 h-3.5" />
-                              <span>Deactivate Account</span>
+                              <UserX className="w-3.5 h-3.5 shrink-0" />
+                              <span className="sm:hidden">Deactivate</span>
+                              <span className="hidden sm:inline">Deactivate Account</span>
                             </>
                           )}
                         </button>
@@ -1784,15 +1801,16 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                             });
                             setSelectedCustomer(null);
                           }}
-                          className="px-4 py-2 text-xs font-bold text-slate-700 dark:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 rounded-lg transition-colors cursor-pointer"
+                          className="px-2.5 sm:px-3.5 py-2 text-[11px] sm:text-xs font-bold text-slate-700 dark:text-white bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 rounded-lg transition-colors cursor-pointer flex items-center justify-center whitespace-nowrap"
                         >
-                          Edit Plan / Credits
+                          <span className="sm:hidden">Edit Plan</span>
+                          <span className="hidden sm:inline">Edit Plan / Credits</span>
                         </button>
                       )}
                       <button
                         type="button"
                         onClick={() => setSelectedCustomer(null)}
-                        className="px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-sm transition-colors cursor-pointer"
+                        className="col-span-2 sm:col-span-1 px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-sm transition-colors cursor-pointer flex items-center justify-center whitespace-nowrap"
                       >
                         Close Dossier
                       </button>
@@ -1804,22 +1822,28 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
 
             {/* Edit User Modal Dialog */}
             {editingUserId && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 dark:bg-slate-950/80 backdrop-blur-xs">
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl text-slate-900 dark:text-slate-100 transition-colors">
-                  <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white font-display">
-                      Superadmin: Edit User Plan & Credits
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 dark:bg-slate-950/80 backdrop-blur-xs"
+                onClick={() => setEditingUserId(null)}
+              >
+                <div
+                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl max-w-md w-full max-h-[82vh] flex flex-col overflow-hidden shadow-2xl text-slate-900 dark:text-slate-100 transition-colors"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 px-4 py-3 sm:px-6 sm:py-4 shrink-0">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white font-display truncate">
+                      Edit User Plan & Credits
                     </h3>
                     <button
                       type="button"
                       onClick={() => setEditingUserId(null)}
-                      className="text-slate-400 hover:text-white"
+                      className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg cursor-pointer shrink-0"
                     >
-                      ✕
+                      <X className="w-4 h-4" />
                     </button>
                   </div>
 
-                  <div className="space-y-3 text-xs">
+                  <div className="flex-1 overflow-y-auto min-h-0 px-4 py-3.5 sm:px-6 sm:py-4 space-y-3 text-xs">
                     <div>
                       <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">
                         Select Plan Tier
@@ -1882,11 +1906,11 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+                  <div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2 px-4 py-3 sm:px-6 sm:py-3.5 border-t border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 shrink-0">
                     <button
                       type="button"
                       onClick={() => setEditingUserId(null)}
-                      className="px-4 py-2 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
+                      className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700 sm:border-transparent rounded-lg cursor-pointer"
                     >
                       Cancel
                     </button>
@@ -1904,15 +1928,21 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
 
             {/* Export Confirmation Modal */}
             {isExportConfirmOpen && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 dark:bg-slate-950/80 backdrop-blur-xs">
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl text-slate-900 dark:text-slate-100 transition-colors animate-in fade-in zoom-in-95 duration-150">
-                  <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-                    <div className="flex items-center gap-2">
-                      <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400">
-                        <Download className="w-5 h-5" />
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 dark:bg-slate-950/80 backdrop-blur-xs"
+                onClick={() => setIsExportConfirmOpen(false)}
+              >
+                <div
+                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl max-w-md w-full max-h-[82vh] flex flex-col overflow-hidden shadow-2xl text-slate-900 dark:text-slate-100 transition-colors animate-in fade-in zoom-in-95 duration-150"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 px-4 py-3 sm:px-6 sm:py-4 shrink-0">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 shrink-0">
+                        <Download className="w-4 h-4 sm:w-5 sm:h-5" />
                       </div>
-                      <div>
-                        <h3 className="text-sm font-bold text-slate-900 dark:text-white font-display">
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white font-display truncate">
                           Confirm User Data Export
                         </h3>
                         <p className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -1923,13 +1953,13 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                     <button
                       type="button"
                       onClick={() => setIsExportConfirmOpen(false)}
-                      className="text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
+                      className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer shrink-0"
                     >
-                      ✕
+                      <X className="w-4 h-4" />
                     </button>
                   </div>
 
-                  <div className="space-y-3 text-xs">
+                  <div className="flex-1 overflow-y-auto min-h-0 px-4 py-3.5 sm:px-6 sm:py-4 space-y-3 text-xs">
                     <p className="text-slate-600 dark:text-slate-300">
                       You are about to export {selectedUserIds.length > 0 ? (
                         <span className="font-semibold text-orange-600 dark:text-orange-400">{selectedUserIds.length} specifically selected</span>
@@ -1946,26 +1976,26 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                         <button
                           type="button"
                           onClick={() => setExportFormat('csv')}
-                          className={`py-2 px-3 text-xs font-bold rounded-lg border flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                          className={`py-2 px-2.5 text-xs font-bold rounded-lg border flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                             exportFormat === 'csv'
                               ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400'
                               : 'border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-400'
                           }`}
                         >
-                          <FileText className="w-4 h-4" />
-                          <span>CSV Spreadsheet</span>
+                          <FileText className="w-4 h-4 shrink-0" />
+                          <span>CSV</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => setExportFormat('json')}
-                          className={`py-2 px-3 text-xs font-bold rounded-lg border flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                          className={`py-2 px-2.5 text-xs font-bold rounded-lg border flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                             exportFormat === 'json'
                               ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400'
                               : 'border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-400'
                           }`}
                         >
-                          <Database className="w-4 h-4" />
-                          <span>JSON Raw Data</span>
+                          <Database className="w-4 h-4 shrink-0" />
+                          <span>JSON</span>
                         </button>
                       </div>
                     </div>
@@ -1978,20 +2008,20 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+                  <div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2 px-4 py-3 sm:px-6 sm:py-3.5 border-t border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 shrink-0">
                     <button
                       type="button"
                       onClick={() => setIsExportConfirmOpen(false)}
-                      className="px-3.5 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                      className="px-3.5 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700 sm:border-transparent rounded-lg transition-colors cursor-pointer"
                     >
                       Cancel
                     </button>
                     <button
                       type="button"
                       onClick={handleExecuteExport}
-                      className="px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-sm transition-colors cursor-pointer flex items-center gap-1.5"
+                      className="px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-sm transition-colors cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap"
                     >
-                      <Download className="w-3.5 h-3.5" />
+                      <Download className="w-3.5 h-3.5 shrink-0" />
                       <span>Download {exportFormat.toUpperCase()}</span>
                     </button>
                   </div>
@@ -2001,18 +2031,29 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
 
             {/* Deactivate User with Manual Reason Modal */}
             {deactivatingTarget && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 dark:bg-slate-950/80 backdrop-blur-xs animate-in fade-in duration-150">
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl text-slate-900 dark:text-slate-100 transition-colors animate-in zoom-in-95 duration-150">
-                  <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="p-2 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400">
-                        <UserX className="w-5 h-5" />
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 dark:bg-slate-950/80 backdrop-blur-xs animate-in fade-in duration-150"
+                onClick={() => {
+                  if (!isDeactivatingSubmitting) {
+                    setDeactivatingTarget(null);
+                    setDeactivationReasonInput('');
+                  }
+                }}
+              >
+                <div
+                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl max-w-lg w-full max-h-[82vh] flex flex-col overflow-hidden shadow-2xl text-slate-900 dark:text-slate-100 transition-colors animate-in zoom-in-95 duration-150"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 px-4 py-3 sm:px-6 sm:py-4 shrink-0">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="p-2 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 shrink-0">
+                        <UserX className="w-4 h-4 sm:w-5 sm:h-5" />
                       </div>
-                      <div>
-                        <h3 className="text-sm font-bold text-slate-900 dark:text-white font-display">
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white font-display truncate">
                           Deactivate User Account
                         </h3>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
                           {deactivatingTarget.name} ({deactivatingTarget.email})
                         </p>
                       </div>
@@ -2023,54 +2064,56 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                         setDeactivatingTarget(null);
                         setDeactivationReasonInput('');
                       }}
-                      className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1 rounded-md"
+                      className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1 rounded-md cursor-pointer shrink-0"
                     >
-                      ✕
+                      <X className="w-4 h-4" />
                     </button>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 text-xs text-rose-700 dark:text-rose-300">
-                    Deactivating this account will immediately revoke access to the Lead Finder, database records, custom clusters, and lead export tools. The reason you enter below will be displayed directly to the user on their Account Deactivated status screen.
-                  </div>
+                  <div className="flex-1 overflow-y-auto min-h-0 px-4 py-3.5 sm:px-6 sm:py-4 space-y-3.5 text-xs">
+                    <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 text-xs text-rose-700 dark:text-rose-300">
+                      Deactivating this account will immediately revoke access to the Lead Finder, database records, custom clusters, and lead export tools. The reason you enter below will be displayed directly to the user on their Account Deactivated status screen.
+                    </div>
 
-                  <div className="space-y-3 text-xs">
-                    <div>
-                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">
-                        Quick Preset Reasons
-                      </label>
-                      <div className="flex flex-wrap gap-1.5">
-                        {DEACTIVATION_PRESETS.map((preset) => (
-                          <button
-                            key={preset}
-                            type="button"
-                            onClick={() => setDeactivationReasonInput(preset)}
-                            className={`px-2.5 py-1 rounded-lg text-[11px] transition-colors cursor-pointer border ${
-                              deactivationReasonInput === preset
-                                ? 'bg-rose-600 text-white border-rose-600 font-semibold shadow-2xs'
-                                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-rose-400'
-                            }`}
-                          >
-                            {preset}
-                          </button>
-                        ))}
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">
+                          Quick Preset Reasons
+                        </label>
+                        <div className="flex flex-wrap gap-1.5">
+                          {DEACTIVATION_PRESETS.map((preset) => (
+                            <button
+                              key={preset}
+                              type="button"
+                              onClick={() => setDeactivationReasonInput(preset)}
+                              className={`px-2.5 py-1 rounded-lg text-[11px] text-left transition-colors cursor-pointer border ${
+                                deactivationReasonInput === preset
+                                  ? 'bg-rose-600 text-white border-rose-600 font-semibold shadow-2xs'
+                                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-rose-400'
+                              }`}
+                            >
+                              {preset}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
+                          Manual Reason / Instructions for User <span className="text-rose-500">*</span>
+                        </label>
+                        <textarea
+                          rows={3}
+                          value={deactivationReasonInput}
+                          onChange={(e) => setDeactivationReasonInput(e.target.value)}
+                          placeholder="e.g. Your subscription payment failed on Nov 15. Please update your billing method or contact support@leadsarrow.io."
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-rose-500 text-xs resize-none"
+                        />
                       </div>
                     </div>
-
-                    <div>
-                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
-                        Manual Reason / Instructions for User <span className="text-rose-500">*</span>
-                      </label>
-                      <textarea
-                        rows={3}
-                        value={deactivationReasonInput}
-                        onChange={(e) => setDeactivationReasonInput(e.target.value)}
-                        placeholder="e.g. Your subscription payment failed on Nov 15. Please update your billing method or contact support@leadsarrow.io."
-                        className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-rose-500 text-xs resize-none"
-                      />
-                    </div>
                   </div>
 
-                  <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+                  <div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2 px-4 py-3 sm:px-6 sm:py-3.5 border-t border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 shrink-0">
                     <button
                       type="button"
                       onClick={() => {
@@ -2078,7 +2121,7 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                         setDeactivationReasonInput('');
                       }}
                       disabled={isDeactivatingSubmitting}
-                      className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                      className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700 sm:border-transparent rounded-xl cursor-pointer"
                     >
                       Cancel
                     </button>
@@ -2086,17 +2129,18 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
                       type="button"
                       onClick={handleConfirmDeactivation}
                       disabled={isDeactivatingSubmitting}
-                      className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:scale-95 rounded-xl shadow-sm transition-all cursor-pointer flex items-center gap-1.5"
+                      className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:scale-95 rounded-xl shadow-sm transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap"
                     >
                       {isDeactivatingSubmitting ? (
                         <>
-                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin shrink-0" />
                           <span>Deactivating...</span>
                         </>
                       ) : (
                         <>
-                          <UserX className="w-3.5 h-3.5" />
-                          <span>Confirm & Deactivate Account</span>
+                          <UserX className="w-3.5 h-3.5 shrink-0" />
+                          <span className="sm:hidden">Deactivate</span>
+                          <span className="hidden sm:inline">Confirm & Deactivate Account</span>
                         </>
                       )}
                     </button>
@@ -2111,66 +2155,66 @@ Brex Financial,brex.com,Pedro Franceschi,CEO,pedro@brex.com,+14155550110,Fintech
         {activeTab === 'ingestion' && (
           <div className="space-y-6">
             {/* Ingestion Channels Bar */}
-            <div className="flex flex-wrap items-center gap-3 bg-white dark:bg-slate-950 p-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs transition-colors">
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-3 bg-white dark:bg-slate-950 p-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs transition-colors">
               <button
                 type="button"
                 onClick={() => setIngestionChannel('csv')}
-                className={`px-4 py-2 text-xs font-bold rounded-lg flex items-center gap-2 transition-colors cursor-pointer ${
+                className={`px-3 sm:px-4 py-2 text-[11px] sm:text-xs font-bold rounded-lg flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 transition-colors cursor-pointer ${
                   ingestionChannel === 'csv'
                     ? 'bg-orange-600 text-white'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900'
                 }`}
               >
-                <FileSpreadsheet className="w-4 h-4" />
-                <span>CSV / Excel Upload (.xlsx / .csv)</span>
+                <FileSpreadsheet className="w-4 h-4 shrink-0" />
+                <span className="truncate">CSV / Excel</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setIngestionChannel('sheets')}
-                className={`px-4 py-2 text-xs font-bold rounded-lg flex items-center gap-2 transition-colors cursor-pointer ${
+                className={`px-3 sm:px-4 py-2 text-[11px] sm:text-xs font-bold rounded-lg flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 transition-colors cursor-pointer ${
                   ingestionChannel === 'sheets'
                     ? 'bg-orange-600 text-white'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900'
                 }`}
               >
-                <Table className="w-4 h-4" />
-                <span>Google Sheets Sync</span>
+                <Table className="w-4 h-4 shrink-0" />
+                <span className="truncate">Google Sheets</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setIngestionChannel('mysql')}
-                className={`px-4 py-2 text-xs font-bold rounded-lg flex items-center gap-2 transition-colors cursor-pointer ${
+                className={`px-3 sm:px-4 py-2 text-[11px] sm:text-xs font-bold rounded-lg flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 transition-colors cursor-pointer ${
                   ingestionChannel === 'mysql'
                     ? 'bg-orange-600 text-white'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900'
                 }`}
               >
-                <Server className="w-4 h-4" />
-                <span>MySQL / SQL Database Ingestion</span>
+                <Server className="w-4 h-4 shrink-0" />
+                <span className="truncate">MySQL / SQL</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setIngestionChannel('manual')}
-                className={`px-4 py-2 text-xs font-bold rounded-lg flex items-center gap-2 transition-colors cursor-pointer ${
+                className={`px-3 sm:px-4 py-2 text-[11px] sm:text-xs font-bold rounded-lg flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 transition-colors cursor-pointer ${
                   ingestionChannel === 'manual'
                     ? 'bg-orange-600 text-white'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900'
                 }`}
               >
-                <Plus className="w-4 h-4" />
-                <span>Manual Single Lead Entry</span>
+                <Plus className="w-4 h-4 shrink-0" />
+                <span className="truncate">Manual Entry</span>
               </button>
             </div>
 
             {/* CHANNEL A: CSV / EXCEL UPLOAD */}
             {ingestionChannel === 'csv' && (
-              <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-6 shadow-xs transition-colors">
+              <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-6 space-y-5 sm:space-y-6 shadow-xs transition-colors">
                 <div>
-                  <h3 className="text-base font-bold text-white font-display flex items-center gap-2">
-                    <FileSpreadsheet className="w-5 h-5 text-orange-500" />
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white font-display flex items-center gap-2">
+                    <FileSpreadsheet className="w-5 h-5 text-orange-500 shrink-0" />
                     <span>Upload CSV or Excel Spreadsheet</span>
                   </h3>
                   <p className="text-xs text-slate-400 mt-0.5">
@@ -2326,7 +2370,7 @@ Snowflake,snowflake.com,Frank Slootman,Chairman,frank@snowflake.com,+14085550182
             {ingestionChannel === 'sheets' && (
               <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-5 shadow-xs transition-colors">
                 <div>
-                  <h3 className="text-base font-bold text-white font-display flex items-center gap-2">
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white font-display flex items-center gap-2">
                     <Table className="w-5 h-5 text-emerald-500" />
                     <span>Google Sheets Real-Time Sync</span>
                   </h3>
@@ -2365,7 +2409,7 @@ Snowflake,snowflake.com,Frank Slootman,Chairman,frank@snowflake.com,+14085550182
             {ingestionChannel === 'mysql' && (
               <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-6 shadow-xs transition-colors">
                 <div>
-                  <h3 className="text-base font-bold text-white font-display flex items-center gap-2">
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white font-display flex items-center gap-2">
                     <Server className="w-5 h-5 text-blue-500" />
                     <span>MySQL / SQL Database Connection & Migration</span>
                   </h3>
@@ -2440,7 +2484,7 @@ Snowflake,snowflake.com,Frank Slootman,Chairman,frank@snowflake.com,+14085550182
             {ingestionChannel === 'manual' && (
               <form onSubmit={handleManualSubmit} className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-5 shadow-xs transition-colors">
                 <div>
-                  <h3 className="text-base font-bold text-white font-display flex items-center gap-2">
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white font-display flex items-center gap-2">
                     <Plus className="w-5 h-5 text-orange-500" />
                     <span>Add Lead Manually</span>
                   </h3>
