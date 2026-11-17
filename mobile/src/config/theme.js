@@ -41,3 +41,25 @@ export const FONTS = {
   bold: 'System',
   heavy: 'System'
 };
+
+export const theme = {
+  colors: {
+    primary: COLORS.primary,
+    primaryDark: COLORS.primaryDark,
+    background: COLORS.bgDark,
+    surface: COLORS.cardDark,
+    surfaceHover: COLORS.surfaceDark,
+    border: COLORS.cardBorderDark,
+    borderLight: '#334155',
+    textPrimary: COLORS.textDark,
+    textSecondary: COLORS.textSecondaryDark,
+    textMuted: COLORS.textMutedDark,
+    success: COLORS.verified,
+    danger: COLORS.danger,
+    warning: COLORS.warning,
+    accent: COLORS.accent,
+  },
+  fonts: FONTS
+};
+
+export default theme;
