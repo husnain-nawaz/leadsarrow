@@ -216,6 +216,23 @@ function WorkspaceContent({ activeView, setActiveView, onToggleLanding }) {
 
 const VALID_VIEWS = ['finder', 'lists', 'custom', 'superadmin', 'profile', 'schema'];
 
+function detectIsMobileApp() {
+  if (typeof window === 'undefined') return false;
+  try {
+    if (window.__LEADSARROW_NATIVE_APP__ === true) return true;
+    if (typeof window.ReactNativeWebView !== 'undefined') return true;
+    const ua = navigator.userAgent || '';
+    if (ua.includes('LeadsArrowAndroidApp')) return true;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('app') === 'android' || params.get('platform') === 'apk') {
+      sessionStorage.setItem('leadsarrow_native_app', '1');
+      return true;
+    }
+    if (sessionStorage.getItem('leadsarrow_native_app') === '1') return true;
+  } catch (e) {}
+  return false;
+}
+
 function getInitialActiveView() {
   // 1. Try URL hash first (e.g. #custom, #lists, #superadmin, #finder)
   try {
@@ -243,8 +260,8 @@ function getInitialActiveView() {
 function MainApp() {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
+  const [isMobileApp] = useState(detectIsMobileApp);
   const [showLandingForLoggedIn, setShowLandingForLoggedIn] = useState(false);
-  const [unauthView, setUnauthView] = useState('login'); // 'login' | 'landing'
 
   // Instantly catch deactivation broadcast from API layer and block dashboard
   useEffect(() => {
@@ -311,16 +328,15 @@ function MainApp() {
     }
   }, [user?.id, user?.email]);
 
-  // If user is not logged in: ALWAYS show the Sign In / Login page FIRST when someone opens the website
+  // Unauthenticated routing:
+  // - Inside the Android .apk mobile app ONLY: show dedicated LoginPage (no Landing Page)
+  // - In web browsers (desktop or mobile screen): ALWAYS show LandingPage + AuthModal (no standalone LoginPage)
   if (!user) {
-    if (unauthView === 'landing') {
+    if (isMobileApp) {
       return (
         <div className="min-h-screen w-full max-w-full overflow-x-hidden">
           <GlobalToast />
-          <LandingPage
-            onReturnDashboard={() => setUnauthView('login')}
-          />
-          <AuthModal />
+          <LoginPage />
         </div>
       );
     }
@@ -328,13 +344,14 @@ function MainApp() {
     return (
       <div className="min-h-screen w-full max-w-full overflow-x-hidden">
         <GlobalToast />
-        <LoginPage onExploreLanding={() => setUnauthView('landing')} />
+        <LandingPage />
+        <AuthModal />
       </div>
     );
   }
 
-  // If user clicked "View Landing Page", allow browsing public landing page
-  if (showLandingForLoggedIn) {
+  // Landing page browsing is only available in web browsers (never inside the Android .apk)
+  if (!isMobileApp && showLandingForLoggedIn) {
     return (
       <div className="relative min-h-screen w-full max-w-full overflow-x-hidden">
         <GlobalToast />
@@ -359,7 +376,7 @@ function MainApp() {
           user={user}
           onSignOut={() => dispatch(logoutUser())}
           onRefresh={() => dispatch(refreshCurrentUserProfile())}
-          onGoToLanding={() => setShowLandingForLoggedIn(true)}
+          onGoToLanding={isMobileApp ? undefined : () => setShowLandingForLoggedIn(true)}
         />
       </div>
     );
@@ -371,7 +388,7 @@ function MainApp() {
       <WorkspaceContent
         activeView={activeView}
         setActiveView={handleSetActiveView}
-        onToggleLanding={() => setShowLandingForLoggedIn(true)}
+        onToggleLanding={isMobileApp ? undefined : () => setShowLandingForLoggedIn(true)}
       />
     </>
   );

@@ -12,8 +12,13 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { WebView } from 'react-native-webview';
 
-// Production Hostinger Live Web URL (The exact mobile version of the website)
-const WEB_APP_URL = 'https://aliceblue-kudu-967560.hostingersite.com';
+// Production Hostinger Live Web URL (flagged as native Android app mode — no landing page, dedicated login screen)
+const WEB_APP_URL = 'https://aliceblue-kudu-967560.hostingersite.com/?app=android';
+const NATIVE_APP_INJECT_SCRIPT = `
+  window.__LEADSARROW_NATIVE_APP__ = true;
+  try { sessionStorage.setItem('leadsarrow_native_app', '1'); } catch (e) {}
+  true;
+`;
 
 export default function App() {
   const webViewRef = useRef(null);
@@ -66,6 +71,9 @@ export default function App() {
               source={{ uri: WEB_APP_URL }}
               style={styles.webView}
               originWhitelist={['*']}
+              applicationNameForUserAgent="LeadsArrowAndroidApp/1.0"
+              injectedJavaScriptBeforeContentLoaded={NATIVE_APP_INJECT_SCRIPT}
+              onMessage={() => {}}
               onNavigationStateChange={(navState) => {
                 setCanGoBack(navState.canGoBack);
               }}
