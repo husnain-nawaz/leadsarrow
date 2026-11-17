@@ -2,7 +2,7 @@
   "expo": {
     "name": "LeadsArrow",
     "slug": "leadsarrow",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "scheme": "leadsarrow",
     "userInterfaceStyle": "dark",
@@ -16,7 +16,7 @@
       "bundleIdentifier": "com.leadsarrow.mobile"
     },
     "android": {
-      "package": "com.leadsarrow.mobile",
+      "package": "com.leadsarrow.app",
       "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "backgroundColor": "#0b0f19"
