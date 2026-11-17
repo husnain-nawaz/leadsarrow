@@ -22,6 +22,7 @@ import AddLeadModal from './components/AddLeadModal.jsx';
 import ExportModal from './components/ExportModal.jsx';
 import SqlArchitectureView from './components/SqlArchitectureView.jsx';
 import LandingPage from './components/LandingPage.jsx';
+import LoginPage from './components/pages/LoginPage.jsx';
 import PlanUpgradeModal from './components/PlanUpgradeModal.jsx';
 import SuperadminPanel from './components/SuperadminPanel.jsx';
 import ProfileModal from './components/ProfileModal.jsx';
@@ -243,6 +244,7 @@ function MainApp() {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const [showLandingForLoggedIn, setShowLandingForLoggedIn] = useState(false);
+  const [unauthView, setUnauthView] = useState('login'); // 'login' | 'landing'
 
   // Instantly catch deactivation broadcast from API layer and block dashboard
   useEffect(() => {
@@ -309,14 +311,24 @@ function MainApp() {
     }
   }, [user?.id, user?.email]);
 
-  // If user is not logged in: ALWAYS show Landing Page with 4 plans & 100 free credits daily info.
-  // Gated: No one can access the workspace dashboard without logging in first.
+  // If user is not logged in: ALWAYS show the Sign In / Login page FIRST when someone opens the website
   if (!user) {
+    if (unauthView === 'landing') {
+      return (
+        <div className="min-h-screen w-full max-w-full overflow-x-hidden">
+          <GlobalToast />
+          <LandingPage
+            onReturnDashboard={() => setUnauthView('login')}
+          />
+          <AuthModal />
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen w-full max-w-full overflow-x-hidden">
         <GlobalToast />
-        <LandingPage />
-        <AuthModal />
+        <LoginPage onExploreLanding={() => setUnauthView('landing')} />
       </div>
     );
   }

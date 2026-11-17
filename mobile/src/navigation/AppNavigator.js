@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { theme } from '../config/theme';
 import Header from '../components/Header';
+import { useAuth } from '../context/AuthContext';
 
 // Screens
 import LeadFinderScreen from '../screens/LeadFinderScreen';
@@ -71,14 +72,24 @@ function MainTabNavigator({ navigation }) {
 }
 
 export default function AppNavigator() {
+  const { isLoggedIn } = useAuth();
+
   return (
     <NavigationContainer>
       <Stack.Navigator
+        initialRouteName={isLoggedIn ? 'MainTabs' : 'Auth'}
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: theme.colors.background }
         }}
       >
+        <Stack.Screen
+          name="Auth"
+          component={AuthScreen}
+          options={{
+            animation: 'fade'
+          }}
+        />
         <Stack.Screen name="MainTabs" component={MainTabNavigator} />
         <Stack.Screen
           name="SavedListDetail"
@@ -86,14 +97,6 @@ export default function AppNavigator() {
           options={{
             headerShown: false,
             animation: 'slide_from_right'
-          }}
-        />
-        <Stack.Screen
-          name="Auth"
-          component={AuthScreen}
-          options={{
-            presentation: 'modal',
-            animation: 'slide_from_bottom'
           }}
         />
       </Stack.Navigator>
