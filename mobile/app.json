@@ -2,7 +2,7 @@
   "expo": {
     "name": "LeadsArrow",
     "slug": "leadsarrow",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "scheme": "leadsarrow",
     "userInterfaceStyle": "dark",

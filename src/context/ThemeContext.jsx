@@ -20,15 +20,25 @@ export function ThemeProvider({ children }) {
 
   const applyThemeToDom = (targetTheme) => {
     const root = document.documentElement;
+    root.style.colorScheme = targetTheme;
+    document.body.style.colorScheme = targetTheme;
+    const metaColorScheme = document.querySelector('meta[name="color-scheme"]');
+    if (metaColorScheme) {
+      metaColorScheme.setAttribute('content', targetTheme);
+    }
     if (targetTheme === 'dark') {
       root.classList.add('dark');
       root.setAttribute('data-theme', 'dark');
+      root.style.backgroundColor = '#0f172a';
+      root.style.color = '#f8fafc';
       document.body.classList.add('dark');
       document.body.style.backgroundColor = '#0f172a';
       document.body.style.color = '#f8fafc';
     } else {
       root.classList.remove('dark');
       root.setAttribute('data-theme', 'light');
+      root.style.backgroundColor = '#f8fafc';
+      root.style.color = '#0f172a';
       document.body.classList.remove('dark');
       document.body.style.backgroundColor = '#f8fafc';
       document.body.style.color = '#0f172a';

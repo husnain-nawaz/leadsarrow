@@ -105,7 +105,10 @@ export default function App() {
                 </View>
               )}
               allowsBackForwardNavigationGestures={true}
+              forceDarkOn={false}
+              pullToRefreshEnabled={true}
               cacheEnabled={true}
+              cacheMode="LOAD_DEFAULT"
             />
           </View>
         )}
